@@ -126,7 +126,7 @@ export default function EventDetails() {
         </div>
       </div>
 
-      {/* Floating Action Button for buying tickets */}
+      {/* Floating Action Button - Contact Admin */}
       <div style={{ 
         position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 24px', 
         backgroundColor: 'var(--card-bg)', borderTop: '1px solid var(--border-color)',
@@ -134,12 +134,25 @@ export default function EventDetails() {
         boxShadow: '0 -4px 12px rgba(0,0,0,0.05)'
       }}>
         <div>
-          <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Price</div>
-          <div style={{ fontSize: '22px', fontWeight: 800 }}>{event.price || "From $50.00"}</div>
+          <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Interested?</div>
+          <div style={{ fontSize: '16px', fontWeight: 700 }}>Contact us for tickets</div>
         </div>
-        <button className="btn-primary" style={{ width: 'auto', padding: '14px 32px', margin: 0 }} onClick={() => navigate(`/seat-selection/${event.id}`)}>
-          Find Tickets
-        </button>
+        <a
+          href={`mailto:${import.meta.env.VITE_ADMIN_EMAIL || 'info.ticketsmasters@gmail.com'}?subject=Ticket Inquiry: ${encodeURIComponent(event.title)}&body=Hi,%0A%0AI'm interested in tickets for:%0A%0AEvent: ${encodeURIComponent(event.title)}%0ADate: ${encodeURIComponent(event.date)}%0ALocation: ${encodeURIComponent(event.location)}%0A%0APlease let me know availability and pricing.%0A%0AThank you!`}
+          style={{
+            backgroundColor: 'var(--primary-color)',
+            color: 'white',
+            padding: '14px 24px',
+            borderRadius: '8px',
+            fontWeight: 700,
+            fontSize: '15px',
+            textDecoration: 'none',
+            display: 'inline-block',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          📧 Get Tickets
+        </a>
       </div>
       
       {/* Toast Notification */}
