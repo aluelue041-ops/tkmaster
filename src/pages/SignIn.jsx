@@ -9,6 +9,8 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  const [toastMessage, setToastMessage] = useState('');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -31,8 +33,10 @@ export default function SignIn() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      alert(isLogin ? 'Successfully signed in!' : 'Account created successfully!');
-      navigate('/account');
+      setToastMessage(isLogin ? 'Successfully signed in!' : 'Account created successfully!');
+      setTimeout(() => {
+        navigate('/account');
+      }, 1500);
     } catch (err) {
       setError(err.message);
     }
@@ -103,6 +107,27 @@ export default function SignIn() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#323232',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '24px',
+          fontSize: '14px',
+          fontWeight: 500,
+          zIndex: 1000,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          animation: 'fadeIn 0.3s'
+        }}>
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 }
