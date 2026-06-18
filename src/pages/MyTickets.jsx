@@ -17,7 +17,8 @@ export default function MyTickets() {
       }
 
       try {
-        const res = await fetch('http://localhost:5000/api/tickets/my-tickets', {
+        const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${API}/api/tickets/my-tickets`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
