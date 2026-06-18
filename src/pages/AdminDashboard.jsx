@@ -144,43 +144,55 @@ export default function AdminDashboard() {
             </div>
 
             <h3 style={{ color: 'white' }}>Live Events</h3>
-            {events.map(event => (
-              <div key={event._id} style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: '#323232', padding: '12px', borderRadius: '12px', marginBottom: '12px' }}>
-                <img src={event.image} alt="" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ margin: '0 0 4px', color: 'white', fontSize: '16px' }}>{event.title}</h4>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>{event.date}</p>
+            {events.length === 0 ? (
+              <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No events currently live. Add one above!</p>
+            ) : (
+              events.map(event => (
+                <div key={event._id} style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: '#323232', padding: '12px', borderRadius: '12px', marginBottom: '12px' }}>
+                  <img src={event.image} alt="" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: '0 0 4px', color: 'white', fontSize: '16px' }}>{event.title}</h4>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>{event.date}</p>
+                  </div>
+                  <button onClick={() => handleDeleteEvent(event._id)} style={{ background: '#ff3b3022', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}>
+                    <Trash2 color="#ff3b30" size={20} />
+                  </button>
                 </div>
-                <button onClick={() => handleDeleteEvent(event._id)} style={{ background: '#ff3b3022', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}>
-                  <Trash2 color="#ff3b30" size={20} />
-                </button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
         {activeTab === 'users' && (
           <div>
             <h3 style={{ color: 'white' }}>Registered Users</h3>
-            {users.map(user => (
-              <div key={user._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
-                <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{user.email}</p>
-                <p style={{ margin: '4px 0 0', color: '#aaa', fontSize: '12px' }}>Role: {user.role} • Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
-              </div>
-            ))}
+            {users.length === 0 ? (
+              <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No users registered yet.</p>
+            ) : (
+              users.map(user => (
+                <div key={user._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
+                  <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{user.email}</p>
+                  <p style={{ margin: '4px 0 0', color: '#aaa', fontSize: '12px' }}>Role: {user.role} • Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
+                </div>
+              ))
+            )}
           </div>
         )}
 
         {activeTab === 'tickets' && (
           <div>
             <h3 style={{ color: 'white' }}>All Tickets Sold</h3>
-            {tickets.map(ticket => (
-              <div key={ticket._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
-                <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{ticket.eventTitle}</p>
-                <p style={{ margin: '4px 0', color: 'var(--primary-color)', fontSize: '14px' }}>Purchased by: {ticket.user?.email || 'Unknown'}</p>
-                <p style={{ margin: 0, color: '#aaa', fontSize: '12px' }}>Seats: {ticket.seats.join(', ')} • Total: ${ticket.totalPrice}</p>
-              </div>
-            ))}
+            {tickets.length === 0 ? (
+              <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No tickets have been sold yet.</p>
+            ) : (
+              tickets.map(ticket => (
+                <div key={ticket._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
+                  <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{ticket.eventTitle}</p>
+                  <p style={{ margin: '4px 0', color: 'var(--primary-color)', fontSize: '14px' }}>Purchased by: {ticket.user?.email || 'Unknown'}</p>
+                  <p style={{ margin: 0, color: '#aaa', fontSize: '12px' }}>Seats: {ticket.seats?.join(', ')} • Total: ${ticket.totalPrice}</p>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>

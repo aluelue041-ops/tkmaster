@@ -33,9 +33,10 @@ body {
 /* Mobile-first App Container */
 .app-container {
   max-width: 480px;
+  width: 100%;
   margin: 0 auto;
   background-color: var(--bg-color);
-  min-height: 100vh;
+  height: 100dvh;
   position: relative;
   overflow: hidden;
   box-shadow: 0 0 20px rgba(0,0,0,0.5);
