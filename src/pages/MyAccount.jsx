@@ -94,20 +94,18 @@ export default function MyAccount() {
         </div>
 
         {/* Install App */}
-        {!isInstalled && (
-          <div className="settings-group">
-            <div className="settings-group-title" style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'none', margin: 0 }}>
-              App
-            </div>
-            <div className="settings-item" onClick={handleInstallApp} style={{ cursor: 'pointer' }}>
-              <div className="settings-item-left">
-                <Download size={20} color="#026cdf" />
-                <span style={{ color: '#026cdf', fontWeight: 600 }}>Install App on Device</span>
-              </div>
-              <ChevronRight size={20} color="#ccc" />
-            </div>
+        <div className="settings-group">
+          <div className="settings-group-title" style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'none', margin: 0 }}>
+            App
           </div>
-        )}
+          <div className="settings-item" onClick={handleInstallApp} style={{ cursor: 'pointer' }}>
+            <div className="settings-item-left">
+              <Download size={20} color="#026cdf" />
+              <span style={{ color: '#026cdf', fontWeight: 600 }}>Install App on Device</span>
+            </div>
+            <ChevronRight size={20} color="#ccc" />
+          </div>
+        </div>
 
         {/* Location Settings */}
         <div className="settings-group">
