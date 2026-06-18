@@ -32,7 +32,7 @@ body {
 
 /* Mobile-first App Container */
 .app-container {
-  max-width: 480px;
+  max-width: 100%;
   width: 100%;
   margin: 0 auto;
   background-color: var(--bg-color);
