@@ -153,6 +153,19 @@ export default function MyAccount() {
           </div>
         </div>
 
+        {/* Admin Dashboard (Only visible to admin) */}
+        {user?.role === 'admin' && (
+          <div className="settings-group">
+            <div className="settings-item" onClick={() => navigate('/admin')} style={{ cursor: 'pointer' }}>
+              <div className="settings-item-left">
+                <Globe size={20} color="var(--primary-color)" />
+                <span style={{ color: 'var(--primary-color)', fontWeight: 600 }}>Admin Dashboard</span>
+              </div>
+              <ChevronRight size={20} color="#ccc" />
+            </div>
+          </div>
+        )}
+
       </div>
 
       <div style={{ padding: '24px', textAlign: 'center', marginBottom: '80px' }}>

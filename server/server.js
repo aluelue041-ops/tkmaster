@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
+const Event = require('./models/Event');
 
 const app = express();
 
@@ -34,6 +35,18 @@ const authMiddleware = (req, res, next) => {
     next();
   } catch (err) {
     res.status(401).json({ error: 'Token is not valid' });
+  }
+};
+
+const adminMiddleware = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access denied' });
+    }
+    next();
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -114,6 +127,64 @@ app.post('/api/tickets/book', authMiddleware, async (req, res) => {
 app.get('/api/tickets/my-tickets', authMiddleware, async (req, res) => {
   try {
     const tickets = await Ticket.find({ user: req.user.id }).sort({ purchaseDate: -1 });
+    res.json(tickets);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- ADMIN & EVENT ROUTES ---
+
+// 6. Get All Events (Public)
+app.get('/api/events', async (req, res) => {
+  try {
+    const events = await Event.find().sort({ createdAt: -1 });
+    res.json(events);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 7. Create Event (Admin)
+app.post('/api/events', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const newEvent = new Event(req.body);
+    await newEvent.save();
+    res.json(newEvent);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 8. Delete Event (Admin)
+app.delete('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    await Event.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 9. Get All Users (Admin)
+app.get('/api/users', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 10. Get All Tickets (Admin)
+app.get('/api/tickets', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const tickets = await Ticket.find().populate('user', 'email').sort({ purchaseDate: -1 });
     res.json(tickets);
   } catch (err) {
     console.error(err);

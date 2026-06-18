@@ -62,6 +62,7 @@ function App() {
             <Route path="/event/:id" element={<EventDetails />} />
             <Route path="/seat-selection/:id" element={<SeatSelection />} />
             <Route path="/signin" element={<SignIn />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
         </main>
         <BottomNav />

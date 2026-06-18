@@ -7,9 +7,9 @@ export default function Discover() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
-  const events = [
+  const [events, setEvents] = useState([
     {
-      id: 1,
+      _id: 1,
       title: "Benson Boone",
       date: "Fri, Sep 19 • 7:00 PM",
       location: "Madison Square Garden • New York, NY",
@@ -17,7 +17,7 @@ export default function Discover() {
       category: "Concerts"
     },
     {
-      id: 2,
+      _id: 2,
       title: "The Weeknd: After Hours Tour",
       date: "Sat, Oct 12 • 8:00 PM",
       location: "MetLife Stadium • East Rutherford, NJ",
@@ -25,22 +25,38 @@ export default function Discover() {
       category: "Concerts"
     },
     {
-      id: 3,
+      _id: 3,
       title: "New York Knicks vs. Boston Celtics",
       date: "Wed, Nov 5 • 7:30 PM",
       location: "Madison Square Garden • New York, NY",
       image: "https://images.unsplash.com/photo-1504450758481-7338eba7524a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       category: "Sports"
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${API}/api/events`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setEvents(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch events:', err);
+      }
+    };
+    fetchEvents();
+  }, []);
 
   const categories = ["All", "Concerts", "Sports", "Arts & Theater", "Family"];
 
   const handleCopyLink = (event, e) => {
     e.stopPropagation();
-    const link = `${window.location.origin}/event/${event.id}`;
+    const link = `${window.location.origin}/event/${event._id}`;
     navigator.clipboard.writeText(link).then(() => {
-      setCopiedId(event.id);
+      setCopiedId(event._id);
       setTimeout(() => setCopiedId(null), 2000);
     });
   };
@@ -48,7 +64,7 @@ export default function Discover() {
   const navigate = useNavigate();
 
   const handleEventClick = (event) => {
-    navigate(`/event/${event.id}`, { state: { event } });
+    navigate(`/event/${event._id}`, { state: { event } });
   };
 
   // Filter events based on search query and active category
@@ -105,7 +121,7 @@ export default function Discover() {
         {filteredEvents.length > 0 ? (
           filteredEvents.map(event => (
             <div 
-              key={event.id} 
+              key={event._id} 
               className="event-card" 
               style={{ position: 'relative', cursor: 'pointer', transition: 'transform 0.2s ease' }}
               onClick={() => handleEventClick(event)}
@@ -138,7 +154,7 @@ export default function Discover() {
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
               >
-                {copiedId === event.id ? (
+                {copiedId === event._id ? (
                   <CheckCircle size={18} color="#00c853" />
                 ) : (
                   <Share2 size={18} color="#333" />
@@ -154,7 +170,7 @@ export default function Discover() {
               </div>
               
               {/* Toast Notification */}
-              {copiedId === event.id && (
+              {copiedId === event._id && (
                 <div style={{
                   position: 'absolute',
                   bottom: '16px',
