@@ -15,6 +15,7 @@ import MyAccount from './pages/MyAccount';
 import EventDetails from './pages/EventDetails';
 import SeatSelection from './pages/SeatSelection';
 import SignIn from './pages/SignIn';
+import AdminDashboard from './pages/AdminDashboard';
 
 function BottomNav() {
   const navigate = useNavigate();
