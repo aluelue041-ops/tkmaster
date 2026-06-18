@@ -80,8 +80,10 @@ function App() {
   return (
     <Router>
       <div className="app-container">
-        <TopNav />
-        <main className="main-content">
+        <BottomNav />
+        <div className="content-wrapper">
+          <TopNav />
+          <main className="main-content">
           <Routes>
             <Route path="/" element={<Discover />} />
             <Route path="/foryou" element={<ForYou />} />
@@ -93,8 +95,8 @@ function App() {
             <Route path="/signin" element={<SignIn />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
-        </main>
-        <BottomNav />
+          </main>
+        </div>
       </div>
     </Router>
   );

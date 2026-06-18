@@ -10,6 +10,8 @@ export default function MyAccount() {
   const [isInstalled, setIsInstalled] = useState(false);
   const navigate = useNavigate();
 
+  const [toastMessage, setToastMessage] = useState('');
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -46,7 +48,6 @@ export default function MyAccount() {
     }
   };
 
-  const [toastMessage, setToastMessage] = useState('');
 
   const handleSignOut = () => {
     localStorage.removeItem('token');

@@ -44,6 +44,13 @@ body {
   flex-direction: column;
 }
 
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .main-content {
   flex: 1;
   overflow-y: auto;
@@ -315,8 +322,12 @@ body {
 
   .main-content {
     padding-bottom: 0;
+  }
+
+  .content-wrapper {
+    order: 2;
     padding: 0 24px;
-    order: 2; /* Main content on the right */
+    flex: 1;
   }
 
   /* Transform Bottom Nav into a Sidebar */
