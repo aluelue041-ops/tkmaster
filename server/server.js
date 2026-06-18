@@ -54,6 +54,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     res.json({ token, user: { id: user.id, email: user.email } });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -73,6 +74,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({ token, user: { id: user.id, email: user.email } });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -83,6 +85,7 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
     const user = await User.findById(req.user.id).select('-password');
     res.json(user);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -102,6 +105,7 @@ app.post('/api/tickets/book', authMiddleware, async (req, res) => {
     await newTicket.save();
     res.json(newTicket);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -112,6 +116,7 @@ app.get('/api/tickets/my-tickets', authMiddleware, async (req, res) => {
     const tickets = await Ticket.find({ user: req.user.id }).sort({ purchaseDate: -1 });
     res.json(tickets);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
