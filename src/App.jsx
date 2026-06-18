@@ -49,10 +49,38 @@ function BottomNav() {
   );
 }
 
+function TopNav() {
+  return (
+    <header style={{ 
+      backgroundColor: '#ffffff', 
+      padding: '16px 20px', 
+      display: 'flex', 
+      alignItems: 'center', 
+      borderBottom: '1px solid #e5e5e5',
+      position: 'sticky',
+      top: 0,
+      zIndex: 100,
+      width: '100%'
+    }}>
+      <h1 style={{ 
+        color: '#026cdf', 
+        margin: 0, 
+        fontSize: '26px', 
+        fontWeight: 800, 
+        letterSpacing: '-1px',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        Ticketmaster
+      </h1>
+    </header>
+  );
+}
+
 function App() {
   return (
     <Router>
       <div className="app-container">
+        <TopNav />
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Discover />} />
