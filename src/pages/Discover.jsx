@@ -13,7 +13,7 @@ export default function Discover() {
       title: "Benson Boone",
       date: "Fri, Sep 19 • 7:00 PM",
       location: "Madison Square Garden • New York, NY",
-      image: "https://images.unsplash.com/photo-1540039155732-680874b8ce2f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      image: "/images/benson_boone.png",
       category: "Concerts"
     },
     {
@@ -21,7 +21,7 @@ export default function Discover() {
       title: "The Weeknd: After Hours Tour",
       date: "Sat, Oct 12 • 8:00 PM",
       location: "MetLife Stadium • East Rutherford, NJ",
-      image: "https://images.unsplash.com/photo-1493225457224-eda0e6fdba39?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      image: "/images/weeknd.png",
       category: "Concerts"
     },
     {
