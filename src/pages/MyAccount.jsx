@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, MapPin, Globe, Heart, CreditCard, HelpCircle, MessageSquare, BookOpen, ChevronRight, Bell } from 'lucide-react';
+import { Mail, MapPin, Globe, Heart, CreditCard, HelpCircle, MessageSquare, BookOpen, ChevronRight, Bell, Download } from 'lucide-react';
 
 export default function MyAccount() {
   const [receiveNotifs, setReceiveNotifs] = useState(false);
   const [locationContent, setLocationContent] = useState(true);
   const [user, setUser] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -13,7 +15,36 @@ export default function MyAccount() {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+
+    // Check if already installed as PWA
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+    }
+
+    // Capture the install prompt event
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
+
+  const handleInstallApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsInstalled(true);
+        setToastMessage('App installed successfully! 🎉');
+      }
+      setDeferredPrompt(null);
+    } else {
+      // iOS fallback
+      setToastMessage('On iPhone: tap Share → Add to Home Screen');
+      setTimeout(() => setToastMessage(''), 4000);
+    }
+  };
 
   const [toastMessage, setToastMessage] = useState('');
 
@@ -61,6 +92,22 @@ export default function MyAccount() {
             <div className={`toggle-switch ${receiveNotifs ? 'on' : ''}`} onClick={() => setReceiveNotifs(!receiveNotifs)}></div>
           </div>
         </div>
+
+        {/* Install App */}
+        {!isInstalled && (
+          <div className="settings-group">
+            <div className="settings-group-title" style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'none', margin: 0 }}>
+              App
+            </div>
+            <div className="settings-item" onClick={handleInstallApp} style={{ cursor: 'pointer' }}>
+              <div className="settings-item-left">
+                <Download size={20} color="#026cdf" />
+                <span style={{ color: '#026cdf', fontWeight: 600 }}>Install App on Device</span>
+              </div>
+              <ChevronRight size={20} color="#ccc" />
+            </div>
+          </div>
+        )}
 
         {/* Location Settings */}
         <div className="settings-group">
