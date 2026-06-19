@@ -298,12 +298,64 @@ app.put('/api/tickets/:id/approve', authMiddleware, adminMiddleware, async (req,
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
-    
     ticket.status = 'Approved';
     await ticket.save();
-    
-    // Optionally re-populate user email to send back
     const updatedTicket = await Ticket.findById(ticket._id).populate('user', 'email');
+
+    // Notify user by email
+    if (updatedTicket.user?.email) {
+      try {
+        await sgMail.send({
+          to: updatedTicket.user.email,
+          from: FROM_EMAIL,
+          subject: `Your ticket for "${ticket.eventTitle}" has been approved ✅`,
+          html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
+            <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">ticketsmaster</h1></div>
+            <div style="padding:24px">
+              <h2>Your booking is approved! 🎉</h2>
+              <p>Your ticket(s) for <strong>${ticket.eventTitle}</strong> have been approved by the admin.</p>
+              <p>You can view your tickets in the app under <strong>My Tickets</strong>.</p>
+            </div>
+          </div>`
+        });
+      } catch(e) { console.error('Email error:', e.message); }
+    }
+
+    res.json(updatedTicket);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 11b. Reject Ticket (Admin)
+app.put('/api/tickets/:id/reject', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    ticket.status = 'Rejected';
+    await ticket.save();
+    const updatedTicket = await Ticket.findById(ticket._id).populate('user', 'email');
+
+    // Notify user by email
+    if (updatedTicket.user?.email) {
+      try {
+        await sgMail.send({
+          to: updatedTicket.user.email,
+          from: FROM_EMAIL,
+          subject: `Your ticket for "${ticket.eventTitle}" was not approved ❌`,
+          html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
+            <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">ticketsmaster</h1></div>
+            <div style="padding:24px">
+              <h2>Booking Update</h2>
+              <p>Unfortunately, your booking for <strong>${ticket.eventTitle}</strong> could not be approved at this time.</p>
+              <p>Please contact support or try booking again.</p>
+            </div>
+          </div>`
+        });
+      } catch(e) { console.error('Email error:', e.message); }
+    }
+
     res.json(updatedTicket);
   } catch (err) {
     console.error(err);

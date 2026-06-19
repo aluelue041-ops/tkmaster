@@ -101,7 +101,28 @@ export default function AdminDashboard() {
       if (res.ok) {
         const updated = await res.json();
         setTickets(tickets.map(t => t._id === id ? updated : t));
-        alert('Ticket approved!');
+        alert('✅ Ticket approved! Client has been notified by email.');
+      } else {
+        const data = await res.json();
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRejectTicket = async (id) => {
+    if (!window.confirm('Are you sure you want to reject this ticket booking?')) return;
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/api/tickets/${id}/reject`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setTickets(tickets.map(t => t._id === id ? updated : t));
+        alert('❌ Ticket rejected. Client has been notified by email.');
       } else {
         const data = await res.json();
         alert(data.error);
@@ -234,31 +255,55 @@ export default function AdminDashboard() {
             ) : (
               tickets.map(ticket => (
                 <div key={ticket._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{ticket.eventTitle}</p>
-                      <p style={{ margin: '4px 0', color: 'var(--primary-color)', fontSize: '14px' }}>Purchased by: {ticket.user?.email || 'Unknown'}</p>
-                      <p style={{ margin: 0, color: '#aaa', fontSize: '12px' }}>Seats: {ticket.seats?.join(', ')} • Total: ${ticket.totalPrice}</p>
-                      <p style={{ margin: '4px 0 0', color: ticket.status === 'Approved' ? '#34c759' : '#ff9500', fontSize: '12px', fontWeight: 600 }}>
-                        Status: {ticket.status || 'Pending'}
-                      </p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, color: 'white', fontWeight: 600, fontSize: '15px' }}>{ticket.eventTitle}</p>
+                      <p style={{ margin: '4px 0', color: 'var(--primary-color)', fontSize: '13px' }}>👤 {ticket.user?.email || 'Unknown'}</p>
+                      <p style={{ margin: '2px 0', color: '#aaa', fontSize: '12px' }}>🎟️ {ticket.seats?.length} seat(s) • ${ticket.totalPrice}</p>
+                      <p style={{ margin: '2px 0 0', color: '#aaa', fontSize: '11px', wordBreak: 'break-all' }}>{ticket.seats?.join(' | ')}</p>
+                      {/* Status badge */}
+                      <span style={{
+                        display: 'inline-block', marginTop: '8px', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
+                        backgroundColor:
+                          ticket.status === 'Approved' ? 'rgba(52,199,89,0.15)' :
+                          ticket.status === 'Rejected' ? 'rgba(255,59,48,0.15)' :
+                          'rgba(255,149,0,0.15)',
+                        color:
+                          ticket.status === 'Approved' ? '#34c759' :
+                          ticket.status === 'Rejected' ? '#ff3b30' :
+                          '#ff9500'
+                      }}>
+                        {ticket.status === 'Approved' ? '✅ Approved' : ticket.status === 'Rejected' ? '❌ Rejected' : '⏳ Pending'}
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-                      {(!ticket.status || ticket.status === 'Pending') && (
-                        <button 
+
+                    {/* Action buttons */}
+                    {(!ticket.status || ticket.status === 'Pending') && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
+                        <button
                           onClick={() => handleApproveTicket(ticket._id)}
-                          style={{ padding: '6px 12px', backgroundColor: '#34c759', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                          style={{ padding: '8px 16px', backgroundColor: '#34c759', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
                         >
-                          Approve
+                          ✅ Approve
                         </button>
-                      )}
-                      <button 
+                        <button
+                          onClick={() => handleRejectTicket(ticket._id)}
+                          style={{ padding: '8px 16px', backgroundColor: '#ff3b30', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        >
+                          ❌ Reject
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Transfer button always visible */}
+                    {ticket.status === 'Approved' && (
+                      <button
                         onClick={() => handleTransferTicket(ticket._id)}
-                        style={{ padding: '6px 12px', backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                        style={{ padding: '8px 16px', backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
                       >
-                        Transfer
+                        🔄 Transfer
                       </button>
-                    </div>
+                    )}
                   </div>
                 </div>
               ))
