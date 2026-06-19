@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin } from 'lucide-react';
+import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -30,8 +30,82 @@ function parseSeat(seatString) {
   };
 }
 
+// Custom Transfer Modal — no browser prompt
+function TransferModal({ onConfirm, onCancel }) {
+  const [email, setEmail] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!email) return;
+    setSending(true);
+    await onConfirm(email);
+    setSending(false);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 9999, padding: '24px'
+    }}>
+      <div style={{
+        backgroundColor: 'white', borderRadius: '20px', padding: '28px 24px',
+        width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>Transfer Ticket</h3>
+          <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+            <X size={20} color="#666" />
+          </button>
+        </div>
+        <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px', lineHeight: 1.5 }}>
+          Enter the email address of the person you'd like to transfer this ticket to.
+        </p>
+        <input
+          type="email"
+          autoFocus
+          placeholder="recipient@email.com"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          style={{
+            width: '100%', padding: '14px 16px', borderRadius: '10px',
+            border: '1.5px solid #ddd', fontSize: '16px', outline: 'none',
+            boxSizing: 'border-box', marginBottom: '20px',
+            transition: 'border-color 0.2s'
+          }}
+        />
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1, padding: '14px', border: '1.5px solid #ddd', borderRadius: '10px',
+              backgroundColor: 'white', fontSize: '15px', fontWeight: 600, cursor: 'pointer', color: '#333'
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!email || sending}
+            style={{
+              flex: 1, padding: '14px', border: 'none', borderRadius: '10px',
+              backgroundColor: email ? '#026cdf' : '#ccc',
+              color: 'white', fontSize: '15px', fontWeight: 700, cursor: email ? 'pointer' : 'not-allowed',
+              transition: 'background 0.2s'
+            }}
+          >
+            {sending ? 'Sending...' : 'Transfer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TicketStub({ seatString, ticketId, onTransfer }) {
   const [showActions, setShowActions] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
   const parsed = parseSeat(seatString);
 
   return (
@@ -64,7 +138,7 @@ function TicketStub({ seatString, ticketId, onTransfer }) {
       {showActions && (
         <div style={{ backgroundColor: '#fafafa', borderTop: '1px solid #eee', display: 'flex', gap: '12px', padding: '12px 16px', justifyContent: 'center' }}>
           <button
-            onClick={() => { onTransfer(ticketId); setShowActions(false); }}
+            onClick={() => { setShowTransferModal(true); setShowActions(false); }}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
               backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '12px',
@@ -74,6 +148,12 @@ function TicketStub({ seatString, ticketId, onTransfer }) {
             <ArrowUpRight size={22} color="#333" />
             <span style={{ fontSize: '13px', fontWeight: 600, color: '#333' }}>Transfer</span>
           </button>
+          {showTransferModal && (
+            <TransferModal
+              onConfirm={async (email) => { await onTransfer(ticketId, email); setShowTransferModal(false); }}
+              onCancel={() => setShowTransferModal(false)}
+            />
+          )}
 
           <button
             onClick={() => alert('Sell feature coming soon!')}
@@ -135,8 +215,7 @@ export default function MyTickets() {
     return events.find(e => e.title === eventTitle) || null;
   };
 
-  const handleTransfer = async (ticketId) => {
-    const newEmail = window.prompt('Enter the email address of the person to transfer this ticket to:');
+  const handleTransfer = async (ticketId, newEmail) => {
     if (!newEmail) return;
     const token = localStorage.getItem('token');
     try {
