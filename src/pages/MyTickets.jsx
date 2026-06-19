@@ -38,17 +38,21 @@ function parseSeat(seatString) {
 }
 
 // Custom Transfer Modal — no browser prompt
-function TransferModal({ ticketId, seatString, eventTitle, onConfirm, onCancel }) {
+function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCancel }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
   const [transferComplete, setTransferComplete] = useState(false);
+
+  const maxQuantity = allSeats ? allSeats.length : 1;
 
   const handleSubmit = async () => {
     if (!name || !email || !phone) return;
     setSending(true);
-    const success = await onConfirm(name, email, phone);
+    const success = await onConfirm(name, email, phone, quantity, note);
     setSending(false);
     if (success) {
       setTransferComplete(true);
@@ -71,7 +75,7 @@ function TransferModal({ ticketId, seatString, eventTitle, onConfirm, onCancel }
           </div>
           <h3 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800 }}>Transfer Complete</h3>
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px', lineHeight: 1.5 }}>
-            The ticket has been securely transferred to <strong>{name}</strong>.
+            {quantity} ticket(s) securely transferred to <strong>{name}</strong>.
           </p>
           
           <div style={{ padding: '16px', backgroundColor: '#f8f8f8', borderRadius: '16px', marginBottom: '24px', border: '1px solid #eee' }}>
@@ -131,13 +135,29 @@ function TransferModal({ ticketId, seatString, eventTitle, onConfirm, onCancel }
                 <div style={{ fontSize: '12px', color: '#555' }}>
                   Section <strong>{p.section}</strong> &nbsp;·&nbsp; Row <strong>{p.row}</strong> &nbsp;·&nbsp; Seat <strong>{p.seat}</strong>
                 </div>
-                <div style={{ fontSize: '11px', color: '#026cdf', fontWeight: 600, marginTop: '4px' }}>1 ticket being transferred</div>
+                <div style={{ fontSize: '11px', color: '#026cdf', fontWeight: 600, marginTop: '4px' }}>{quantity} ticket(s) selected</div>
               </div>
             </div>
           );
         })()}
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+          {maxQuantity > 1 && (
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '6px', textTransform: 'uppercase' }}>Number of Tickets</label>
+                <select
+                  value={quantity}
+                  onChange={e => setQuantity(Number(e.target.value))}
+                  style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '1.5px solid #ddd', fontSize: '15px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}
+                >
+                  {Array.from({ length: maxQuantity }).map((_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '6px', textTransform: 'uppercase' }}>Full Name</label>
             <input
@@ -169,6 +189,16 @@ function TransferModal({ ticketId, seatString, eventTitle, onConfirm, onCancel }
               style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '1.5px solid #ddd', fontSize: '15px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '6px', textTransform: 'uppercase' }}>Optional Note</label>
+            <textarea
+              placeholder="Enjoy the show!"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              rows="2"
+              style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '1.5px solid #ddd', fontSize: '15px', outline: 'none', boxSizing: 'border-box', resize: 'vertical' }}
+            />
+          </div>
         </div>
 
         <button
@@ -188,9 +218,85 @@ function TransferModal({ ticketId, seatString, eventTitle, onConfirm, onCancel }
   );
 }
 
-function TicketStub({ seatString, ticketId, onTransfer, eventImage, eventTitle, currency, totalPrice, status }) {
+// Custom Sell Modal
+function SellModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCancel }) {
+  const [quantity, setQuantity] = useState(1);
+  const [resalePrice, setResalePrice] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sellComplete, setSellComplete] = useState(false);
+
+  const maxQuantity = allSeats ? allSeats.length : 1;
+
+  const handleSubmit = async () => {
+    if (!resalePrice) return;
+    setSending(true);
+    const success = await onConfirm(quantity, Number(resalePrice));
+    setSending(false);
+    if (success) {
+      setSellComplete(true);
+    }
+  };
+
+  if (sellComplete) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px' }}>
+        <div style={{ backgroundColor: 'white', borderRadius: '24px', padding: '32px 24px', textAlign: 'center', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#34c759', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <span style={{ color: 'white', fontSize: '28px' }}>✓</span>
+          </div>
+          <h3 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800 }}>Listed for Sale</h3>
+          <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px', lineHeight: 1.5 }}>
+            {quantity} ticket(s) listed on the marketplace for <strong>${resalePrice}</strong> each.
+          </p>
+          <button onClick={onCancel} style={{ width: '100%', padding: '16px', border: 'none', borderRadius: '12px', backgroundColor: '#026cdf', color: 'white', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px' }}>
+      <div style={{ backgroundColor: 'white', borderRadius: '24px', padding: '32px 24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>Sell Ticket</h3>
+          <button onClick={onCancel} style={{ background: '#f0f0f0', borderRadius: '50%', border: 'none', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X size={18} color="#333" />
+          </button>
+        </div>
+        <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px', lineHeight: 1.5 }}>List your ticket on the marketplace.</p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+          {maxQuantity > 1 && (
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '6px', textTransform: 'uppercase' }}>Number of Tickets</label>
+              <select value={quantity} onChange={e => setQuantity(Number(e.target.value))} style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '1.5px solid #ddd', fontSize: '15px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white' }}>
+                {Array.from({ length: maxQuantity }).map((_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
+              </select>
+            </div>
+          )}
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '6px', textTransform: 'uppercase' }}>Asking Price (per ticket)</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: '16px', top: '14px', fontSize: '15px', color: '#555', fontWeight: 600 }}>$</span>
+              <input type="number" placeholder="0.00" value={resalePrice} onChange={e => setResalePrice(e.target.value)} style={{ width: '100%', padding: '14px 14px 14px 32px', borderRadius: '10px', border: '1.5px solid #ddd', fontSize: '15px', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+          </div>
+        </div>
+
+        <button onClick={handleSubmit} disabled={!resalePrice || sending} style={{ width: '100%', padding: '16px', border: 'none', borderRadius: '12px', backgroundColor: resalePrice ? '#026cdf' : '#e0e0e0', color: resalePrice ? 'white' : '#999', fontSize: '16px', fontWeight: 700, cursor: resalePrice ? 'pointer' : 'not-allowed' }}>
+          {sending ? 'Processing...' : 'List for Sale'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats }) {
   const [showActions, setShowActions] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showSellModal, setShowSellModal] = useState(false);
   const parsed = parseSeat(seatString);
 
   const downloadPDF = () => {
@@ -340,8 +446,9 @@ function TicketStub({ seatString, ticketId, onTransfer, eventImage, eventTitle, 
               ticketId={ticketId}
               seatString={seatString}
               eventTitle={eventTitle}
-              onConfirm={async (name, email, phone) => { 
-                return await onTransfer(ticketId, email, name, phone); 
+              allSeats={allSeats}
+              onConfirm={async (name, email, phone, quantity, note) => { 
+                return await onTransfer(ticketId, email, name, phone, quantity, note, seatString); 
               }}
               onCancel={() => setShowTransferModal(false)}
             />
@@ -360,17 +467,28 @@ function TicketStub({ seatString, ticketId, onTransfer, eventImage, eventTitle, 
           </button>
 
           <button
-            onClick={() => alert('Sell feature coming soon!')}
+            onClick={() => { setShowSellModal(true); setShowActions(false); }}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
               backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '12px',
-              padding: '14px 20px', cursor: 'pointer', flex: 1, maxWidth: '120px',
-              opacity: 0.5
+              padding: '14px 20px', cursor: 'pointer', flex: 1, maxWidth: '120px'
             }}
           >
             <RefreshCw size={22} color="#333" />
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#333' }}>Sell</span>
           </button>
+          {showSellModal && (
+            <SellModal
+              ticketId={ticketId}
+              seatString={seatString}
+              eventTitle={eventTitle}
+              allSeats={allSeats}
+              onConfirm={async (quantity, resalePrice) => {
+                return await onSell(ticketId, quantity, resalePrice, seatString);
+              }}
+              onCancel={() => setShowSellModal(false)}
+            />
+          )}
         </div>
       )}
     </div>
@@ -452,14 +570,14 @@ export default function MyTickets() {
     return events.find(e => e.title?.toLowerCase() === safeTitle) || fallbackEvents.find(e => e.title?.toLowerCase() === safeTitle) || null;
   };
 
-  const handleTransfer = async (ticketId, newEmail, name, phone) => {
+  const handleTransfer = async (ticketId, newEmail, name, phone, quantity, note, selectedSeat) => {
     if (!newEmail) return false;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API}/api/tickets/${ticketId}/transfer-to`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ newEmail, name, phone })
+        body: JSON.stringify({ newEmail, name, phone, quantity, note, selectedSeat })
       });
       const data = await res.json();
       if (res.ok) {
@@ -471,6 +589,28 @@ export default function MyTickets() {
       }
     } catch (err) {
       alert('Transfer failed. Please try again.');
+      return false;
+    }
+  };
+
+  const handleSell = async (ticketId, quantity, resalePrice, selectedSeat) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/api/tickets/${ticketId}/sell`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ quantity, resalePrice, selectedSeat })
+      });
+      if (res.ok) {
+        // Refresh tickets
+        fetch(`${API}/api/tickets/my-tickets`, { headers: { 'Authorization': `Bearer ${token}` } })
+          .then(r => r.json())
+          .then(setTickets);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error(err);
       return false;
     }
   };
@@ -556,11 +696,13 @@ export default function MyTickets() {
               seatString={seatStr}
               ticketId={selectedOrder._id}
               onTransfer={handleTransfer}
+              onSell={handleSell}
               eventImage={image}
               eventTitle={selectedOrder.eventTitle}
               currency={selectedOrder.currency}
               totalPrice={selectedOrder.totalPrice}
               status={selectedOrder.status}
+              allSeats={selectedOrder.seats}
             />
           ))}
           {activeTab === 'Extras' && (

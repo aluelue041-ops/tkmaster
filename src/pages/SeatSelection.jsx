@@ -81,6 +81,21 @@ export default function SeatSelection() {
 
   const sections = generateSections(basePrice);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeZone, setActiveZone] = useState('All');
+
+  const filteredSections = sections.filter(sec => {
+    // Search filter
+    if (searchQuery && !sec.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    // Zone filter
+    if (activeZone === 'All') return true;
+    if (activeZone === 'VIP' && sec.name.includes('VIP')) return true;
+    if (activeZone === 'Floor' && sec.name.includes('Floor') && !sec.name.includes('VIP')) return true;
+    if (activeZone === 'Level 100' && (sec.name.includes('1') && sec.name.length <= 15)) return true; // section 1xx
+    if (activeZone === 'Level 200' && sec.name.includes('2')) return true;
+    return false;
+  });
+
   const getSeatedRows = (section) => {
     if (!section || !section.config) return [];
     return Array.from({ length: section.config.rows }, (_, rIndex) => ({
@@ -93,10 +108,14 @@ export default function SeatSelection() {
 
   // Real-time booked seats loaded from server
   const [bookedSeats, setBookedSeats] = useState(new Set());
+  const [resaleTickets, setResaleTickets] = useState([]);
+  const [activeTab, setActiveTab] = useState('Standard');
 
   useEffect(() => {
     if (!id || id === 'trending') return;
     const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    
+    // Fetch booked seats
     fetch(`${API}/api/events/${id}/booked-seats`)
       .then(r => r.json())
       .then(data => {
@@ -113,6 +132,14 @@ export default function SeatSelection() {
           });
           setBookedSeats(seatSet);
         }
+      })
+      .catch(() => {});
+
+    // Fetch resale tickets
+    fetch(`${API}/api/events/${id}/resale-tickets`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setResaleTickets(data);
       })
       .catch(() => {});
   }, [id]);
@@ -211,21 +238,99 @@ export default function SeatSelection() {
         </div>
       </div>
 
+      {/* Ticket Type Tabs */}
+      {viewMode === 'sections' && (
+        <div style={{ display: 'flex', backgroundColor: 'white', borderBottom: '1px solid #eaeaea', position: 'sticky', top: '72px', zIndex: 90 }}>
+          {['Standard', 'Resale'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                flex: 1, padding: '16px', border: 'none', background: 'none', cursor: 'pointer',
+                fontSize: '15px', fontWeight: 700,
+                color: activeTab === tab ? '#111' : '#888',
+                borderBottom: activeTab === tab ? '3px solid #026cdf' : '3px solid transparent',
+                transition: 'all 0.2s'
+              }}
+            >
+              {tab} {tab === 'Resale' && `(${resaleTickets.length})`}
+            </button>
+          ))}
+        </div>
+      )}
+
       {viewMode === 'sections' ? (
-        <>
-          {/* Simplified Stadium Map Placeholder */}
-          <div style={{ padding: '24px 16px', backgroundColor: 'white', marginBottom: '8px', borderBottom: '1px solid #eaeaea' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px', textAlign: 'center', color: '#555' }}>Stadium Map</h3>
-            <div style={{ width: '100%', height: '140px', backgroundColor: '#f9f9f9', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #ccc' }}>
-              <span style={{ color: '#888', fontSize: '14px' }}>Select a Zone Below</span>
+        activeTab === 'Standard' ? (
+          <>
+            {/* Interactive Stadium Map */}
+          <div style={{ padding: '24px 16px', backgroundColor: 'white', borderBottom: '1px solid #eaeaea' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px', textAlign: 'center', color: '#111' }}>Interactive Stadium Map</h3>
+            <div style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto', height: '220px' }}>
+              <svg viewBox="0 0 200 200" style={{ width: '100%', height: '100%', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.05))' }}>
+                {/* Stage */}
+                <rect x="70" y="10" width="60" height="20" rx="4" fill="#333" />
+                <text x="100" y="23" fontSize="8" fill="white" fontWeight="bold" textAnchor="middle">STAGE</text>
+                
+                {/* VIP / Pit */}
+                <path d="M 60 40 L 140 40 Q 145 60 140 70 L 60 70 Q 55 60 60 40" fill={activeZone === 'VIP' ? '#ff3b30' : '#ffebee'} stroke="#ff3b30" strokeWidth="2" cursor="pointer" onClick={() => setActiveZone('VIP')} />
+                <text x="100" y="58" fontSize="10" fill={activeZone === 'VIP' ? 'white' : '#ff3b30'} fontWeight="bold" textAnchor="middle" pointerEvents="none">VIP</text>
+
+                {/* Floor */}
+                <path d="M 50 80 L 150 80 Q 155 110 145 130 L 55 130 Q 45 110 50 80" fill={activeZone === 'Floor' ? '#026cdf' : '#e3f2fd'} stroke="#026cdf" strokeWidth="2" cursor="pointer" onClick={() => setActiveZone('Floor')} />
+                <text x="100" y="108" fontSize="10" fill={activeZone === 'Floor' ? 'white' : '#026cdf'} fontWeight="bold" textAnchor="middle" pointerEvents="none">FLOOR</text>
+
+                {/* Level 100 */}
+                <path d="M 35 140 C 35 140, 100 170, 165 140 L 180 160 C 180 160, 100 195, 20 160 Z" fill={activeZone === 'Level 100' ? '#f5a623' : '#fff8e1'} stroke="#f5a623" strokeWidth="2" cursor="pointer" onClick={() => setActiveZone('Level 100')} />
+                <text x="100" y="165" fontSize="9" fill={activeZone === 'Level 100' ? 'white' : '#f5a623'} fontWeight="bold" textAnchor="middle" pointerEvents="none">LEVEL 100</text>
+
+                {/* Level 200 */}
+                <path d="M 10 170 C 10 170, 100 210, 190 170 L 195 180 C 195 180, 100 225, 5 180 Z" fill={activeZone === 'Level 200' ? '#8e8e93' : '#f5f5f5'} stroke="#8e8e93" strokeWidth="2" cursor="pointer" onClick={() => setActiveZone('Level 200')} />
+                <text x="100" y="190" fontSize="8" fill={activeZone === 'Level 200' ? 'white' : '#8e8e93'} fontWeight="bold" textAnchor="middle" pointerEvents="none">LEVEL 200</text>
+              </svg>
             </div>
+            
+            {/* Zone Filter Chips */}
+            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '16px 0 4px', scrollbarWidth: 'none' }}>
+              {['All', 'VIP', 'Floor', 'Level 100', 'Level 200'].map(zone => (
+                <button
+                  key={zone}
+                  onClick={() => setActiveZone(zone)}
+                  style={{
+                    padding: '8px 16px', borderRadius: '20px', border: 'none', whiteSpace: 'nowrap',
+                    fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                    backgroundColor: activeZone === zone ? '#111' : '#f0f0f0',
+                    color: activeZone === zone ? 'white' : '#555'
+                  }}
+                >
+                  {zone}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div style={{ padding: '16px 16px 0' }}>
+            <input
+              type="text"
+              placeholder="Search sections (e.g., '109', 'VIP')..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #eaeaea',
+                fontSize: '15px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'white',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+              }}
+            />
           </div>
 
           {/* Sections List */}
           <div style={{ padding: '16px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Available Sections</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Available Sections ({filteredSections.length})</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {sections.map(section => (
+              {filteredSections.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: '#888' }}>No sections match your search.</div>
+              )}
+              {filteredSections.map(section => (
                 <div 
                   key={section.id}
                   onClick={() => handleSectionSelect(section)}
@@ -264,6 +369,51 @@ export default function SeatSelection() {
             </div>
           </div>
         </>
+        ) : (
+          <div style={{ padding: '16px' }}>
+            <div style={{ backgroundColor: '#f0f6ff', padding: '16px', borderRadius: '12px', marginBottom: '16px', border: '1px solid #c8def5' }}>
+              <h3 style={{ margin: '0 0 4px', fontSize: '16px', color: '#026cdf' }}>Fan-to-Fan Resale</h3>
+              <p style={{ margin: 0, fontSize: '13px', color: '#555' }}>These tickets are being sold by other fans. Prices are set by the seller.</p>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {resaleTickets.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: '#888' }}>No resale tickets available right now.</div>
+              )}
+              {resaleTickets.map(ticket => (
+                <div 
+                  key={ticket._id}
+                  style={{
+                    padding: '16px', backgroundColor: 'white', borderRadius: '12px',
+                    border: '1px solid #eaeaea', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ backgroundColor: '#ff3b30', color: 'white', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>Resale</span>
+                      <span style={{ fontSize: '13px', color: '#666', fontWeight: 600 }}>{ticket.seats.length} Ticket(s)</span>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#111' }}>
+                      {ticket.seats.length > 0 ? ticket.seats[0].split(',')[0] : 'General Admission'}
+                    </div>
+                    {ticket.seats.length > 1 && (
+                      <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>+ {ticket.seats.length - 1} more seat(s)</div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 800, fontSize: '18px', color: '#111' }}>{ticket.currency || '$'}{ticket.resalePrice} <span style={{ fontSize: '12px', fontWeight: 400, color: '#888' }}>ea</span></div>
+                    <button 
+                      onClick={() => alert('Resale checkout coming soon!')}
+                      style={{ marginTop: '8px', padding: '6px 16px', backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Buy Now
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
       ) : (
         /* Detailed Seat Map for Seated Sections */
         <div style={{ padding: '24px 16px', textAlign: 'center' }}>

@@ -16,9 +16,10 @@ const TicketSchema = new mongoose.Schema({
   purchaseDate: { type: Date, default: Date.now },
   status: {
     type: String,
-    enum: ['Active', 'Transferred', 'Expired', 'Pending', 'Approved', 'Rejected'],
+    enum: ['Active', 'Transferred', 'Expired', 'Pending', 'Approved', 'Rejected', 'For Sale'],
     default: 'Active'
-  }
+  },
+  resalePrice: { type: Number }
 });
 
 module.exports = mongoose.model('Ticket', TicketSchema);

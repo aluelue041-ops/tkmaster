@@ -353,6 +353,66 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
   }
 });
 
+// 5c. Sell Ticket (Client)
+app.put('/api/tickets/:id/sell', authMiddleware, async (req, res) => {
+  try {
+    const { quantity, resalePrice, selectedSeat } = req.body;
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+
+    if (ticket.user && ticket.user._id.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'You do not own this ticket' });
+    }
+
+    let numToSell = parseInt(quantity) || 1;
+    if (numToSell > ticket.seats.length) numToSell = ticket.seats.length;
+
+    let soldSeats = [];
+    if (numToSell === ticket.seats.length) {
+      // Sell the entire ticket
+      ticket.status = 'For Sale';
+      ticket.resalePrice = resalePrice;
+      await ticket.save();
+    } else {
+      // Partial sell: split the ticket
+      let seatsCopy = [...ticket.seats];
+      let selIdx = seatsCopy.indexOf(selectedSeat);
+      if (selIdx !== -1) {
+        soldSeats.push(seatsCopy.splice(selIdx, 1)[0]);
+      }
+      while (soldSeats.length < numToSell && seatsCopy.length > 0) {
+        soldSeats.push(seatsCopy.shift());
+      }
+      
+      const unitPrice = ticket.totalPrice / ticket.seats.length;
+      const soldPrice = unitPrice * soldSeats.length;
+      
+      // Update original ticket
+      ticket.seats = seatsCopy;
+      ticket.totalPrice = ticket.totalPrice - soldPrice;
+      await ticket.save();
+      
+      // Create new ticket for sale
+      const newTicket = new Ticket({
+        user: ticket.user,
+        eventId: ticket.eventId,
+        eventTitle: ticket.eventTitle,
+        seats: soldSeats,
+        totalPrice: soldPrice,
+        currency: ticket.currency,
+        status: 'For Sale',
+        resalePrice: resalePrice
+      });
+      await newTicket.save();
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // --- ADMIN & EVENT ROUTES ---
 
 // Upload image to Cloudinary
@@ -402,6 +462,17 @@ app.get('/api/events/:id/booked-seats', async (req, res) => {
     const event = await Event.findById(req.params.id).select('bookedSeats');
     if (!event) return res.status(404).json({ error: 'Event not found' });
     res.json(event.bookedSeats || []);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 6c. Get resale tickets for an event
+app.get('/api/events/:id/resale-tickets', async (req, res) => {
+  try {
+    const tickets = await Ticket.find({ eventId: req.params.id, status: 'For Sale' }).populate('user', 'email');
+    res.json(tickets);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
