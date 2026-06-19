@@ -60,17 +60,20 @@ function TopNav() {
       position: 'sticky',
       top: 0,
       zIndex: 100,
-      width: '100%'
+      width: '100%',
+      gap: '12px'
     }}>
+      <img src="/logo.svg" alt="logo" style={{ width: '32px', height: '32px', borderRadius: '8px' }} />
       <h1 style={{ 
         color: '#026cdf', 
         margin: 0, 
         fontSize: '26px', 
         fontWeight: 800, 
         letterSpacing: '-1px',
-        fontFamily: 'Inter, sans-serif'
+        fontFamily: 'Inter, sans-serif',
+        fontStyle: 'italic'
       }}>
-        Ticketmaster
+        ticketsmaster
       </h1>
     </header>
   );
