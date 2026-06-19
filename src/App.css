@@ -44,13 +44,6 @@ body {
   flex-direction: column;
 }
 
-.content-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
 .main-content {
   flex: 1;
   overflow-y: auto;
@@ -96,6 +89,47 @@ body {
 .nav-label {
   font-size: 10px;
   font-weight: 500;
+}
+
+/* Global Header (TopNav replacement) */
+.global-header {
+  background-color: #ffffff;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e5e5;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.logo-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.logo-text {
+  color: #026cdf;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  font-family: 'Inter', sans-serif;
+  font-style: italic;
+}
+
+.desktop-nav {
+  display: none;
 }
 
 /* Common Page Styles */
@@ -312,62 +346,49 @@ body {
 
 @media (min-width: 768px) {
   .app-container {
-    max-width: 1400px;
-    flex-direction: row; /* Sidebar layout for desktop */
-    border-radius: 12px;
-    margin: 20px auto;
-    height: calc(100vh - 40px);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    max-width: none;
+    border-radius: 0;
+    margin: 0;
+    height: 100vh;
+    box-shadow: none;
   }
 
   .main-content {
-    padding-bottom: 0;
+    padding-bottom: 0; /* Remove bottom padding on desktop */
   }
 
-  .content-wrapper {
-    order: 2;
-    padding: 0 24px;
-    flex: 1;
-  }
-
-  /* Transform Bottom Nav into a Sidebar */
+  /* Show Desktop Nav & Hide Bottom Nav */
   .bottom-nav {
-    position: static;
-    width: 260px;
-    height: 100%;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding-top: 40px;
-    border-top: none;
-    border-right: 1px solid var(--border-color);
-    order: 1; /* Sidebar on the left */
+    display: none !important;
   }
 
-  .nav-btn {
-    width: 100%;
-    flex-direction: row;
-    justify-content: flex-start;
-    padding: 16px 32px;
-    gap: 16px;
+  .desktop-nav {
+    display: flex;
+    gap: 28px;
+    align-items: center;
   }
 
-  .nav-icon {
-    margin-bottom: 0;
-    width: 24px;
-    height: 24px;
+  .desktop-nav-btn {
+    background: none;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
   }
 
-  .nav-label {
-    font-size: 16px;
-  }
-
-  .nav-btn:hover {
-    background-color: #f0f4ff;
+  .desktop-nav-btn:hover, .desktop-nav-btn.active {
     color: var(--primary-color);
   }
 
-  .page.dark-mode .nav-btn:hover {
-    background-color: #1e1e1e;
+  .page.dark-mode .desktop-nav-btn {
+    color: var(--dark-text-sec);
+  }
+
+  .page.dark-mode .desktop-nav-btn:hover,
+  .page.dark-mode .desktop-nav-btn.active {
+    color: #fff;
   }
 
   /* Make Header larger and left aligned */

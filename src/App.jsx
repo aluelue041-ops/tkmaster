@@ -49,32 +49,37 @@ function BottomNav() {
   );
 }
 
-function TopNav() {
+function Header() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const navItems = [
+    { path: '/', label: 'Discover' },
+    { path: '/foryou', label: 'For You' },
+    { path: '/mytickets', label: 'My Tickets' },
+    { path: '/sell', label: 'Sell' },
+    { path: '/account', label: 'My Account' },
+  ];
+
   return (
-    <header style={{ 
-      backgroundColor: '#ffffff', 
-      padding: '16px 20px', 
-      display: 'flex', 
-      alignItems: 'center', 
-      borderBottom: '1px solid #e5e5e5',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-      width: '100%',
-      gap: '12px'
-    }}>
-      <img src="/logo.svg" alt="logo" style={{ width: '32px', height: '32px', borderRadius: '8px' }} />
-      <h1 style={{ 
-        color: '#026cdf', 
-        margin: 0, 
-        fontSize: '26px', 
-        fontWeight: 800, 
-        letterSpacing: '-1px',
-        fontFamily: 'Inter, sans-serif',
-        fontStyle: 'italic'
-      }}>
-        ticketsmaster
-      </h1>
+    <header className="global-header">
+      <div className="logo-container" onClick={() => navigate('/')}>
+        <img src="/logo.svg" alt="logo" className="logo-img" />
+        <h1 className="logo-text">ticketsmaster</h1>
+      </div>
+      
+      {/* Desktop Nav Links */}
+      <nav className="desktop-nav">
+        {navItems.map(item => (
+          <button 
+            key={item.path} 
+            className={`desktop-nav-btn ${location.pathname === item.path ? 'active' : ''}`}
+            onClick={() => navigate(item.path)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
     </header>
   );
 }
@@ -83,10 +88,8 @@ function App() {
   return (
     <Router>
       <div className="app-container">
-        <BottomNav />
-        <div className="content-wrapper">
-          <TopNav />
-          <main className="main-content">
+        <Header />
+        <main className="main-content">
           <Routes>
             <Route path="/" element={<Discover />} />
             <Route path="/foryou" element={<ForYou />} />
@@ -98,8 +101,8 @@ function App() {
             <Route path="/signin" element={<SignIn />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
-          </main>
-        </div>
+        </main>
+        <BottomNav />
       </div>
     </Router>
   );
