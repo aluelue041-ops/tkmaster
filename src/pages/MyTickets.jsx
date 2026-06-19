@@ -31,73 +31,129 @@ function parseSeat(seatString) {
 }
 
 // Custom Transfer Modal — no browser prompt
-function TransferModal({ onConfirm, onCancel }) {
+function TransferModal({ ticketId, seatString, onConfirm, onCancel }) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [sending, setSending] = useState(false);
+  const [transferComplete, setTransferComplete] = useState(false);
 
   const handleSubmit = async () => {
-    if (!email) return;
+    if (!name || !email || !phone) return;
     setSending(true);
-    await onConfirm(email);
+    const success = await onConfirm(name, email, phone);
     setSending(false);
+    if (success) {
+      setTransferComplete(true);
+    }
   };
+
+  if (transferComplete) {
+    const qrData = encodeURIComponent(`TICKET:${ticketId}|TO:${email}|SEAT:${seatString}`);
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px'
+      }}>
+        <div style={{
+          backgroundColor: 'white', borderRadius: '24px', padding: '32px 24px', textAlign: 'center',
+          width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+        }}>
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#34c759', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <span style={{ color: 'white', fontSize: '28px' }}>✓</span>
+          </div>
+          <h3 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800 }}>Transfer Complete</h3>
+          <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px', lineHeight: 1.5 }}>
+            The ticket has been securely transferred to <strong>{name}</strong>.
+          </p>
+          
+          <div style={{ padding: '16px', backgroundColor: '#f8f8f8', borderRadius: '16px', marginBottom: '24px', border: '1px solid #eee' }}>
+            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`} alt="Ticket QR Code" style={{ width: '180px', height: '180px', margin: '0 auto', display: 'block' }} />
+            <p style={{ fontSize: '11px', color: '#888', marginTop: '12px', fontWeight: 600 }}>SCAN TO VERIFY TRANSFER</p>
+          </div>
+
+          <button
+            onClick={onCancel}
+            style={{
+              width: '100%', padding: '16px', border: 'none', borderRadius: '12px',
+              backgroundColor: '#026cdf', color: 'white', fontSize: '16px', fontWeight: 700, cursor: 'pointer'
+            }}
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isFormValid = name.trim() && email.trim() && phone.trim();
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+      position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 9999, padding: '24px'
     }}>
       <div style={{
-        backgroundColor: 'white', borderRadius: '20px', padding: '28px 24px',
+        backgroundColor: 'white', borderRadius: '24px', padding: '32px 24px',
         width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>Transfer Ticket</h3>
-          <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-            <X size={20} color="#666" />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>Transfer Ticket</h3>
+          <button onClick={onCancel} style={{ background: '#f0f0f0', borderRadius: '50%', border: 'none', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X size={18} color="#333" />
           </button>
         </div>
         <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px', lineHeight: 1.5 }}>
-          Enter the email address of the person you'd like to transfer this ticket to.
+          Please enter the details of the person receiving this ticket.
         </p>
-        <input
-          type="email"
-          autoFocus
-          placeholder="recipient@email.com"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-          style={{
-            width: '100%', padding: '14px 16px', borderRadius: '10px',
-            border: '1.5px solid #ddd', fontSize: '16px', outline: 'none',
-            boxSizing: 'border-box', marginBottom: '20px',
-            transition: 'border-color 0.2s'
-          }}
-        />
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            onClick={onCancel}
-            style={{
-              flex: 1, padding: '14px', border: '1.5px solid #ddd', borderRadius: '10px',
-              backgroundColor: 'white', fontSize: '15px', fontWeight: 600, cursor: 'pointer', color: '#333'
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!email || sending}
-            style={{
-              flex: 1, padding: '14px', border: 'none', borderRadius: '10px',
-              backgroundColor: email ? '#026cdf' : '#ccc',
-              color: 'white', fontSize: '15px', fontWeight: 700, cursor: email ? 'pointer' : 'not-allowed',
-              transition: 'background 0.2s'
-            }}
-          >
-            {sending ? 'Sending...' : 'Transfer'}
-          </button>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '6px', textTransform: 'uppercase' }}>Full Name</label>
+            <input
+              type="text"
+              autoFocus
+              placeholder="John Doe"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '1.5px solid #ddd', fontSize: '15px', outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '6px', textTransform: 'uppercase' }}>Email Address</label>
+            <input
+              type="email"
+              placeholder="john@example.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '1.5px solid #ddd', fontSize: '15px', outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '6px', textTransform: 'uppercase' }}>Phone Number</label>
+            <input
+              type="tel"
+              placeholder="+1 (555) 000-0000"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '1.5px solid #ddd', fontSize: '15px', outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
         </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={!isFormValid || sending}
+          style={{
+            width: '100%', padding: '16px', border: 'none', borderRadius: '12px',
+            backgroundColor: isFormValid ? '#026cdf' : '#e0e0e0',
+            color: isFormValid ? 'white' : '#999', fontSize: '16px', fontWeight: 700, cursor: isFormValid ? 'pointer' : 'not-allowed',
+            transition: 'background 0.2s'
+          }}
+        >
+          {sending ? 'Processing...' : 'Transfer Ticket'}
+        </button>
       </div>
     </div>
   );
@@ -150,7 +206,11 @@ function TicketStub({ seatString, ticketId, onTransfer }) {
           </button>
           {showTransferModal && (
             <TransferModal
-              onConfirm={async (email) => { await onTransfer(ticketId, email); setShowTransferModal(false); }}
+              ticketId={ticketId}
+              seatString={seatString}
+              onConfirm={async (name, email, phone) => { 
+                return await onTransfer(ticketId, email, name, phone); 
+              }}
               onCancel={() => setShowTransferModal(false)}
             />
           )}
@@ -215,25 +275,26 @@ export default function MyTickets() {
     return events.find(e => e.title === eventTitle) || null;
   };
 
-  const handleTransfer = async (ticketId, newEmail) => {
-    if (!newEmail) return;
+  const handleTransfer = async (ticketId, newEmail, name, phone) => {
+    if (!newEmail) return false;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API}/api/tickets/${ticketId}/transfer-to`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ newEmail })
+        body: JSON.stringify({ newEmail, name, phone })
       });
       const data = await res.json();
       if (res.ok) {
-        alert(`✅ Ticket successfully transferred to ${newEmail}!`);
         setTickets(prev => prev.filter(t => t._id !== ticketId));
-        setSelectedOrder(null);
+        return true;
       } else {
         alert(`❌ ${data.error}`);
+        return false;
       }
     } catch (err) {
       alert('Transfer failed. Please try again.');
+      return false;
     }
   };
 
