@@ -77,8 +77,8 @@ export default function SeatSelection() {
 
     // Generate seat IDs
     const seats = selectedSection.isGA 
-      ? Array.from({ length: quantity }, (_, i) => `${selectedSection.name} - Tkt ${i + 1}`)
-      : selectedSpecificSeats.map(s => `${selectedSection.name} - Row ${s.row} Seat ${s.num}`);
+      ? Array.from({ length: quantity }, (_, i) => `Section: ${selectedSection.name}, Ticket Number: ${i + 1} (General Admission)`)
+      : selectedSpecificSeats.map(s => `Section: ${selectedSection.name}, Row: ${s.row}, Seat Number: ${s.num}`);
 
     try {
       const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -318,9 +318,13 @@ export default function SeatSelection() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
               {selectedSection 
-                ? (selectedSection.isGA ? `${quantity} x ${selectedSection.name}` : `${selectedSpecificSeats.length} Seat(s) in ${selectedSection.name}`) 
+                ? (selectedSection.isGA 
+                    ? `${quantity} x Section: ${selectedSection.name}` 
+                    : selectedSpecificSeats.length > 0 
+                      ? selectedSpecificSeats.map(s => `Sec: ${selectedSection.name}, Row: ${s.row}, Seat: ${s.num}`).join(' • ')
+                      : `Section: ${selectedSection.name} (Select seats)`) 
                 : 'Select a section'}
             </div>
             <div style={{ fontSize: '24px', fontWeight: 800 }}>${totalPrice}</div>
