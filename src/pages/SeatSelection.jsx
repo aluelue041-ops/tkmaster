@@ -18,26 +18,31 @@ export default function SeatSelection() {
   const basePrice = event?.basePrice || 80;
 
   const sections = [
-    { id: 'pits', name: 'Pits', price: Math.round(basePrice * 4.375), color: '#ff3b30', isGA: true },
-    { id: 'front_standing', name: 'Front Standing', price: Math.round(basePrice * 3.125), color: '#007aff', isGA: true },
-    { id: 'level_1', name: 'Level 1', price: Math.round(basePrice * 2.5), color: '#34c759', isGA: false },
-    { id: 'rear_standing', name: 'Rear Standing', price: Math.round(basePrice * 1.875), color: '#ffcc00', isGA: true },
-    { id: 'level_2', name: 'Level 2', price: Math.round(basePrice * 1.5), color: '#af52de', isGA: false },
-    { id: 'level_5', name: 'Level 5', price: basePrice, color: '#ff9500', isGA: false },
+    { id: 'vip_pit', name: 'VIP Pit (Floor A–D)', price: Math.round(basePrice * 4.5), color: '#ff3b30', isGA: false, config: { rows: 20, seats: 30 } },
+    { id: 'premium_floor', name: 'Premium Floor (Floor E–L)', price: Math.round(basePrice * 4), color: '#ff2d55', isGA: false, config: { rows: 25, seats: 40 } },
+    { id: 'gold_1', name: 'Gold (110–114, 128–132)', price: Math.round(basePrice * 3), color: '#ffcc00', isGA: false, config: { rows: 25, seats: 35 } },
+    { id: 'gold_2', name: 'Gold (115–127)', price: Math.round(basePrice * 3), color: '#ffc107', isGA: false, config: { rows: 30, seats: 40 } },
+    { id: 'silver', name: 'Silver (105–109, 133–138)', price: Math.round(basePrice * 2.5), color: '#a1a1aa', isGA: false, config: { rows: 30, seats: 35 } },
+    { id: 'bronze', name: 'Bronze (102–104, 139–156)', price: Math.round(basePrice * 2), color: '#cd7f32', isGA: false, config: { rows: 35, seats: 40 } },
+    { id: 'club_london', name: 'Club London (M1–M16)', price: Math.round(basePrice * 6), color: '#000000', isGA: false, config: { rows: 15, seats: 25 } },
+    { id: 'upper_gold', name: 'Upper Gold (210–214, 228–232)', price: Math.round(basePrice * 2.5), color: '#f59e0b', isGA: false, config: { rows: 20, seats: 30 } },
+    { id: 'upper_silver', name: 'Upper Silver (205–209, 233–240)', price: Math.round(basePrice * 1.8), color: '#d4d4d8', isGA: false, config: { rows: 25, seats: 35 } },
+    { id: 'upper_bronze', name: 'Upper Bronze (201–204, 241–256)', price: basePrice, color: '#b45309', isGA: false, config: { rows: 30, seats: 40 } },
   ];
 
-  // Mock rows for seated sections
-  const seatedRows = [
-    { id: 'A', seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-    { id: 'B', seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14] },
-    { id: 'C', seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] },
-    { id: 'D', seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] },
-    { id: 'E', seats: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] },
-  ];
+  const getSeatedRows = (section) => {
+    if (!section || !section.config) return [];
+    return Array.from({ length: section.config.rows }, (_, rIndex) => ({
+      id: String(rIndex + 1),
+      seats: Array.from({ length: section.config.seats }, (_, sIndex) => sIndex + 1)
+    }));
+  };
+
+  const seatedRows = getSeatedRows(selectedSection);
 
   // Randomly pre-book some seats for realism
   const [bookedSeats] = useState(new Set([
-    'A-3', 'A-4', 'B-7', 'C-1', 'C-2', 'E-10', 'D-5', 'D-6', 'E-12'
+    '1-3', '1-4', '2-7', '3-1', '3-2', '5-10', '4-5', '4-6', '5-12'
   ]));
 
   const handleSectionSelect = (section) => {
@@ -136,38 +141,12 @@ export default function SeatSelection() {
 
       {viewMode === 'sections' ? (
         <>
-          {/* Simplified Stadium Map Illustration */}
+          {/* Simplified Stadium Map Placeholder */}
           <div style={{ padding: '24px 16px', backgroundColor: 'white', marginBottom: '8px', borderBottom: '1px solid #eaeaea' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px', textAlign: 'center', color: '#555' }}>Stadium Layout</h3>
-            <svg viewBox="0 0 300 220" style={{ width: '100%', maxWidth: '350px', margin: '0 auto', display: 'block' }}>
-          {/* Level 5 */}
-          <path d="M 60 20 A 130 100 0 0 1 60 200" fill="transparent" stroke="#ff9500" strokeWidth="16" strokeLinecap="round" style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'level_5'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
-          {/* Level 2 */}
-          <path d="M 80 45 A 100 75 0 0 1 80 175" fill="transparent" stroke="#af52de" strokeWidth="14" strokeLinecap="round" style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'level_2'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
-          {/* Level 1 */}
-          <path d="M 100 70 A 70 50 0 0 1 100 150" fill="transparent" stroke="#34c759" strokeWidth="14" strokeLinecap="round" style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'level_1'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
-          
-          {/* Stage */}
-          <rect x="20" y="90" width="30" height="40" fill="#333" rx="4" />
-          <text x="35" y="114" fill="white" fontSize="9" textAnchor="middle" fontWeight="bold" transform="rotate(-90, 35, 110)">STAGE</text>
-          
-          {/* Front Standing */}
-          <g style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'front_standing'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
-            <rect x="60" y="55" width="50" height="30" fill="#007aff" rx="4" />
-            <rect x="60" y="135" width="50" height="30" fill="#007aff" rx="4" />
-          </g>
-
-          {/* Pits */}
-          <g style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'pits'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
-            <rect x="60" y="90" width="22" height="18" fill="#ff3b30" rx="3" />
-            <rect x="60" y="112" width="22" height="18" fill="#ff3b30" rx="3" />
-            <rect x="86" y="90" width="22" height="18" fill="#ff3b30" rx="3" />
-            <rect x="86" y="112" width="22" height="18" fill="#ff3b30" rx="3" />
-          </g>
-          
-          {/* Rear Standing */}
-          <rect x="120" y="55" width="40" height="110" fill="#ffcc00" rx="4" style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'rear_standing'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
-            </svg>
+            <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px', textAlign: 'center', color: '#555' }}>Stadium Map</h3>
+            <div style={{ width: '100%', height: '140px', backgroundColor: '#f9f9f9', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #ccc' }}>
+              <span style={{ color: '#888', fontSize: '14px' }}>Select a Zone Below</span>
+            </div>
           </div>
 
           {/* Sections List */}
