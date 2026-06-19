@@ -5,6 +5,8 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const sgMail = require('@sendgrid/mail');
+const cloudinary = require('cloudinary').v2;
+const multer = require('multer');
 
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
@@ -14,6 +16,19 @@ const Event = require('./models/Event');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@ticketsmaster.app';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@ticketsmaster.app';
+
+// Cloudinary setup
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Multer — store upload in memory, then stream to Cloudinary
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
 
 // Email Helpers
 async function sendWelcomeEmail(toEmail) {
@@ -297,6 +312,30 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
 });
 
 // --- ADMIN & EVENT ROUTES ---
+
+// Upload image to Cloudinary
+app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file provided' });
+
+    // Stream buffer to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'ticketsmaster/events', resource_type: 'image' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      stream.end(req.file.buffer);
+    });
+
+    res.json({ url: result.secure_url });
+  } catch (err) {
+    console.error('Cloudinary upload error:', err);
+    res.status(500).json({ error: 'Image upload failed' });
+  }
+});
 
 // 6. Get All Events (Public) - excludes expired events
 app.get('/api/events', async (req, res) => {

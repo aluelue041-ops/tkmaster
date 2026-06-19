@@ -53,18 +53,35 @@ export default function AdminDashboard() {
 
   const getEventMeta = (title) => events.find(e => e.title === title) || null;
 
-  const handleImageUpload = (e) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert("File size must be less than 2MB.");
-        return;
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size must be less than 10MB.');
+      return;
+    }
+    setUploading(true);
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const res = await fetch(`${API}/api/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setNewEvent(prev => ({ ...prev, image: data.url }));
+      } else {
+        alert(data.error || 'Upload failed');
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewEvent(prev => ({ ...prev, image: reader.result }));
-      };
-      reader.readAsDataURL(file);
+    } catch (err) {
+      alert('Upload failed. Please try a URL instead.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -226,11 +243,26 @@ export default function AdminDashboard() {
                 </div>
                 <input type="text" placeholder="Live Location URL (Google Maps link)" value={newEvent.mapLink} onChange={e => setNewEvent({...newEvent, mapLink: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input type="text" placeholder="Image URL (or upload ->)" value={newEvent.image} onChange={e => setNewEvent({...newEvent, image: e.target.value})} required style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
+                  <input
+                    type="text"
+                    placeholder="Image URL (or upload →)"
+                    value={newEvent.image.startsWith('data:') ? '📎 File uploaded (Base64)' : newEvent.image}
+                    onChange={e => setNewEvent({...newEvent, image: e.target.value})}
+                    required
+                    style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }}
+                  />
                   <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} id="banner-upload" />
-                  <label htmlFor="banner-upload" style={{ padding: '10px 16px', borderRadius: '8px', backgroundColor: '#444', color: 'white', cursor: 'pointer', fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap' }}>
-                    Upload Image
+                  <label htmlFor="banner-upload" style={{
+                    padding: '10px 16px', borderRadius: '8px',
+                    backgroundColor: uploading ? '#666' : '#444',
+                    color: 'white', cursor: uploading ? 'not-allowed' : 'pointer',
+                    fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap'
+                  }}>
+                    {uploading ? 'Uploading...' : 'Upload Image'}
                   </label>
+                  {newEvent.image && !newEvent.image.startsWith('data:') && (
+                    <img src={newEvent.image} alt="preview" style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                  )}
                 </div>
                 <select value={newEvent.category} onChange={e => setNewEvent({...newEvent, category: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: 'none' }}>
                   <option value="Concerts">Concerts</option>
