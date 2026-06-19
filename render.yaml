@@ -9,11 +9,17 @@ services:
     startCommand: node server.js
     envVars:
       - key: MONGO_URI
-        value: mongodb+srv://ronohb70_db_user:Sniperfx738@ticketsz.9uqegl5.mongodb.net/?appName=ticketsz
+        sync: false
       - key: JWT_SECRET
-        value: supersecretjwtkey123
+        sync: false
       - key: PORT
         value: 5000
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: FROM_EMAIL
+        value: info.ticketsmasters@gmail.com
+      - key: ADMIN_EMAIL
+        value: info.ticketsmasters@gmail.com
 
   # ─── Frontend: React Static Site ────────────────────────────────────────────
   - type: web
