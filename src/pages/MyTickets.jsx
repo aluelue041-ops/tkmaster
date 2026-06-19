@@ -22,8 +22,14 @@ function parseSeat(seatString) {
   const secMatch = seatString.match(/Section:\s*([^,]+)/);
   const rowMatch = seatString.match(/Row:\s*([^,]+)/);
   const seatMatch = seatString.match(/Seat Number:\s*(\d+)/);
+
+  let sectionName = secMatch ? secMatch[1].trim() : '-';
+  if (sectionName.includes('-') && !sectionName.toLowerCase().includes('vip')) {
+    sectionName = sectionName.split('-').pop().trim();
+  }
+
   return {
-    section: secMatch ? secMatch[1].trim() : '-',
+    section: sectionName,
     row: rowMatch ? rowMatch[1].trim() : '-',
     seat: seatMatch ? seatMatch[1] : '-',
     type: 'Full Price Ticket'
