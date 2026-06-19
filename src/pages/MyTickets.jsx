@@ -38,7 +38,7 @@ function parseSeat(seatString) {
 }
 
 // Custom Transfer Modal — no browser prompt
-function TransferModal({ ticketId, seatString, onConfirm, onCancel }) {
+function TransferModal({ ticketId, seatString, eventTitle, onConfirm, onCancel }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -114,6 +114,28 @@ function TransferModal({ ticketId, seatString, onConfirm, onCancel }) {
         <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px', lineHeight: 1.5 }}>
           Please enter the details of the person receiving this ticket.
         </p>
+
+        {/* Ticket summary */}
+        {(() => {
+          const p = parseSeat(seatString);
+          return (
+            <div style={{
+              backgroundColor: '#f0f6ff', border: '1px solid #c8def5', borderRadius: '12px',
+              padding: '12px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px'
+            }}>
+              <div style={{ fontSize: '28px' }}>🎟️</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: '14px', color: '#111', marginBottom: '2px' }}>
+                  {eventTitle || 'Event Ticket'}
+                </div>
+                <div style={{ fontSize: '12px', color: '#555' }}>
+                  Section <strong>{p.section}</strong> &nbsp;·&nbsp; Row <strong>{p.row}</strong> &nbsp;·&nbsp; Seat <strong>{p.seat}</strong>
+                </div>
+                <div style={{ fontSize: '11px', color: '#026cdf', fontWeight: 600, marginTop: '4px' }}>1 ticket being transferred</div>
+              </div>
+            </div>
+          );
+        })()}
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
           <div>
@@ -317,6 +339,7 @@ function TicketStub({ seatString, ticketId, onTransfer, eventImage, eventTitle, 
             <TransferModal
               ticketId={ticketId}
               seatString={seatString}
+              eventTitle={eventTitle}
               onConfirm={async (name, email, phone) => { 
                 return await onTransfer(ticketId, email, name, phone); 
               }}
