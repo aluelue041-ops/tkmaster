@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 :root {
   --primary-color: #0066ff;
   --bg-color: #f5f5f5;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 
@@ -8,17 +8,27 @@ export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [serverReady, setServerReady] = useState(false);
 
   const [toastMessage, setToastMessage] = useState('');
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+  // Ping the backend on page load to wake Render from cold start
+  useEffect(() => {
+    fetch(`${API}/api/events`)
+      .then(() => setServerReady(true))
+      .catch(() => setServerReady(true)); // still allow login even if ping fails
+  }, [API]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
     
     try {
-      const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const res = await fetch(`${API}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,6 +49,8 @@ export default function SignIn() {
       }, 1500);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,9 +101,26 @@ export default function SignIn() {
               />
             </div>
 
-            <button type="submit" className="btn-primary" style={{ marginTop: '16px', width: '100%' }}>
-              {isLogin ? 'Sign In' : 'Sign Up'}
+            <button 
+              type="submit" 
+              className="btn-primary" 
+              disabled={loading}
+              style={{ marginTop: '16px', width: '100%', opacity: loading ? 0.8 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+            >
+              {loading && (
+                <span style={{
+                  width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.4)',
+                  borderTop: '2px solid white', borderRadius: '50%',
+                  display: 'inline-block', animation: 'spin 0.8s linear infinite'
+                }} />
+              )}
+              {loading ? (isLogin ? 'Signing In...' : 'Creating Account...') : (isLogin ? 'Sign In' : 'Sign Up')}
             </button>
+            {!serverReady && (
+              <p style={{ textAlign: 'center', fontSize: '12px', color: '#aaa', marginTop: '8px' }}>
+                ⚡ Waking up server, first load may take ~30s...
+              </p>
+            )}
           </form>
 
           <div style={{ marginTop: '24px', textAlign: 'center' }}>
