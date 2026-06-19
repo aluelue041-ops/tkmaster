@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ticketmaster-v1';
+const CACHE_NAME = 'ticketsmaster-v2';
 const urlsToCache = ['/'];
 
 self.addEventListener('install', (event) => {
