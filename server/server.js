@@ -213,57 +213,56 @@ app.get('/api/tickets/my-tickets', authMiddleware, async (req, res) => {
 // 5b. Transfer Own Ticket (Client)
 app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
   try {
-    const { newEmail, name } = req.body;
+    const { newEmail, name, phone } = req.body;
     const ticket = await Ticket.findById(req.params.id).populate('user', 'email');
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
     // Only the ticket owner can transfer
-    if (ticket.user._id.toString() !== req.user.id) {
+    if (ticket.user && ticket.user._id.toString() !== req.user.id) {
       return res.status(403).json({ error: 'You do not own this ticket' });
     }
 
-    const senderEmail = ticket.user.email;
+    const senderEmail = ticket.user ? ticket.user.email : 'A user';
     let newUser = await User.findOne({ email: newEmail });
-    let tempPassword = null;
-    let isNewAccount = false;
 
-    // If user doesn't exist, auto-create one
-    if (!newUser) {
-      tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!'; // e.g. "x7y8z9Aa1!"
-      newUser = new User({ email: newEmail, password: tempPassword });
-      await newUser.save();
-      isNewAccount = true;
+    if (newUser) {
+      ticket.user = newUser._id;
+      ticket.guestEmail = undefined;
+      ticket.guestName = undefined;
+    } else {
+      ticket.user = null; // Remove ownership from original user
+      ticket.guestEmail = newEmail;
+      ticket.guestName = name;
     }
-
-    ticket.user = newUser._id;
+    
     await ticket.save();
 
-    // Send email notification to recipient
+    // Send email notification to recipient with QR code
     try {
-      let emailHtml = `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
+      const seatString = ticket.seats && ticket.seats.length > 0 ? ticket.seats.join(', ') : 'General Admission';
+      const qrData = encodeURIComponent(`TICKET:${ticket._id}|TO:${newEmail}|SEAT:${seatString}`);
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrData}`;
+
+      let emailHtml = `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;border:1px solid #eaeaea;border-radius:12px;overflow:hidden;">
         <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">ticketsmaster</h1></div>
-        <div style="padding:24px">
-          <h2>Hi ${name || 'there'}, you've received a ticket! 🎟️</h2>
-          <p><strong>${senderEmail}</strong> has just transferred their ticket(s) for <strong>${ticket.eventTitle}</strong> to you.</p>`;
-
-      if (isNewAccount) {
-        emailHtml += `
-          <div style="background:#f8f8f8;padding:16px;border-radius:8px;margin:20px 0">
-            <p style="margin-top:0">We've created an account for you to access your tickets.</p>
-            <p><strong>Login Email:</strong> ${newEmail}</p>
-            <p style="margin-bottom:0"><strong>Temporary Password:</strong> ${tempPassword}</p>
+        <div style="padding:32px 24px;background:white;text-align:center;">
+          <h2 style="margin-top:0;">Hi ${name || 'there'}, you've received a ticket! 🎟️</h2>
+          <p style="color:#555;font-size:16px;"><strong>${senderEmail}</strong> has transferred their ticket for <strong>${ticket.eventTitle}</strong> to you.</p>
+          
+          <div style="background:#f8f8f8;padding:24px;border-radius:16px;margin:32px 0;border:1px solid #eee;display:inline-block;">
+            <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR OFFICIAL TICKET</p>
+            <img src="${qrUrl}" alt="Ticket QR Code" style="width:200px;height:200px;display:block;margin:0 auto;" />
+            <p style="font-size:13px;color:#333;margin:16px 0 0;font-weight:600;">Seats: ${seatString}</p>
           </div>
-          <p>Please log in and change your password as soon as possible.</p>`;
-      } else {
-        emailHtml += `<p>You can log into your account to view your newly transferred tickets.</p>`;
-      }
 
-      emailHtml += `</div></div>`;
+          <p style="color:#666;font-size:14px;line-height:1.5;">Show this QR code at the entrance to verify your ticket.<br/>You don't need to create an account to use this ticket!</p>
+        </div>
+      </div>`;
 
       await sgMail.send({
         to: newEmail,
         from: FROM_EMAIL,
-        subject: `${senderEmail} sent you tickets to ${ticket.eventTitle}!`,
+        subject: `🎟️ You received a ticket for ${ticket.eventTitle}!`,
         html: emailHtml
       });
     } catch(e) {

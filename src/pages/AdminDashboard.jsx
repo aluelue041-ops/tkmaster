@@ -270,7 +270,7 @@ export default function AdminDashboard() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ margin: 0, color: 'white', fontWeight: 600, fontSize: '15px' }}>{ticket.eventTitle}</p>
-                      <p style={{ margin: '4px 0', color: 'var(--primary-color)', fontSize: '13px' }}>👤 {ticket.user?.email || 'Unknown'}</p>
+                      <p style={{ margin: '4px 0', color: 'var(--primary-color)', fontSize: '13px' }}>👤 {ticket.user?.email || ticket.guestEmail || 'Unknown'}</p>
                       <p style={{ margin: '2px 0', color: '#aaa', fontSize: '12px' }}>🎟️ {ticket.seats?.length} seat(s) • ${ticket.totalPrice}</p>
                       <p style={{ margin: '2px 0 0', color: '#aaa', fontSize: '11px', wordBreak: 'break-all' }}>{ticket.seats?.join(' | ')}</p>
                       {/* Status badge */}

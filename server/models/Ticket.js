@@ -4,7 +4,13 @@ const TicketSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false
+  },
+  guestEmail: {
+    type: String
+  },
+  guestName: {
+    type: String
   },
   eventId: {
     type: String,
