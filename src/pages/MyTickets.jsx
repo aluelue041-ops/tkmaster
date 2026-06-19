@@ -172,43 +172,100 @@ function TicketStub({ seatString, ticketId, onTransfer, eventImage, eventTitle, 
   const parsed = parseSeat(seatString);
 
   const downloadPDF = () => {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [100, 55] });
-    // Background
+    // A5 landscape: 210mm x 148mm — plenty of room
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a5' });
+    const W = 210;
+    const H = 148;
+
+    // Blue header bar
     doc.setFillColor(2, 108, 223);
-    doc.rect(0, 0, 100, 18, 'F');
-    // Header text
+    doc.rect(0, 0, W, 28, 'F');
+
+    // ticketsmaster branding
     doc.setFont('helvetica', 'bolditalic');
-    doc.setFontSize(13);
+    doc.setFontSize(22);
     doc.setTextColor(255, 255, 255);
-    doc.text('ticketsmaster', 50, 11, { align: 'center' });
+    doc.text('ticketsmaster', 14, 19);
+
+    // Status badge in header
+    const statusLabel = (status || 'Active').toUpperCase();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(W - 46, 10, 32, 10, 3, 3, 'F');
+    doc.setTextColor(2, 108, 223);
+    doc.text(statusLabel, W - 30, 16.5, { align: 'center' });
+
     // Event title
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(30, 30, 30);
-    doc.text((eventTitle || 'Event').toUpperCase(), 50, 24, { align: 'center', maxWidth: 90 });
+    doc.setFontSize(14);
+    doc.setTextColor(20, 20, 20);
+    const title = (eventTitle || 'Event').toUpperCase();
+    doc.text(title, 14, 42, { maxWidth: 120 });
+
     // Divider
-    doc.setDrawColor(230, 230, 230);
-    doc.line(5, 28, 95, 28);
-    // Seat details
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.3);
+    doc.line(14, 50, W - 14, 50);
+
+    // Three columns: SECTION | ROW | SEAT
+    const cols = [
+      { label: 'SECTION', value: parsed.section, x: 14 },
+      { label: 'ROW',     value: String(parsed.row),  x: 80 },
+      { label: 'SEAT',    value: String(parsed.seat),  x: 130 },
+    ];
+
+    cols.forEach(col => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(130, 130, 130);
+      doc.text(col.label, col.x, 60);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(22);
+      doc.setTextColor(20, 20, 20);
+      doc.text(col.value, col.x, 76);
+    });
+
+    // Second divider
+    doc.setDrawColor(220, 220, 220);
+    doc.line(14, 84, W - 14, 84);
+
+    // Price & Booking ID row
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(100, 100, 100);
-    doc.text('SECTION', 10, 34);
-    doc.text('ROW', 45, 34);
-    doc.text('SEAT', 75, 34);
+    doc.setFontSize(8);
+    doc.setTextColor(130, 130, 130);
+    doc.text('TOTAL PAID', 14, 93);
+    doc.text('BOOKING ID', 80, 93);
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.setTextColor(30, 30, 30);
-    doc.text(parsed.section, 10, 41);
-    doc.text(parsed.row, 45, 41);
-    doc.text(String(parsed.seat), 75, 41);
-    // Price
+    doc.setTextColor(2, 108, 223);
+    doc.text(`${currency || '$'}${totalPrice || ''}`, 14, 102);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+    doc.text(String(ticketId), 80, 102, { maxWidth: 80 });
+
+    // QR code box on the right
+    const qrData = encodeURIComponent(`TICKET:${ticketId}|SECTION:${parsed.section}|ROW:${parsed.row}|SEAT:${parsed.seat}`);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
+    doc.addImage(qrUrl, 'PNG', W - 52, 32, 38, 38);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(160, 160, 160);
+    doc.text('SCAN TO VERIFY', W - 33, 73, { align: 'center' });
+
+    // Footer
+    doc.setFillColor(248, 248, 248);
+    doc.rect(0, H - 16, W, 16, 'F');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`${currency || '$'}${totalPrice || ''}`, 10, 49);
-    doc.text(`ID: ${ticketId}`, 50, 49, { align: 'center' });
-    doc.save(`ticket-${ticketId}-${parsed.section}.pdf`);
+    doc.setTextColor(160, 160, 160);
+    doc.text('© 2026 ticketsmaster — Present this ticket at the entrance', W / 2, H - 6, { align: 'center' });
+
+    doc.save(`ticket-${parsed.section || 'ticket'}.pdf`);
   };
 
   return (
