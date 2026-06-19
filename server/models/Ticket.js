@@ -22,6 +22,10 @@ const TicketSchema = new mongoose.Schema({
   purchaseDate: {
     type: Date,
     default: Date.now
+  },
+  status: {
+    type: String,
+    default: 'Pending'
   }
 });
 

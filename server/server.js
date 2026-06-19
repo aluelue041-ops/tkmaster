@@ -268,5 +268,44 @@ app.get('/api/tickets', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// 11. Approve Ticket (Admin)
+app.put('/api/tickets/:id/approve', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    
+    ticket.status = 'Approved';
+    await ticket.save();
+    
+    // Optionally re-populate user email to send back
+    const updatedTicket = await Ticket.findById(ticket._id).populate('user', 'email');
+    res.json(updatedTicket);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 12. Transfer Ticket (Admin)
+app.put('/api/tickets/:id/transfer', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { newEmail } = req.body;
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+
+    const newUser = await User.findOne({ email: newEmail });
+    if (!newUser) return res.status(404).json({ error: 'User with that email does not exist' });
+
+    ticket.user = newUser._id;
+    await ticket.save();
+
+    const updatedTicket = await Ticket.findById(ticket._id).populate('user', 'email');
+    res.json(updatedTicket);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

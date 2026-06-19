@@ -91,6 +91,53 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleApproveTicket = async (id) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/api/tickets/${id}/approve`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setTickets(tickets.map(t => t._id === id ? updated : t));
+        alert('Ticket approved!');
+      } else {
+        const data = await res.json();
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleTransferTicket = async (id) => {
+    const newEmail = window.prompt("Enter the email address of the user to transfer this ticket to:");
+    if (!newEmail) return;
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/api/tickets/${id}/transfer`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ newEmail })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setTickets(tickets.map(t => t._id === id ? updated : t));
+        alert(`Ticket successfully transferred to ${newEmail}!`);
+      } else {
+        const data = await res.json();
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>Loading Dashboard...</div>;
 
   return (
@@ -187,9 +234,32 @@ export default function AdminDashboard() {
             ) : (
               tickets.map(ticket => (
                 <div key={ticket._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
-                  <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{ticket.eventTitle}</p>
-                  <p style={{ margin: '4px 0', color: 'var(--primary-color)', fontSize: '14px' }}>Purchased by: {ticket.user?.email || 'Unknown'}</p>
-                  <p style={{ margin: 0, color: '#aaa', fontSize: '12px' }}>Seats: {ticket.seats?.join(', ')} • Total: ${ticket.totalPrice}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{ticket.eventTitle}</p>
+                      <p style={{ margin: '4px 0', color: 'var(--primary-color)', fontSize: '14px' }}>Purchased by: {ticket.user?.email || 'Unknown'}</p>
+                      <p style={{ margin: 0, color: '#aaa', fontSize: '12px' }}>Seats: {ticket.seats?.join(', ')} • Total: ${ticket.totalPrice}</p>
+                      <p style={{ margin: '4px 0 0', color: ticket.status === 'Approved' ? '#34c759' : '#ff9500', fontSize: '12px', fontWeight: 600 }}>
+                        Status: {ticket.status || 'Pending'}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                      {(!ticket.status || ticket.status === 'Pending') && (
+                        <button 
+                          onClick={() => handleApproveTicket(ticket._id)}
+                          style={{ padding: '6px 12px', backgroundColor: '#34c759', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          Approve
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleTransferTicket(ticket._id)}
+                        style={{ padding: '6px 12px', backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Transfer
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))
             )}
