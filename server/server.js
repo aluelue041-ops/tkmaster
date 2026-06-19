@@ -210,6 +210,31 @@ app.get('/api/tickets/my-tickets', authMiddleware, async (req, res) => {
   }
 });
 
+// 5b. Transfer Own Ticket (Client)
+app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
+  try {
+    const { newEmail } = req.body;
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+
+    // Only the ticket owner can transfer
+    if (ticket.user.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'You do not own this ticket' });
+    }
+
+    const newUser = await User.findOne({ email: newEmail });
+    if (!newUser) return res.status(404).json({ error: 'No user found with that email' });
+
+    ticket.user = newUser._id;
+    await ticket.save();
+
+    res.json({ success: true, transferredTo: newEmail });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // --- ADMIN & EVENT ROUTES ---
 
 // 6. Get All Events (Public)
