@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ChevronLeft, Info, Check } from 'lucide-react';
 
 export default function SeatSelection() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
+  const event = location.state?.event;
+  const eventTitle = event?.title || 'Selected Event';
   const [selectedSeats, setSelectedSeats] = useState([]);
 
   // Mock stage and seat rows
@@ -59,8 +62,8 @@ export default function SeatSelection() {
         },
         body: JSON.stringify({
           eventId: id || 'trending',
-          eventTitle: 'Selected Event',
-          seats: selectedSeats,
+          eventTitle: eventTitle,
+          seats: selectedSeats.map(s => s.id),
           totalPrice
         })
       });
@@ -81,13 +84,13 @@ export default function SeatSelection() {
       <div style={{ backgroundColor: 'white', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <button 
           onClick={() => navigate(-1)}
-          style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #eaeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'white', cursor: 'pointer' }}
+          style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #eaeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'white', cursor: 'pointer', flexShrink: 0 }}
         >
           <ChevronLeft size={24} color="#333" />
         </button>
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: 700 }}>Select Seats</h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Section 102 • General Admission</p>
+          <h2 style={{ fontSize: '17px', fontWeight: 700, margin: 0 }}>Select Seats</h2>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>{eventTitle}</p>
         </div>
       </div>
 

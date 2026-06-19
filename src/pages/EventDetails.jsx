@@ -126,33 +126,38 @@ export default function EventDetails() {
         </div>
       </div>
 
-      {/* Floating Action Button - Contact Admin */}
+      {/* Sticky Bottom Bar */}
       <div style={{ 
         position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 24px', 
         backgroundColor: 'var(--card-bg)', borderTop: '1px solid var(--border-color)',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 100,
-        boxShadow: '0 -4px 12px rgba(0,0,0,0.05)'
+        boxShadow: '0 -4px 12px rgba(0,0,0,0.08)'
       }}>
         <div>
-          <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Interested?</div>
-          <div style={{ fontSize: '16px', fontWeight: 700 }}>Contact us for tickets</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Starting from</div>
+          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--primary-color)' }}>
+            {event.price || '$50.00'}
+          </div>
         </div>
-        <a
-          href={`mailto:${import.meta.env.VITE_ADMIN_EMAIL || 'info.ticketsmasters@gmail.com'}?subject=Ticket Inquiry: ${encodeURIComponent(event.title)}&body=Hi,%0A%0AI'm interested in tickets for:%0A%0AEvent: ${encodeURIComponent(event.title)}%0ADate: ${encodeURIComponent(event.date)}%0ALocation: ${encodeURIComponent(event.location)}%0A%0APlease let me know availability and pricing.%0A%0AThank you!`}
+        <button
+          onClick={() => navigate(`/seat-selection/${event._id || id}`, { state: { event } })}
           style={{
-            backgroundColor: 'var(--primary-color)',
+            backgroundColor: '#026cdf',
             color: 'white',
-            padding: '14px 24px',
-            borderRadius: '8px',
+            padding: '14px 32px',
+            borderRadius: '12px',
             fontWeight: 700,
-            fontSize: '15px',
-            textDecoration: 'none',
-            display: 'inline-block',
-            whiteSpace: 'nowrap'
+            fontSize: '16px',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '0 4px 16px rgba(2,108,223,0.35)',
+            transition: 'all 0.2s'
           }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
-          📧 Get Tickets
-        </a>
+          🎟️ See Tickets
+        </button>
       </div>
       
       {/* Toast Notification */}

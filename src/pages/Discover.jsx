@@ -123,70 +123,78 @@ export default function Discover() {
             <div 
               key={event._id} 
               className="event-card" 
-              style={{ position: 'relative', cursor: 'pointer', transition: 'transform 0.2s ease' }}
-              onClick={() => handleEventClick(event)}
+              style={{ position: 'relative', transition: 'transform 0.2s ease', overflow: 'hidden' }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              <img src={event.image} alt={event.title} className="event-image" />
-              
-              {/* Share Button Overlay */}
-              <button 
-                onClick={(e) => handleCopyLink(event, e)}
-                style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '36px',
-                  height: '36px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                  transition: 'all 0.2s',
-                  zIndex: 2
-                }}
-                title="Copy event link"
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                {copiedId === event._id ? (
-                  <CheckCircle size={18} color="#00c853" />
-                ) : (
-                  <Share2 size={18} color="#333" />
-                )}
-              </button>
+              {/* Event Image — clickable */}
+              <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => handleEventClick(event)}>
+                <img src={event.image} alt={event.title} className="event-image" />
+                {/* Category badge */}
+                <span style={{
+                  position: 'absolute', top: '12px', left: '12px',
+                  backgroundColor: 'rgba(2,108,223,0.9)', color: 'white',
+                  padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600
+                }}>{event.category}</span>
+                {/* Share Button */}
+                <button 
+                  onClick={(e) => handleCopyLink(event, e)}
+                  style={{
+                    position: 'absolute', top: '12px', right: '12px',
+                    backgroundColor: 'rgba(255,255,255,0.9)', border: 'none',
+                    borderRadius: '50%', width: '36px', height: '36px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 2
+                  }}
+                  title="Copy event link"
+                >
+                  {copiedId === event._id ? <CheckCircle size={18} color="#00c853" /> : <Share2 size={18} color="#333" />}
+                </button>
+              </div>
 
-              <div className="event-details">
+              {/* Event Info */}
+              <div className="event-details" style={{ paddingBottom: '0' }}>
                 <div className="event-date">{event.date}</div>
-                <h3 className="event-title">{event.title}</h3>
+                <h3 className="event-title" style={{ cursor: 'pointer' }} onClick={() => handleEventClick(event)}>{event.title}</h3>
                 <div className="event-location">
                   <MapPin size={14} /> {event.location}
                 </div>
+
+                {/* See Tickets Button */}
+                <button
+                  onClick={() => handleEventClick(event)}
+                  style={{
+                    marginTop: '14px',
+                    width: '100%',
+                    padding: '12px',
+                    backgroundColor: '#026cdf',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '10px',
+                    fontWeight: 700,
+                    fontSize: '15px',
+                    cursor: 'pointer',
+                    letterSpacing: '0.3px',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0057b8'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#026cdf'}
+                >
+                  🎟️ See Tickets
+                </button>
               </div>
-              
-              {/* Toast Notification */}
+
+              {/* Toast */}
               {copiedId === event._id && (
                 <div style={{
-                  position: 'absolute',
-                  bottom: '16px',
-                  left: '50%',
+                  position: 'absolute', bottom: '80px', left: '50%',
                   transform: 'translateX(-50%)',
-                  backgroundColor: '#323232',
-                  color: 'white',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  zIndex: 10,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                  animation: 'fadeIn 0.2s'
+                  backgroundColor: '#323232', color: 'white',
+                  padding: '8px 16px', borderRadius: '20px',
+                  fontSize: '14px', fontWeight: 500, zIndex: 10,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                 }}>
-                  Link copied to clipboard!
+                  Link copied!
                 </div>
               )}
             </div>
