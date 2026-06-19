@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X } from 'lucide-react';
+import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -165,10 +166,50 @@ function TransferModal({ ticketId, seatString, onConfirm, onCancel }) {
   );
 }
 
-function TicketStub({ seatString, ticketId, onTransfer, eventImage }) {
+function TicketStub({ seatString, ticketId, onTransfer, eventImage, eventTitle, currency, totalPrice, status }) {
   const [showActions, setShowActions] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const parsed = parseSeat(seatString);
+
+  const downloadPDF = () => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [100, 55] });
+    // Background
+    doc.setFillColor(2, 108, 223);
+    doc.rect(0, 0, 100, 18, 'F');
+    // Header text
+    doc.setFont('helvetica', 'bolditalic');
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    doc.text('ticketsmaster', 50, 11, { align: 'center' });
+    // Event title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(30, 30, 30);
+    doc.text((eventTitle || 'Event').toUpperCase(), 50, 24, { align: 'center', maxWidth: 90 });
+    // Divider
+    doc.setDrawColor(230, 230, 230);
+    doc.line(5, 28, 95, 28);
+    // Seat details
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    doc.text('SECTION', 10, 34);
+    doc.text('ROW', 45, 34);
+    doc.text('SEAT', 75, 34);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(30, 30, 30);
+    doc.text(parsed.section, 10, 41);
+    doc.text(parsed.row, 45, 41);
+    doc.text(String(parsed.seat), 75, 41);
+    // Price
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`${currency || '$'}${totalPrice || ''}`, 10, 49);
+    doc.text(`ID: ${ticketId}`, 50, 49, { align: 'center' });
+    doc.save(`ticket-${ticketId}-${parsed.section}.pdf`);
+  };
 
   return (
     <div style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e8e8e8', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
@@ -209,11 +250,11 @@ function TicketStub({ seatString, ticketId, onTransfer, eventImage }) {
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
               backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '12px',
-              padding: '14px 28px', cursor: 'pointer', flex: 1, maxWidth: '140px'
+              padding: '14px 20px', cursor: 'pointer', flex: 1, maxWidth: '120px'
             }}
           >
             <ArrowUpRight size={22} color="#333" />
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#333' }}>Transfer</span>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#333' }}>Transfer</span>
           </button>
           {showTransferModal && (
             <TransferModal
@@ -227,16 +268,28 @@ function TicketStub({ seatString, ticketId, onTransfer, eventImage }) {
           )}
 
           <button
+            onClick={downloadPDF}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+              backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '12px',
+              padding: '14px 20px', cursor: 'pointer', flex: 1, maxWidth: '120px'
+            }}
+          >
+            <Download size={22} color="#026cdf" />
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#026cdf' }}>Save PDF</span>
+          </button>
+
+          <button
             onClick={() => alert('Sell feature coming soon!')}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
               backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '12px',
-              padding: '14px 28px', cursor: 'pointer', flex: 1, maxWidth: '140px',
+              padding: '14px 20px', cursor: 'pointer', flex: 1, maxWidth: '120px',
               opacity: 0.5
             }}
           >
             <RefreshCw size={22} color="#333" />
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#333' }}>Sell</span>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#333' }}>Sell</span>
           </button>
         </div>
       )}
@@ -424,6 +477,10 @@ export default function MyTickets() {
               ticketId={selectedOrder._id}
               onTransfer={handleTransfer}
               eventImage={image}
+              eventTitle={selectedOrder.eventTitle}
+              currency={selectedOrder.currency}
+              totalPrice={selectedOrder.totalPrice}
+              status={selectedOrder.status}
             />
           ))}
           {activeTab === 'Extras' && (
@@ -475,11 +532,21 @@ export default function MyTickets() {
                   {/* Status badge */}
                   <div style={{ marginTop: '10px' }}>
                     <span style={{
-                      display: 'inline-block', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
-                      backgroundColor: ticket.status === 'Approved' ? '#e8f5e9' : '#fff8e1',
-                      color: ticket.status === 'Approved' ? '#2e7d32' : '#f57f17'
+                      display: 'inline-block', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
+                      backgroundColor:
+                        ticket.status === 'Active' ? '#e8f5e9' :
+                        ticket.status === 'Approved' ? '#e8f5e9' :
+                        ticket.status === 'Transferred' ? '#e3f2fd' :
+                        ticket.status === 'Expired' ? '#f3f3f3' :
+                        ticket.status === 'Rejected' ? '#fce4ec' : '#fff8e1',
+                      color:
+                        ticket.status === 'Active' ? '#2e7d32' :
+                        ticket.status === 'Approved' ? '#2e7d32' :
+                        ticket.status === 'Transferred' ? '#1565c0' :
+                        ticket.status === 'Expired' ? '#9e9e9e' :
+                        ticket.status === 'Rejected' ? '#c62828' : '#f57f17'
                     }}>
-                      {ticket.status || 'Pending'}
+                      {ticket.status || 'Active'}
                     </span>
                   </div>
                 </div>

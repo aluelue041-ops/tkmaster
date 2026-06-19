@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ChevronLeft, Check, Plus, Minus } from 'lucide-react';
 
@@ -91,10 +91,31 @@ export default function SeatSelection() {
 
   const seatedRows = getSeatedRows(selectedSection);
 
-  // Randomly pre-book some seats for realism
-  const [bookedSeats] = useState(new Set([
-    '1-3', '1-4', '2-7', '3-1', '3-2', '5-10', '4-5', '4-6', '5-12'
-  ]));
+  // Real-time booked seats loaded from server
+  const [bookedSeats, setBookedSeats] = useState(new Set());
+
+  useEffect(() => {
+    if (!id || id === 'trending') return;
+    const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    fetch(`${API}/api/events/${id}/booked-seats`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          // seats stored as full strings like "Section: VIP - Floor A, Row: 1, Seat Number: 5"
+          // Build a set of row-seat keys using section+row+seat
+          const seatSet = new Set();
+          data.forEach(s => {
+            const rowMatch = s.match(/Row:\s*([^,]+)/);
+            const seatMatch = s.match(/Seat Number:\s*(\d+)/);
+            if (rowMatch && seatMatch) {
+              seatSet.add(`${rowMatch[1].trim()}-${seatMatch[1]}`);
+            }
+          });
+          setBookedSeats(seatSet);
+        }
+      })
+      .catch(() => {});
+  }, [id]);
 
   const handleSectionSelect = (section) => {
     setSelectedSection(section);

@@ -6,36 +6,18 @@ const TicketSchema = new mongoose.Schema({
     ref: 'User',
     required: false
   },
-  guestEmail: {
-    type: String
-  },
-  guestName: {
-    type: String
-  },
-  eventId: {
-    type: String,
-    required: true
-  },
-  eventTitle: {
-    type: String,
-    required: true
-  },
+  guestEmail: { type: String },
+  guestName: { type: String },
+  eventId: { type: String, required: true },
+  eventTitle: { type: String, required: true },
   seats: [String],
-  totalPrice: {
-    type: Number,
-    required: true
-  },
-  currency: {
-    type: String,
-    default: '$'
-  },
-  purchaseDate: {
-    type: Date,
-    default: Date.now
-  },
+  totalPrice: { type: Number, required: true },
+  currency: { type: String, default: '$' },
+  purchaseDate: { type: Date, default: Date.now },
   status: {
     type: String,
-    default: 'Pending'
+    enum: ['Active', 'Transferred', 'Expired', 'Pending', 'Approved', 'Rejected'],
+    default: 'Active'
   }
 });
 

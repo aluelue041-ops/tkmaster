@@ -45,6 +45,8 @@ async function sendWelcomeEmail(toEmail) {
 
 async function sendBookingConfirmationEmail(toEmail, ticket) {
   try {
+    const qrData = encodeURIComponent(`TICKET:${ticket._id}|EVENT:${ticket.eventTitle}|SEATS:${ticket.seats.join('; ')}`);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrData}`;
     const seatsList = ticket.seats.map(s => `<li style="margin:4px 0">${s}</li>`).join('');
     await sgMail.send({
       to: toEmail,
@@ -55,16 +57,21 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
           <div style="background:#026cdf;padding:32px;text-align:center">
             <h1 style="color:white;font-style:italic;margin:0;font-size:32px">ticketsmaster</h1>
           </div>
-          <div style="padding:32px">
-            <h2 style="color:#1a1a1a">Booking Confirmed! ✅</h2>
+          <div style="padding:32px;background:white">
+            <h2 style="color:#1a1a1a;margin-top:0">Booking Confirmed! ✅</h2>
             <p style="color:#555">Here are your booking details:</p>
-            <div style="background:white;border-radius:8px;padding:20px;margin:16px 0;border:1px solid #e5e5e5">
+            <div style="background:#f9f9f9;border-radius:8px;padding:20px;margin:16px 0;border:1px solid #e5e5e5">
               <p style="margin:0 0 8px"><strong>Event:</strong> ${ticket.eventTitle}</p>
+              <p style="margin:0 0 8px"><strong>Total Paid:</strong> <span style="color:#026cdf;font-size:18px">${ticket.currency || '$'}${ticket.totalPrice}</span></p>
               <p style="margin:0 0 8px"><strong>Seats:</strong></p>
               <ul style="margin:0;padding-left:20px;color:#333">${seatsList}</ul>
-              <p style="margin:12px 0 0"><strong>Total Paid:</strong> <span style="color:#026cdf;font-size:18px">$${ticket.totalPrice}</span></p>
             </div>
-            <p style="color:#888;font-size:13px">Your booking ID: <code>${ticket._id}</code></p>
+            <div style="background:#f8f8f8;padding:24px;border-radius:16px;margin:24px 0;border:1px solid #eee;text-align:center">
+              <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR TICKET QR CODE</p>
+              <img src="${qrUrl}" alt="Ticket QR Code" style="width:200px;height:200px;display:block;margin:0 auto;" />
+              <p style="font-size:12px;color:#888;margin:12px 0 0">Show this QR at the entrance</p>
+            </div>
+            <p style="color:#888;font-size:13px">Booking ID: <code>${ticket._id}</code></p>
           </div>
           <div style="padding:16px 32px;background:#eee;font-size:12px;color:#999;text-align:center">
             &copy; 2026 ticketsmaster. All rights reserved.
@@ -185,12 +192,22 @@ app.post('/api/tickets/book', authMiddleware, async (req, res) => {
       eventTitle,
       seats,
       totalPrice,
-      currency: currency || '$'
+      currency: currency || '$',
+      status: 'Active'
     });
 
     await newTicket.save();
 
-    // Send booking confirmation email
+    // Mark seats as booked on the event document for real-time availability
+    if (eventId && eventId !== 'trending') {
+      try {
+        await Event.findByIdAndUpdate(eventId, {
+          $push: { bookedSeats: { $each: seats } }
+        });
+      } catch (e) { console.error('Seat tracking error:', e.message); }
+    }
+
+    // Send booking confirmation email with QR code
     const user = await User.findById(req.user.id).select('email');
     if (user) sendBookingConfirmationEmail(user.email, newTicket);
 
@@ -237,6 +254,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
       ticket.guestName = name;
     }
     
+    ticket.status = 'Transferred';
     await ticket.save();
 
     // Send email notification to recipient with QR code
@@ -280,11 +298,29 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
 
 // --- ADMIN & EVENT ROUTES ---
 
-// 6. Get All Events (Public)
+// 6. Get All Events (Public) - excludes expired events
 app.get('/api/events', async (req, res) => {
   try {
+    const now = new Date();
+    // Fetch all events, filter out those with a real eventDate in the past
     const events = await Event.find().sort({ createdAt: -1 });
-    res.json(events);
+    const active = events.filter(ev => {
+      if (ev.eventDate && ev.eventDate < now) return false;
+      return true;
+    });
+    res.json(active);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 6b. Get booked seats for an event
+app.get('/api/events/:id/booked-seats', async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id).select('bookedSeats');
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+    res.json(event.bookedSeats || []);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

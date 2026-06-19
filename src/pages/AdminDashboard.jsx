@@ -8,7 +8,7 @@ export default function AdminDashboard() {
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
   const [activeTab, setActiveTab] = useState('events'); // events, users, tickets
-  const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '' });
+  const [newEvent, setNewEvent] = useState({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '' });
   const [loading, setLoading] = useState(true);
 
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (res.ok) {
         setEvents([data, ...events]);
-        setNewEvent({ title: '', date: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '' });
+        setNewEvent({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '' });
       } else {
         alert(data.error);
       }
@@ -215,7 +215,10 @@ export default function AdminDashboard() {
               <h3 style={{ color: 'white', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Plus size={20} /> Add New Event</h3>
               <form onSubmit={handleAddEvent} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <input type="text" placeholder="Event Title" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} required style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
-                <input type="text" placeholder="Date & Time (e.g. Fri, Sep 19 • 7:00 PM)" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} required style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input type="text" placeholder="Display Date (e.g. Fri, Sep 19 • 7:00 PM)" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} required style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none' }} />
+                  <input type="datetime-local" title="Event date/time for expiry" value={newEvent.eventDate} onChange={e => setNewEvent({...newEvent, eventDate: e.target.value})} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
+                </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input type="text" placeholder="Currency (e.g. $, £, €)" value={newEvent.currency} onChange={e => setNewEvent({...newEvent, currency: e.target.value})} required style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
                   <input type="number" placeholder="Base Price (e.g. 80)" value={newEvent.basePrice} onChange={e => setNewEvent({...newEvent, basePrice: Number(e.target.value)})} required style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
