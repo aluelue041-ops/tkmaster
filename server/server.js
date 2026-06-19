@@ -213,20 +213,62 @@ app.get('/api/tickets/my-tickets', authMiddleware, async (req, res) => {
 // 5b. Transfer Own Ticket (Client)
 app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
   try {
-    const { newEmail } = req.body;
-    const ticket = await Ticket.findById(req.params.id);
+    const { newEmail, name } = req.body;
+    const ticket = await Ticket.findById(req.params.id).populate('user', 'email');
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
     // Only the ticket owner can transfer
-    if (ticket.user.toString() !== req.user.id) {
+    if (ticket.user._id.toString() !== req.user.id) {
       return res.status(403).json({ error: 'You do not own this ticket' });
     }
 
-    const newUser = await User.findOne({ email: newEmail });
-    if (!newUser) return res.status(404).json({ error: 'No user found with that email' });
+    const senderEmail = ticket.user.email;
+    let newUser = await User.findOne({ email: newEmail });
+    let tempPassword = null;
+    let isNewAccount = false;
+
+    // If user doesn't exist, auto-create one
+    if (!newUser) {
+      tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!'; // e.g. "x7y8z9Aa1!"
+      newUser = new User({ email: newEmail, password: tempPassword });
+      await newUser.save();
+      isNewAccount = true;
+    }
 
     ticket.user = newUser._id;
     await ticket.save();
+
+    // Send email notification to recipient
+    try {
+      let emailHtml = `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
+        <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">ticketsmaster</h1></div>
+        <div style="padding:24px">
+          <h2>Hi ${name || 'there'}, you've received a ticket! 🎟️</h2>
+          <p><strong>${senderEmail}</strong> has just transferred their ticket(s) for <strong>${ticket.eventTitle}</strong> to you.</p>`;
+
+      if (isNewAccount) {
+        emailHtml += `
+          <div style="background:#f8f8f8;padding:16px;border-radius:8px;margin:20px 0">
+            <p style="margin-top:0">We've created an account for you to access your tickets.</p>
+            <p><strong>Login Email:</strong> ${newEmail}</p>
+            <p style="margin-bottom:0"><strong>Temporary Password:</strong> ${tempPassword}</p>
+          </div>
+          <p>Please log in and change your password as soon as possible.</p>`;
+      } else {
+        emailHtml += `<p>You can log into your account to view your newly transferred tickets.</p>`;
+      }
+
+      emailHtml += `</div></div>`;
+
+      await sgMail.send({
+        to: newEmail,
+        from: FROM_EMAIL,
+        subject: `${senderEmail} sent you tickets to ${ticket.eventTitle}!`,
+        html: emailHtml
+      });
+    } catch(e) {
+      console.error('Email error during transfer:', e.message);
+    }
 
     res.json({ success: true, transferredTo: newEmail });
   } catch (err) {
