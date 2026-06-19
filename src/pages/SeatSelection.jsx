@@ -136,29 +136,33 @@ export default function SeatSelection() {
           <div style={{ padding: '24px 16px', backgroundColor: 'white', marginBottom: '8px', borderBottom: '1px solid #eaeaea' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px', textAlign: 'center', color: '#555' }}>Stadium Layout</h3>
             <svg viewBox="0 0 300 220" style={{ width: '100%', maxWidth: '350px', margin: '0 auto', display: 'block' }}>
-              {/* Level 5 */}
-              <path d="M 60 20 A 130 100 0 0 1 60 200" fill="none" stroke="#ff9500" strokeWidth="16" strokeLinecap="round" />
-              {/* Level 2 */}
-              <path d="M 80 45 A 100 75 0 0 1 80 175" fill="none" stroke="#af52de" strokeWidth="14" strokeLinecap="round" />
-              {/* Level 1 */}
-              <path d="M 100 70 A 70 50 0 0 1 100 150" fill="none" stroke="#34c759" strokeWidth="14" strokeLinecap="round" />
-              
-              {/* Stage */}
-              <rect x="20" y="90" width="30" height="40" fill="#333" rx="4" />
-              <text x="35" y="114" fill="white" fontSize="9" textAnchor="middle" fontWeight="bold" transform="rotate(-90, 35, 110)">STAGE</text>
-              
-              {/* Front Standing */}
-              <rect x="60" y="55" width="50" height="30" fill="#007aff" rx="4" />
-              <rect x="60" y="135" width="50" height="30" fill="#007aff" rx="4" />
+          {/* Level 5 */}
+          <path d="M 60 20 A 130 100 0 0 1 60 200" fill="transparent" stroke="#ff9500" strokeWidth="16" strokeLinecap="round" style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'level_5'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
+          {/* Level 2 */}
+          <path d="M 80 45 A 100 75 0 0 1 80 175" fill="transparent" stroke="#af52de" strokeWidth="14" strokeLinecap="round" style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'level_2'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
+          {/* Level 1 */}
+          <path d="M 100 70 A 70 50 0 0 1 100 150" fill="transparent" stroke="#34c759" strokeWidth="14" strokeLinecap="round" style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'level_1'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
+          
+          {/* Stage */}
+          <rect x="20" y="90" width="30" height="40" fill="#333" rx="4" />
+          <text x="35" y="114" fill="white" fontSize="9" textAnchor="middle" fontWeight="bold" transform="rotate(-90, 35, 110)">STAGE</text>
+          
+          {/* Front Standing */}
+          <g style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'front_standing'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
+            <rect x="60" y="55" width="50" height="30" fill="#007aff" rx="4" />
+            <rect x="60" y="135" width="50" height="30" fill="#007aff" rx="4" />
+          </g>
 
-              {/* Pits */}
-              <rect x="60" y="90" width="22" height="18" fill="#ff3b30" rx="3" />
-              <rect x="60" y="112" width="22" height="18" fill="#ff3b30" rx="3" />
-              <rect x="86" y="90" width="22" height="18" fill="#ff3b30" rx="3" />
-              <rect x="86" y="112" width="22" height="18" fill="#ff3b30" rx="3" />
-              
-              {/* Rear Standing */}
-              <rect x="120" y="55" width="40" height="110" fill="#ffcc00" rx="4" />
+          {/* Pits */}
+          <g style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'pits'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
+            <rect x="60" y="90" width="22" height="18" fill="#ff3b30" rx="3" />
+            <rect x="60" y="112" width="22" height="18" fill="#ff3b30" rx="3" />
+            <rect x="86" y="90" width="22" height="18" fill="#ff3b30" rx="3" />
+            <rect x="86" y="112" width="22" height="18" fill="#ff3b30" rx="3" />
+          </g>
+          
+          {/* Rear Standing */}
+          <rect x="120" y="55" width="40" height="110" fill="#ffcc00" rx="4" style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => handleSectionSelect(sections.find(s => s.id === 'rear_standing'))} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'} />
             </svg>
           </div>
 
