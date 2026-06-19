@@ -17,18 +17,69 @@ export default function SeatSelection() {
 
   const basePrice = event?.basePrice || 80;
 
-  const sections = [
-    { id: 'vip_pit', name: 'VIP Pit (Floor A–D)', price: Math.round(basePrice * 4.5), color: '#ff3b30', isGA: false, config: { rows: 20, seats: 30 } },
-    { id: 'premium_floor', name: 'Premium Floor (Floor E–L)', price: Math.round(basePrice * 4), color: '#ff2d55', isGA: false, config: { rows: 25, seats: 40 } },
-    { id: 'gold_1', name: 'Gold (110–114, 128–132)', price: Math.round(basePrice * 3), color: '#ffcc00', isGA: false, config: { rows: 25, seats: 35 } },
-    { id: 'gold_2', name: 'Gold (115–127)', price: Math.round(basePrice * 3), color: '#ffc107', isGA: false, config: { rows: 30, seats: 40 } },
-    { id: 'silver', name: 'Silver (105–109, 133–138)', price: Math.round(basePrice * 2.5), color: '#a1a1aa', isGA: false, config: { rows: 30, seats: 35 } },
-    { id: 'bronze', name: 'Bronze (102–104, 139–156)', price: Math.round(basePrice * 2), color: '#cd7f32', isGA: false, config: { rows: 35, seats: 40 } },
-    { id: 'club_london', name: 'Club London (M1–M16)', price: Math.round(basePrice * 6), color: '#000000', isGA: false, config: { rows: 15, seats: 25 } },
-    { id: 'upper_gold', name: 'Upper Gold (210–214, 228–232)', price: Math.round(basePrice * 2.5), color: '#f59e0b', isGA: false, config: { rows: 20, seats: 30 } },
-    { id: 'upper_silver', name: 'Upper Silver (205–209, 233–240)', price: Math.round(basePrice * 1.8), color: '#d4d4d8', isGA: false, config: { rows: 25, seats: 35 } },
-    { id: 'upper_bronze', name: 'Upper Bronze (201–204, 241–256)', price: basePrice, color: '#b45309', isGA: false, config: { rows: 30, seats: 40 } },
-  ];
+  const generateSections = (base) => {
+    const list = [];
+    const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i);
+    const charRange = (startChar, endChar) => {
+      const start = startChar.charCodeAt(0);
+      const end = endChar.charCodeAt(0);
+      return Array.from({ length: end - start + 1 }, (_, i) => String.fromCharCode(start + i));
+    };
+
+    // 1. VIP Pit (Floor A-D)
+    charRange('A', 'D').forEach(char => {
+      list.push({ id: `vip_pit_${char}`, name: `VIP Pit - Floor ${char}`, price: Math.round(base * 4.5), color: '#ff3b30', isGA: false, config: { rows: 20, seats: 30 } });
+    });
+
+    // 2. Premium Floor (Floor E-L)
+    charRange('E', 'L').forEach(char => {
+      list.push({ id: `premium_floor_${char}`, name: `Premium Floor - Floor ${char}`, price: Math.round(base * 4), color: '#ff2d55', isGA: false, config: { rows: 25, seats: 40 } });
+    });
+
+    // 3. Gold (110-114, 128-132)
+    [...range(110, 114), ...range(128, 132)].forEach(num => {
+      list.push({ id: `gold_${num}`, name: `Gold - Section ${num}`, price: Math.round(base * 3), color: '#ffcc00', isGA: false, config: { rows: 25, seats: 35 } });
+    });
+    
+    // 4. Gold (115-127)
+    range(115, 127).forEach(num => {
+      list.push({ id: `gold_${num}`, name: `Gold - Section ${num}`, price: Math.round(base * 3), color: '#ffc107', isGA: false, config: { rows: 30, seats: 40 } });
+    });
+
+    // 5. Silver (105-109, 133-138)
+    [...range(105, 109), ...range(133, 138)].forEach(num => {
+      list.push({ id: `silver_${num}`, name: `Silver - Section ${num}`, price: Math.round(base * 2.5), color: '#a1a1aa', isGA: false, config: { rows: 30, seats: 35 } });
+    });
+
+    // 6. Bronze (102-104, 139-156)
+    [...range(102, 104), ...range(139, 156)].forEach(num => {
+      list.push({ id: `bronze_${num}`, name: `Bronze - Section ${num}`, price: Math.round(base * 2), color: '#cd7f32', isGA: false, config: { rows: 35, seats: 40 } });
+    });
+
+    // 7. Club London (M1-M16)
+    range(1, 16).forEach(num => {
+      list.push({ id: `club_london_m${num}`, name: `Club London - M${num}`, price: Math.round(base * 6), color: '#000000', isGA: false, config: { rows: 15, seats: 25 } });
+    });
+
+    // 8. Upper Gold (210-214, 228-232)
+    [...range(210, 214), ...range(228, 232)].forEach(num => {
+      list.push({ id: `upper_gold_${num}`, name: `Upper Gold - Section ${num}`, price: Math.round(base * 2.5), color: '#f59e0b', isGA: false, config: { rows: 20, seats: 30 } });
+    });
+
+    // 9. Upper Silver (205-209, 233-240)
+    [...range(205, 209), ...range(233, 240)].forEach(num => {
+      list.push({ id: `upper_silver_${num}`, name: `Upper Silver - Section ${num}`, price: Math.round(base * 1.8), color: '#d4d4d8', isGA: false, config: { rows: 25, seats: 35 } });
+    });
+
+    // 10. Upper Bronze (201-204, 241-256)
+    [...range(201, 204), ...range(241, 256)].forEach(num => {
+      list.push({ id: `upper_bronze_${num}`, name: `Upper Bronze - Section ${num}`, price: base, color: '#b45309', isGA: false, config: { rows: 30, seats: 40 } });
+    });
+
+    return list;
+  };
+
+  const sections = generateSections(basePrice);
 
   const getSeatedRows = (section) => {
     if (!section || !section.config) return [];
