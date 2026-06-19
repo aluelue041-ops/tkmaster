@@ -8,6 +8,7 @@ export default function SeatSelection() {
   const location = useLocation();
   const event = location.state?.event;
   const eventTitle = event?.title || 'Selected Event';
+  const currency = event?.currency || '$';
   
   const [selectedSection, setSelectedSection] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -92,7 +93,8 @@ export default function SeatSelection() {
           eventId: id || 'trending',
           eventTitle: eventTitle,
           seats: seats,
-          totalPrice
+          totalPrice,
+          currency
         })
       });
 
@@ -197,7 +199,7 @@ export default function SeatSelection() {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 800, fontSize: '18px', color: 'var(--primary-color)' }}>${section.price}</div>
+                    <div style={{ fontWeight: 800, fontSize: '18px', color: 'var(--primary-color)' }}>{currency}{section.price}</div>
                     {selectedSection?.id === section.id && section.isGA && (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '4px' }}>
                         <Check size={16} color="#026cdf" />
@@ -331,7 +333,7 @@ export default function SeatSelection() {
                       : `Section: ${selectedSection.name} (Select seats)`) 
                 : 'Select a section'}
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800 }}>${totalPrice}</div>
+            <div style={{ fontSize: '24px', fontWeight: 800 }}>{currency}{totalPrice}</div>
           </div>
           <button 
             className="btn-primary" 

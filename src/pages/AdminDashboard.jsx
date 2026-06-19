@@ -8,7 +8,7 @@ export default function AdminDashboard() {
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
   const [activeTab, setActiveTab] = useState('events'); // events, users, tickets
-  const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', image: '', category: 'Concerts' });
+  const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', image: '', category: 'Concerts', currency: '$', mapLink: '' });
   const [loading, setLoading] = useState(true);
 
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -201,7 +201,11 @@ export default function AdminDashboard() {
               <form onSubmit={handleAddEvent} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <input type="text" placeholder="Event Title" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} required style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
                 <input type="text" placeholder="Date & Time (e.g. Fri, Sep 19 • 7:00 PM)" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} required style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
-                <input type="text" placeholder="Location" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} required style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input type="text" placeholder="Currency (e.g. $, £, €)" value={newEvent.currency} onChange={e => setNewEvent({...newEvent, currency: e.target.value})} required style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
+                  <input type="text" placeholder="Location" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} required style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none' }} />
+                </div>
+                <input type="text" placeholder="Live Location URL (Google Maps link)" value={newEvent.mapLink} onChange={e => setNewEvent({...newEvent, mapLink: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
                 <input type="text" placeholder="Image URL (e.g. /images/weeknd.png)" value={newEvent.image} onChange={e => setNewEvent({...newEvent, image: e.target.value})} required style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
                 <select value={newEvent.category} onChange={e => setNewEvent({...newEvent, category: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: 'none' }}>
                   <option value="Concerts">Concerts</option>
@@ -271,7 +275,7 @@ export default function AdminDashboard() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ margin: 0, color: 'white', fontWeight: 600, fontSize: '15px' }}>{ticket.eventTitle}</p>
                       <p style={{ margin: '4px 0', color: 'var(--primary-color)', fontSize: '13px' }}>👤 {ticket.user?.email || ticket.guestEmail || 'Unknown'}</p>
-                      <p style={{ margin: '2px 0', color: '#aaa', fontSize: '12px' }}>🎟️ {ticket.seats?.length} seat(s) • ${ticket.totalPrice}</p>
+                      <p style={{ margin: '2px 0', color: '#aaa', fontSize: '12px' }}>🎟️ {ticket.seats?.length} seat(s) • {ticket.currency || '$'}{ticket.totalPrice}</p>
                       <p style={{ margin: '2px 0 0', color: '#aaa', fontSize: '11px', wordBreak: 'break-all' }}>{ticket.seats?.join(' | ')}</p>
                       {/* Status badge */}
                       <span style={{

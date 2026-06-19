@@ -95,7 +95,15 @@ export default function EventDetails() {
               <MapPin size={24} color="var(--primary-color)" />
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '16px' }}>{event.location.split('•')[0].trim()}</div>
+              <div style={{ fontWeight: 600, fontSize: '16px' }}>
+                {event.mapLink ? (
+                  <a href={event.mapLink} target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)', textDecoration: 'none' }}>
+                    {event.location.split('•')[0].trim()}
+                  </a>
+                ) : (
+                  event.location.split('•')[0].trim()
+                )}
+              </div>
               <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{event.location.split('•')[1]?.trim() || "Location TBA"}</div>
             </div>
           </div>
@@ -113,16 +121,29 @@ export default function EventDetails() {
         {/* Location Map Placeholder */}
         <div style={{ marginTop: '32px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px' }}>Location</h2>
-          <div style={{ 
-            width: '100%', height: '180px', backgroundColor: '#e0e0e0', borderRadius: '16px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden'
-          }}>
-            {/* Simple static map placeholder visually */}
-            <div style={{ position: 'absolute', inset: 0, opacity: 0.5, backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-            <div style={{ zIndex: 2, padding: '12px', backgroundColor: 'white', borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-               <MapPin size={24} color="var(--primary-color)" />
+          {event.mapLink ? (
+            <a href={event.mapLink} target="_blank" rel="noreferrer" style={{ display: 'block', textDecoration: 'none' }}>
+              <div style={{ 
+                width: '100%', height: '180px', backgroundColor: '#e0e0e0', borderRadius: '16px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', cursor: 'pointer'
+              }}>
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.5, backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                <div style={{ zIndex: 2, padding: '12px', backgroundColor: 'white', borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                   <MapPin size={24} color="#026cdf" />
+                </div>
+              </div>
+            </a>
+          ) : (
+            <div style={{ 
+              width: '100%', height: '180px', backgroundColor: '#e0e0e0', borderRadius: '16px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden'
+            }}>
+              <div style={{ position: 'absolute', inset: 0, opacity: 0.5, backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+              <div style={{ zIndex: 2, padding: '12px', backgroundColor: 'white', borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                 <MapPin size={24} color="var(--primary-color)" />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -136,7 +157,7 @@ export default function EventDetails() {
         <div>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Starting from</div>
           <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--primary-color)' }}>
-            {event.price || '$50.00'}
+            {event.price || `${event.currency || '$'}50.00`}
           </div>
         </div>
         <button

@@ -159,13 +159,18 @@ function TransferModal({ ticketId, seatString, onConfirm, onCancel }) {
   );
 }
 
-function TicketStub({ seatString, ticketId, onTransfer }) {
+function TicketStub({ seatString, ticketId, onTransfer, eventImage }) {
   const [showActions, setShowActions] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const parsed = parseSeat(seatString);
 
   return (
-    <div style={{ marginBottom: '12px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #e8e8e8' }}>
+    <div style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e8e8e8', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+      {/* Event banner on top of ticket */}
+      {eventImage && (
+        <img src={eventImage} alt="Event Banner" style={{ width: '100%', height: '80px', objectFit: 'cover', display: 'block' }} />
+      )}
+      
       {/* Ticket type header */}
       <div style={{ backgroundColor: '#f0f0f0', padding: '10px 16px', fontWeight: 700, fontSize: '13px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
         {parsed.type}
@@ -330,7 +335,13 @@ export default function MyTickets() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#555', fontSize: '13px' }}>
               <MapPin size={14} />
-              <span>{eventMeta?.location || 'Venue'}</span>
+              {eventMeta?.mapLink ? (
+                <a href={eventMeta.mapLink} target="_blank" rel="noreferrer" style={{ color: '#026cdf', textDecoration: 'none', fontWeight: 600 }}>
+                  {eventMeta?.location || 'Venue'}
+                </a>
+              ) : (
+                <span>{eventMeta?.location || 'Venue'}</span>
+              )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#333', fontSize: '13px', fontWeight: 600 }}>
               <TicketIcon size={16} />
@@ -373,6 +384,7 @@ export default function MyTickets() {
               seatString={seatStr}
               ticketId={selectedOrder._id}
               onTransfer={handleTransfer}
+              eventImage={image}
             />
           ))}
           {activeTab === 'Extras' && (

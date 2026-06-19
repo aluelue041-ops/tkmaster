@@ -25,6 +25,10 @@ const TicketSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  currency: {
+    type: String,
+    default: '$'
+  },
   purchaseDate: {
     type: Date,
     default: Date.now

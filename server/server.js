@@ -177,13 +177,14 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
 // 4. Book Tickets
 app.post('/api/tickets/book', authMiddleware, async (req, res) => {
   try {
-    const { eventId, eventTitle, seats, totalPrice } = req.body;
+    const { eventId, eventTitle, seats, totalPrice, currency } = req.body;
     const newTicket = new Ticket({
       user: req.user.id,
       eventId,
       eventTitle,
       seats,
-      totalPrice
+      totalPrice,
+      currency: currency || '$'
     });
 
     await newTicket.save();
