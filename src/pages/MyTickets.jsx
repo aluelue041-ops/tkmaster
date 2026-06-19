@@ -271,13 +271,46 @@ export default function MyTickets() {
     fetchData();
   }, []);
 
+  const fallbackEvents = [
+    {
+      title: "Benson Boone",
+      date: "Fri, Sep 19 • 7:00 PM",
+      location: "Madison Square Garden • New York, NY",
+      image: "/images/benson_boone.png",
+      category: "Concerts"
+    },
+    {
+      title: "The Weeknd: After Hours Tour",
+      date: "Sat, Oct 12 • 8:00 PM",
+      location: "MetLife Stadium • East Rutherford, NJ",
+      image: "/images/weeknd.png",
+      category: "Concerts"
+    },
+    {
+      title: "New York Knicks vs. Boston Celtics",
+      date: "Wed, Nov 5 • 7:30 PM",
+      location: "Madison Square Garden • New York, NY",
+      image: "https://images.unsplash.com/photo-1504450758481-7338eba7524a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      category: "Sports"
+    },
+    {
+      title: "Summer Music Festival",
+      date: "Sat, Oct 12 • 8:00 PM",
+      location: "Various Artists • City Park",
+      image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      category: "Concerts"
+    }
+  ];
+
   const getEventImage = (eventTitle) => {
-    const match = events.find(e => e.title === eventTitle);
+    const safeTitle = eventTitle ? eventTitle.toLowerCase() : '';
+    const match = events.find(e => e.title?.toLowerCase() === safeTitle) || fallbackEvents.find(e => e.title?.toLowerCase() === safeTitle);
     return match?.image || null;
   };
 
   const getEventMeta = (eventTitle) => {
-    return events.find(e => e.title === eventTitle) || null;
+    const safeTitle = eventTitle ? eventTitle.toLowerCase() : '';
+    return events.find(e => e.title?.toLowerCase() === safeTitle) || fallbackEvents.find(e => e.title?.toLowerCase() === safeTitle) || null;
   };
 
   const handleTransfer = async (ticketId, newEmail, name, phone) => {
