@@ -4,10 +4,78 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const sgMail = require('@sendgrid/mail');
 
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
 const Event = require('./models/Event');
+
+// SendGrid setup
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@ticketsmaster.app';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@ticketsmaster.app';
+
+// Email Helpers
+async function sendWelcomeEmail(toEmail) {
+  try {
+    await sgMail.send({
+      to: toEmail,
+      from: FROM_EMAIL,
+      subject: 'Welcome to ticketsmaster! 🎟️',
+      html: `
+        <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
+          <div style="background:#026cdf;padding:32px;text-align:center">
+            <h1 style="color:white;font-style:italic;margin:0;font-size:32px">ticketsmaster</h1>
+          </div>
+          <div style="padding:32px">
+            <h2 style="color:#1a1a1a">Welcome aboard! 🎉</h2>
+            <p style="color:#555;line-height:1.6">Your account has been created successfully. Start discovering and booking tickets for the best live events near you.</p>
+            <a href="https://tkmaster.onrender.com" style="display:inline-block;margin-top:16px;padding:12px 28px;background:#026cdf;color:white;border-radius:8px;text-decoration:none;font-weight:bold">Browse Events</a>
+          </div>
+          <div style="padding:16px 32px;background:#eee;font-size:12px;color:#999;text-align:center">
+            &copy; 2026 ticketsmaster. All rights reserved.
+          </div>
+        </div>
+      `
+    });
+  } catch (err) {
+    console.error('SendGrid welcome email error:', err.response?.body || err.message);
+  }
+}
+
+async function sendBookingConfirmationEmail(toEmail, ticket) {
+  try {
+    const seatsList = ticket.seats.map(s => `<li style="margin:4px 0">${s}</li>`).join('');
+    await sgMail.send({
+      to: toEmail,
+      from: FROM_EMAIL,
+      subject: `Booking Confirmed: ${ticket.eventTitle} 🎟️`,
+      html: `
+        <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
+          <div style="background:#026cdf;padding:32px;text-align:center">
+            <h1 style="color:white;font-style:italic;margin:0;font-size:32px">ticketsmaster</h1>
+          </div>
+          <div style="padding:32px">
+            <h2 style="color:#1a1a1a">Booking Confirmed! ✅</h2>
+            <p style="color:#555">Here are your booking details:</p>
+            <div style="background:white;border-radius:8px;padding:20px;margin:16px 0;border:1px solid #e5e5e5">
+              <p style="margin:0 0 8px"><strong>Event:</strong> ${ticket.eventTitle}</p>
+              <p style="margin:0 0 8px"><strong>Seats:</strong></p>
+              <ul style="margin:0;padding-left:20px;color:#333">${seatsList}</ul>
+              <p style="margin:12px 0 0"><strong>Total Paid:</strong> <span style="color:#026cdf;font-size:18px">$${ticket.totalPrice}</span></p>
+            </div>
+            <p style="color:#888;font-size:13px">Your booking ID: <code>${ticket._id}</code></p>
+          </div>
+          <div style="padding:16px 32px;background:#eee;font-size:12px;color:#999;text-align:center">
+            &copy; 2026 ticketsmaster. All rights reserved.
+          </div>
+        </div>
+      `
+    });
+  } catch (err) {
+    console.error('SendGrid booking email error:', err.response?.body || err.message);
+  }
+}
 
 const app = express();
 
@@ -65,6 +133,9 @@ app.post('/api/auth/register', async (req, res) => {
     const payload = { user: { id: user.id } };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
+    // Send welcome email
+    sendWelcomeEmail(email);
+
     res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
   } catch (err) {
     console.error(err);
@@ -116,6 +187,11 @@ app.post('/api/tickets/book', authMiddleware, async (req, res) => {
     });
 
     await newTicket.save();
+
+    // Send booking confirmation email
+    const user = await User.findById(req.user.id).select('email');
+    if (user) sendBookingConfirmationEmail(user.email, newTicket);
+
     res.json(newTicket);
   } catch (err) {
     console.error(err);
