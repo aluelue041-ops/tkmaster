@@ -157,7 +157,7 @@ export default function EventDetails() {
         <div>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Starting from</div>
           <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--primary-color)' }}>
-            {event.price || `${event.currency || '$'}50.00`}
+            {event.currency || '$'}{event.basePrice || 80}
           </div>
         </div>
         <button

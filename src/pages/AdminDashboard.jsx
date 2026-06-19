@@ -8,7 +8,7 @@ export default function AdminDashboard() {
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
   const [activeTab, setActiveTab] = useState('events'); // events, users, tickets
-  const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', image: '', category: 'Concerts', currency: '$', mapLink: '' });
+  const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '' });
   const [loading, setLoading] = useState(true);
 
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (res.ok) {
         setEvents([data, ...events]);
-        setNewEvent({ title: '', date: '', location: '', image: '', category: 'Concerts', currency: '$', mapLink: '' });
+        setNewEvent({ title: '', date: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '' });
       } else {
         alert(data.error);
       }
@@ -218,6 +218,7 @@ export default function AdminDashboard() {
                 <input type="text" placeholder="Date & Time (e.g. Fri, Sep 19 • 7:00 PM)" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} required style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input type="text" placeholder="Currency (e.g. $, £, €)" value={newEvent.currency} onChange={e => setNewEvent({...newEvent, currency: e.target.value})} required style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
+                  <input type="number" placeholder="Base Price (e.g. 80)" value={newEvent.basePrice} onChange={e => setNewEvent({...newEvent, basePrice: Number(e.target.value)})} required style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
                   <input type="text" placeholder="Location" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} required style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none' }} />
                 </div>
                 <input type="text" placeholder="Live Location URL (Google Maps link)" value={newEvent.mapLink} onChange={e => setNewEvent({...newEvent, mapLink: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />

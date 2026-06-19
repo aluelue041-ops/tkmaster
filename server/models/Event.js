@@ -7,6 +7,7 @@ const EventSchema = new mongoose.Schema({
   image: { type: String, required: true },
   category: { type: String, required: true },
   currency: { type: String, default: '$' },
+  basePrice: { type: Number, default: 80 },
   mapLink: { type: String },
   createdAt: { type: Date, default: Date.now }
 });

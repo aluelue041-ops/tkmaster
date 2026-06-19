@@ -15,13 +15,15 @@ export default function SeatSelection() {
   const [selectedSpecificSeats, setSelectedSpecificSeats] = useState([]);
   const [viewMode, setViewMode] = useState('sections'); // 'sections' or 'seats'
 
+  const basePrice = event?.basePrice || 80;
+
   const sections = [
-    { id: 'pits', name: 'Pits', price: 350, color: '#ff3b30', isGA: true },
-    { id: 'front_standing', name: 'Front Standing', price: 250, color: '#007aff', isGA: true },
-    { id: 'level_1', name: 'Level 1', price: 200, color: '#34c759', isGA: false },
-    { id: 'rear_standing', name: 'Rear Standing', price: 150, color: '#ffcc00', isGA: true },
-    { id: 'level_2', name: 'Level 2', price: 120, color: '#af52de', isGA: false },
-    { id: 'level_5', name: 'Level 5', price: 80, color: '#ff9500', isGA: false },
+    { id: 'pits', name: 'Pits', price: Math.round(basePrice * 4.375), color: '#ff3b30', isGA: true },
+    { id: 'front_standing', name: 'Front Standing', price: Math.round(basePrice * 3.125), color: '#007aff', isGA: true },
+    { id: 'level_1', name: 'Level 1', price: Math.round(basePrice * 2.5), color: '#34c759', isGA: false },
+    { id: 'rear_standing', name: 'Rear Standing', price: Math.round(basePrice * 1.875), color: '#ffcc00', isGA: true },
+    { id: 'level_2', name: 'Level 2', price: Math.round(basePrice * 1.5), color: '#af52de', isGA: false },
+    { id: 'level_5', name: 'Level 5', price: basePrice, color: '#ff9500', isGA: false },
   ];
 
   // Mock rows for seated sections
