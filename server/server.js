@@ -247,7 +247,7 @@ app.get('/api/tickets/my-tickets', authMiddleware, async (req, res) => {
 // 5b. Transfer Own Ticket (Client)
 app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
   try {
-    const { newEmail, name, phone } = req.body;
+    const { newEmail, name, phone, quantity, note, selectedSeat } = req.body;
     const ticket = await Ticket.findById(req.params.id).populate('user', 'email');
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
@@ -259,30 +259,72 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
     const senderEmail = ticket.user ? ticket.user.email : 'A user';
     let newUser = await User.findOne({ email: newEmail });
 
-    if (newUser) {
-      ticket.user = newUser._id;
-      ticket.guestEmail = undefined;
-      ticket.guestName = undefined;
+    let numToTransfer = parseInt(quantity) || 1;
+    if (numToTransfer > ticket.seats.length) numToTransfer = ticket.seats.length;
+
+    let transferredSeats = [];
+    if (numToTransfer === ticket.seats.length) {
+      // Transfer the entire ticket
+      transferredSeats = [...ticket.seats];
+      if (newUser) {
+        ticket.user = newUser._id;
+        ticket.guestEmail = undefined;
+        ticket.guestName = undefined;
+      } else {
+        ticket.user = null; // Remove ownership from original user
+        ticket.guestEmail = newEmail;
+        ticket.guestName = name;
+      }
+      ticket.status = 'Transferred';
+      await ticket.save();
     } else {
-      ticket.user = null; // Remove ownership from original user
-      ticket.guestEmail = newEmail;
-      ticket.guestName = name;
+      // Partial transfer: split the ticket
+      let seatsCopy = [...ticket.seats];
+      let selIdx = seatsCopy.indexOf(selectedSeat);
+      if (selIdx !== -1) {
+        transferredSeats.push(seatsCopy.splice(selIdx, 1)[0]);
+      }
+      while (transferredSeats.length < numToTransfer && seatsCopy.length > 0) {
+        transferredSeats.push(seatsCopy.shift());
+      }
+      
+      const unitPrice = ticket.totalPrice / ticket.seats.length;
+      const transferredPrice = unitPrice * transferredSeats.length;
+      
+      // Update original ticket
+      ticket.seats = seatsCopy;
+      ticket.totalPrice = ticket.totalPrice - transferredPrice;
+      await ticket.save();
+      
+      // Create new ticket for recipient
+      const newTicket = new Ticket({
+        user: newUser ? newUser._id : null,
+        guestEmail: newUser ? undefined : newEmail,
+        guestName: newUser ? undefined : name,
+        eventId: ticket.eventId,
+        eventTitle: ticket.eventTitle,
+        seats: transferredSeats,
+        totalPrice: transferredPrice,
+        currency: ticket.currency,
+        status: 'Transferred'
+      });
+      await newTicket.save();
     }
-    
-    ticket.status = 'Transferred';
-    await ticket.save();
 
     // Send email notification to recipient with QR code
     try {
-      const seatString = ticket.seats && ticket.seats.length > 0 ? ticket.seats.join(', ') : 'General Admission';
+      const seatString = transferredSeats.length > 0 ? transferredSeats.join(', ') : 'General Admission';
       const qrData = encodeURIComponent(`TICKET:${ticket._id}|TO:${newEmail}|SEAT:${seatString}`);
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrData}`;
+
+      const noteHtml = note ? `<div style="background:#fff3cd;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ffeeba"><p style="margin:0;color:#856404;font-size:14px"><strong>Note from sender:</strong><br/>${note}</p></div>` : '';
 
       let emailHtml = `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;border:1px solid #eaeaea;border-radius:12px;overflow:hidden;">
         <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">ticketsmaster</h1></div>
         <div style="padding:32px 24px;background:white;text-align:center;">
-          <h2 style="margin-top:0;">Hi ${name || 'there'}, you've received a ticket! 🎟️</h2>
-          <p style="color:#555;font-size:16px;"><strong>${senderEmail}</strong> has transferred their ticket for <strong>${ticket.eventTitle}</strong> to you.</p>
+          <h2 style="margin-top:0;">Hi ${name || 'there'}, you've received ${transferredSeats.length} ticket(s)! 🎟️</h2>
+          <p style="color:#555;font-size:16px;"><strong>${senderEmail}</strong> has transferred their ticket(s) for <strong>${ticket.eventTitle}</strong> to you.</p>
+          ${noteHtml}
           
           <div style="background:#f8f8f8;padding:24px;border-radius:16px;margin:32px 0;border:1px solid #eee;display:inline-block;">
             <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR OFFICIAL TICKET</p>
@@ -297,7 +339,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
       await sgMail.send({
         to: newEmail,
         from: FROM_EMAIL,
-        subject: `🎟️ You received a ticket for ${ticket.eventTitle}!`,
+        subject: `🎟️ You received ${transferredSeats.length} ticket(s) for ${ticket.eventTitle}!`,
         html: emailHtml
       });
     } catch(e) {
