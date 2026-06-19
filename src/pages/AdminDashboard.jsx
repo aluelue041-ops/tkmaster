@@ -51,6 +51,8 @@ export default function AdminDashboard() {
     fetchData();
   }, [navigate, API]);
 
+  const getEventMeta = (title) => events.find(e => e.title === title) || null;
+
   const handleAddEvent = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
@@ -253,8 +255,18 @@ export default function AdminDashboard() {
             {tickets.length === 0 ? (
               <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No tickets have been sold yet.</p>
             ) : (
-              tickets.map(ticket => (
-                <div key={ticket._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
+              tickets.map(ticket => {
+                const meta = getEventMeta(ticket.eventTitle);
+                return (
+                <div key={ticket._id} style={{ backgroundColor: '#323232', borderRadius: '12px', marginBottom: '12px', overflow: 'hidden' }}>
+                  {/* Event Banner */}
+                  {meta?.image
+                    ? <img src={meta.image} alt={ticket.eventTitle} style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
+                    : <div style={{ width: '100%', height: '80px', background: 'linear-gradient(135deg, #026cdf, #004aad)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600 }}>{ticket.eventTitle}</span>
+                      </div>
+                  }
+                  <div style={{ padding: '14px 16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ margin: 0, color: 'white', fontWeight: 600, fontSize: '15px' }}>{ticket.eventTitle}</p>
@@ -306,7 +318,8 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
