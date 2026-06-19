@@ -14,11 +14,7 @@ const TicketSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  seats: [{
-    row: String,
-    num: Number,
-    price: Number
-  }],
+  seats: [String],
   totalPrice: {
     type: Number,
     required: true
