@@ -29,6 +29,10 @@ function BottomNav() {
     { path: '/account', label: 'My Account', icon: User },
   ];
 
+  if (location.pathname.startsWith('/event/') || location.pathname.startsWith('/seat-selection/')) {
+    return null;
+  }
+
   return (
     <nav className="bottom-nav">
       {navItems.map((item) => {
