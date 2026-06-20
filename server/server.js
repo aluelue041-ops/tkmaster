@@ -59,13 +59,20 @@ async function sendWelcomeEmail(toEmail) {
   }
 }
 
+function formatSeatsForEmail(seats) {
+  return seats.map(s => {
+    return s.replace(/Section:\s*Section/i, 'Section').replace(/Seat Number:/i, 'Seat:');
+  }).join('<br/>');
+}
+
 async function sendBookingConfirmationEmail(toEmail, ticket) {
   try {
     const qrData = `TICKET:${ticket._id}`;
     const qrImageBase64 = await QRCode.toDataURL(qrData);
     const base64Data = qrImageBase64.split(',')[1];
     
-    const seatsList = ticket.seats.map(s => `<li style="margin:4px 0">${s}</li>`).join('');
+    const formattedSeats = formatSeatsForEmail(ticket.seats);
+    
     await sgMail.send({
       to: toEmail,
       from: FROM_EMAIL,
@@ -82,7 +89,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
               <p style="margin:0 0 8px"><strong>Event:</strong> ${ticket.eventTitle}</p>
               <p style="margin:0 0 8px"><strong>Total Paid:</strong> <span style="color:#026cdf;font-size:18px">${ticket.currency || '$'}${ticket.totalPrice}</span></p>
               <p style="margin:0 0 8px"><strong>Seats:</strong></p>
-              <ul style="margin:0;padding-left:20px;color:#333">${seatsList}</ul>
+              <p style="margin:0;color:#333;line-height:1.6">${formattedSeats}</p>
             </div>
             <div style="background:#f8f8f8;padding:24px;border-radius:16px;margin:24px 0;border:1px solid #eee;text-align:center">
               <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR TICKET QR CODE</p>
@@ -346,7 +353,8 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
 
     // Send email notification to recipient with QR code
     try {
-      const seatString = transferredSeats.length > 0 ? transferredSeats.join(', ') : 'General Admission';
+      const cleanSeats = transferredSeats.map(s => s.replace(/Section:\s*Section/i, 'Section').replace(/Seat Number:/i, 'Seat:'));
+      const seatString = cleanSeats.length > 0 ? cleanSeats.join('<br/>') : 'General Admission';
       const qrData = `TICKET:${ticket._id}`;
       const qrImageBase64 = await QRCode.toDataURL(qrData);
       const base64Data = qrImageBase64.split(',')[1];
