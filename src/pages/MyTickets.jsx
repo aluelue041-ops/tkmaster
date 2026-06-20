@@ -434,6 +434,14 @@ function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, even
           <div style={{ fontSize: '22px', fontWeight: 800, color: '#111' }}>{parsed.seat}</div>
         </div>
       </div>
+      
+      {/* Order Number Row */}
+      <div style={{ backgroundColor: 'white', padding: '0 16px 16px', borderBottom: '1px dashed #eee' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9f9f9', padding: '10px 14px', borderRadius: '8px' }}>
+          <span style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '0.5px' }}>BOOKING ID</span>
+          <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, fontFamily: 'monospace' }}>{ticketId}</span>
+        </div>
+      </div>
 
       {/* Action buttons - shown on tap */}
       {showActions && (

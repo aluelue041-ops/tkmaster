@@ -362,6 +362,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
             <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR OFFICIAL TICKET</p>
             <img src="${qrUrl}" alt="Ticket QR Code" width="200" height="200" style="display:block;margin:0 auto;" />
             <p style="font-size:13px;color:#333;margin:16px 0 0;font-weight:600;">Seats: ${seatString}</p>
+            <p style="font-size:12px;color:#888;margin:8px 0 0;">Booking ID: <code>${ticket._id}</code></p>
           </div>
 
           <p style="color:#666;font-size:14px;line-height:1.5;">Show this QR code at the entrance to verify your ticket.<br/>You don't need to create an account to use this ticket!</p>
