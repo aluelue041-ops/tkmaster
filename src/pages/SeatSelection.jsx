@@ -204,7 +204,10 @@ export default function SeatSelection() {
         })
       });
 
-      if (!res.ok) throw new Error('Failed to book tickets');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Server error (${res.status})`);
+      }
       
       const numTickets = selectedSection.isGA ? quantity : selectedSpecificSeats.length;
       alert(`Successfully booked ${numTickets} ticket(s) in ${selectedSection.name} for $${totalPrice}!`);
