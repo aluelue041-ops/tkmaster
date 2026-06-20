@@ -65,13 +65,26 @@ function formatSeatsForEmail(seats) {
   }).join('<br/>');
 }
 
+async function generateQRAndUpload(ticketId) {
+  // Generate QR as PNG buffer
+  const qrBuffer = await QRCode.toBuffer(`TICKET:${ticketId}`, { width: 300, margin: 2 });
+  // Upload to Cloudinary and return a permanent https URL
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'ticketsmaster/qrcodes', public_id: `qr_${ticketId}`, resource_type: 'image', overwrite: true },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+    stream.end(qrBuffer);
+  });
+}
+
 async function sendBookingConfirmationEmail(toEmail, ticket) {
   try {
-    const qrData = `TICKET:${ticket._id}`;
-    const qrImageBase64 = await QRCode.toDataURL(qrData, { width: 250, margin: 2 });
-    
+    const qrUrl = await generateQRAndUpload(ticket._id);
     const formattedSeats = formatSeatsForEmail(ticket.seats);
-    
     await sgMail.send({
       to: toEmail,
       from: FROM_EMAIL,
@@ -92,7 +105,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
             </div>
             <div style="background:#f8f8f8;padding:24px;border-radius:16px;margin:24px 0;border:1px solid #eee;text-align:center">
               <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR TICKET QR CODE</p>
-              <img src="${qrImageBase64}" alt="Ticket QR Code" style="width:200px;height:200px;display:block;margin:0 auto;" />
+              <img src="${qrUrl}" alt="Ticket QR Code" width="200" height="200" style="display:block;margin:0 auto;" />
               <p style="font-size:12px;color:#888;margin:12px 0 0">Show this QR at the entrance</p>
             </div>
             <p style="color:#888;font-size:13px">Booking ID: <code>${ticket._id}</code></p>
@@ -347,8 +360,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
     try {
       const cleanSeats = transferredSeats.map(s => s.replace(/Section:\s*Section/i, 'Section').replace(/Seat Number:/i, 'Seat:'));
       const seatString = cleanSeats.length > 0 ? cleanSeats.join('<br/>') : 'General Admission';
-      const qrData = `TICKET:${ticket._id}`;
-      const qrImageBase64 = await QRCode.toDataURL(qrData, { width: 250, margin: 2 });
+      const qrUrl = await generateQRAndUpload(ticket._id);
 
       const noteHtml = note ? `<div style="background:#fff3cd;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ffeeba"><p style="margin:0;color:#856404;font-size:14px"><strong>Note from sender:</strong><br/>${note}</p></div>` : '';
 
@@ -361,7 +373,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
           
           <div style="background:#f8f8f8;padding:24px;border-radius:16px;margin:32px 0;border:1px solid #eee;display:inline-block;">
             <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR OFFICIAL TICKET</p>
-            <img src="${qrImageBase64}" alt="Ticket QR Code" style="width:200px;height:200px;display:block;margin:0 auto;" />
+            <img src="${qrUrl}" alt="Ticket QR Code" width="200" height="200" style="display:block;margin:0 auto;" />
             <p style="font-size:13px;color:#333;margin:16px 0 0;font-weight:600;">Seats: ${seatString}</p>
           </div>
 
