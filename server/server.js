@@ -60,8 +60,8 @@ async function sendWelcomeEmail(toEmail) {
 
 async function sendBookingConfirmationEmail(toEmail, ticket) {
   try {
-    const qrData = encodeURIComponent(`TICKET:${ticket._id}|EVENT:${ticket.eventTitle}|SEATS:${ticket.seats.join('; ')}`);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrData}`;
+    const qrData = encodeURIComponent(`TICKET:${ticket._id}`);
+    const qrUrl = `https://quickchart.io/qr?size=250x250&text=${qrData}`;
     const seatsList = ticket.seats.map(s => `<li style="margin:4px 0">${s}</li>`).join('');
     await sgMail.send({
       to: toEmail,
@@ -100,6 +100,29 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
 }
 
 const app = express();
+const http = require('http');
+const { Server } = require('socket.io');
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"]
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+  
+  socket.on('join', (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined room`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
 
 // Middleware
 app.use(cors({
@@ -314,8 +337,8 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
     // Send email notification to recipient with QR code
     try {
       const seatString = transferredSeats.length > 0 ? transferredSeats.join(', ') : 'General Admission';
-      const qrData = encodeURIComponent(`TICKET:${ticket._id}|TO:${newEmail}|SEAT:${seatString}`);
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrData}`;
+      const qrData = encodeURIComponent(`TICKET:${ticket._id}`);
+      const qrUrl = `https://quickchart.io/qr?size=250x250&text=${qrData}`;
 
       const noteHtml = note ? `<div style="background:#fff3cd;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ffeeba"><p style="margin:0;color:#856404;font-size:14px"><strong>Note from sender:</strong><br/>${note}</p></div>` : '';
 
@@ -344,6 +367,10 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
       });
     } catch(e) {
       console.error('Email error during transfer:', e.message);
+    }
+
+    if (newUser) {
+      io.to(newUser._id.toString()).emit('ticket_received', { message: `You received ${transferredSeats.length} ticket(s) for ${ticket.eventTitle} from ${senderEmail}!` });
     }
 
     res.json({ success: true, transferredTo: newEmail });
@@ -407,6 +434,35 @@ app.put('/api/tickets/:id/sell', authMiddleware, async (req, res) => {
     }
 
     res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 5d. Buy Resale Ticket (Client)
+app.post('/api/tickets/:id/buy-resale', authMiddleware, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id).populate('user', 'email');
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    if (ticket.status !== 'For Sale') return res.status(400).json({ error: 'Ticket is not for sale' });
+    
+    const sellerId = ticket.user ? ticket.user._id.toString() : null;
+    
+    ticket.user = req.user.id;
+    ticket.status = 'Active';
+    ticket.totalPrice = ticket.resalePrice * ticket.seats.length;
+    ticket.resalePrice = undefined;
+    await ticket.save();
+
+    // Notify seller
+    if (sellerId) {
+      io.to(sellerId).emit('ticket_sold', { message: `Your resale ticket for ${ticket.eventTitle} has been sold!` });
+    }
+    // Notify buyer
+    io.to(req.user.id).emit('ticket_bought', { message: `You successfully bought a resale ticket for ${ticket.eventTitle}!` });
+
+    res.json(ticket);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -552,6 +608,10 @@ app.put('/api/tickets/:id/approve', authMiddleware, adminMiddleware, async (req,
       } catch(e) { console.error('Email error:', e.message); }
     }
 
+    if (updatedTicket.user) {
+      io.to(updatedTicket.user._id.toString()).emit('ticket_approved', { message: `Your ticket for ${ticket.eventTitle} has been approved!` });
+    }
+
     res.json(updatedTicket);
   } catch (err) {
     console.error(err);
@@ -587,6 +647,10 @@ app.put('/api/tickets/:id/reject', authMiddleware, adminMiddleware, async (req, 
       } catch(e) { console.error('Email error:', e.message); }
     }
 
+    if (updatedTicket.user) {
+      io.to(updatedTicket.user._id.toString()).emit('ticket_rejected', { message: `Your ticket for ${ticket.eventTitle} has been rejected.` });
+    }
+
     res.json(updatedTicket);
   } catch (err) {
     console.error(err);
@@ -616,4 +680,4 @@ app.put('/api/tickets/:id/transfer', authMiddleware, adminMiddleware, async (req
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

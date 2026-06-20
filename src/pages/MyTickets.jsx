@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download } from 'lucide-react';
+import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { jsPDF } from 'jspdf';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -64,7 +65,7 @@ function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, 
   };
 
   if (transferComplete) {
-    const qrData = encodeURIComponent(`TICKET:${ticketId}|TO:${email}|SEAT:${seatString}`);
+    const qrData = encodeURIComponent(`TICKET:${ticketId}`);
     return (
       <div style={{
         position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
@@ -83,7 +84,7 @@ function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, 
           </p>
           
           <div style={{ padding: '16px', backgroundColor: '#f8f8f8', borderRadius: '16px', marginBottom: '24px', border: '1px solid #eee' }}>
-            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`} alt="Ticket QR Code" style={{ width: '180px', height: '180px', margin: '0 auto', display: 'block' }} />
+            <img src={`https://quickchart.io/qr?size=180x180&text=${qrData}`} alt="Ticket QR Code" style={{ width: '180px', height: '180px', margin: '0 auto', display: 'block' }} />
             <p style={{ fontSize: '11px', color: '#888', marginTop: '12px', fontWeight: 600 }}>SCAN TO VERIFY TRANSFER</p>
           </div>
 
@@ -381,8 +382,8 @@ function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, even
     doc.text(String(ticketId), 80, 102, { maxWidth: 80 });
 
     // QR code box on the right
-    const qrData = encodeURIComponent(`TICKET:${ticketId}|SECTION:${parsed.section}|ROW:${parsed.row}|SEAT:${parsed.seat}`);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
+    const qrData = encodeURIComponent(`TICKET:${ticketId}`);
+    const qrUrl = `https://quickchart.io/qr?size=200x200&text=${qrData}`;
     doc.addImage(qrUrl, 'PNG', W - 52, 32, 38, 38);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6);
@@ -468,6 +469,21 @@ function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, even
           >
             <Download size={22} color="#026cdf" />
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#026cdf' }}>Save PDF</span>
+          </button>
+
+          <button
+            onClick={() => {
+              toast.success('Ticket added to Wallet!');
+              setShowActions(false);
+            }}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+              backgroundColor: 'black', border: 'none', borderRadius: '12px',
+              padding: '14px 20px', cursor: 'pointer', flex: 1, maxWidth: '120px'
+            }}
+          >
+            <Smartphone size={22} color="white" />
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'white' }}>Wallet</span>
           </button>
 
           <button

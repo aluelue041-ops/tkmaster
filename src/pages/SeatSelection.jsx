@@ -214,6 +214,34 @@ export default function SeatSelection() {
     }
   };
 
+  const [resaleLoading, setResaleLoading] = useState(null);
+
+  const handleResaleCheckout = async (ticketId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please sign in to book tickets!');
+      navigate('/signin');
+      return;
+    }
+
+    setResaleLoading(ticketId);
+    try {
+      const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API}/api/tickets/${ticketId}/buy-resale`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) throw new Error('Failed to buy resale ticket');
+      
+      // Real-time toast will handle the success message from App.jsx socket
+      navigate('/mytickets');
+    } catch (err) {
+      alert(err.message);
+      setResaleLoading(null);
+    }
+  };
+
   return (
     <div className="page seat-selection-page" style={{ paddingBottom: '120px', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       
@@ -403,10 +431,11 @@ export default function SeatSelection() {
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontWeight: 800, fontSize: '18px', color: '#111' }}>{ticket.currency || '$'}{ticket.resalePrice} <span style={{ fontSize: '12px', fontWeight: 400, color: '#888' }}>ea</span></div>
                     <button 
-                      onClick={() => alert('Resale checkout coming soon!')}
-                      style={{ marginTop: '8px', padding: '6px 16px', backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                      onClick={() => handleResaleCheckout(ticket._id)}
+                      disabled={resaleLoading === ticket._id}
+                      style={{ marginTop: '8px', padding: '6px 16px', backgroundColor: resaleLoading === ticket._id ? '#e0e0e0' : '#026cdf', color: resaleLoading === ticket._id ? '#999' : 'white', border: 'none', borderRadius: '20px', fontSize: '13px', fontWeight: 700, cursor: resaleLoading === ticket._id ? 'not-allowed' : 'pointer' }}
                     >
-                      Buy Now
+                      {resaleLoading === ticket._id ? 'Buying...' : 'Buy Now'}
                     </button>
                   </div>
                 </div>

@@ -5,6 +5,12 @@ import {
   Settings, Bell, ChevronRight, Share, Heart as HeartOutline, MoreVertical, CheckCircle
 } from 'lucide-react';
 import './App.css';
+import { io } from 'socket.io-client';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export const socket = io(API);
 
 // Pages
 import Discover from './pages/Discover';
@@ -89,9 +95,39 @@ function Header() {
 }
 
 function App() {
+  React.useEffect(() => {
+    const handleAuth = () => {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          if (user && user.id) {
+            socket.emit('join', user.id);
+          }
+        } catch (e) {}
+      }
+    };
+    handleAuth();
+
+    socket.on('ticket_bought', (data) => toast.success(data.message));
+    socket.on('ticket_sold', (data) => toast.info(data.message));
+    socket.on('ticket_received', (data) => toast.success(data.message));
+    socket.on('ticket_approved', (data) => toast.success(data.message));
+    socket.on('ticket_rejected', (data) => toast.error(data.message));
+
+    return () => {
+      socket.off('ticket_bought');
+      socket.off('ticket_sold');
+      socket.off('ticket_received');
+      socket.off('ticket_approved');
+      socket.off('ticket_rejected');
+    };
+  }, []);
+
   return (
     <Router>
       <div className="app-container">
+        <ToastContainer position="top-center" autoClose={4000} />
         <Header />
         <main className="main-content">
           <Routes>
