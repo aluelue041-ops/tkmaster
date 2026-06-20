@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const sgMail = require('@sendgrid/mail');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+const QRCode = require('qrcode');
 
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
@@ -60,8 +61,10 @@ async function sendWelcomeEmail(toEmail) {
 
 async function sendBookingConfirmationEmail(toEmail, ticket) {
   try {
-    const qrData = encodeURIComponent(`TICKET:${ticket._id}`);
-    const qrUrl = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${qrData}`;
+    const qrData = `TICKET:${ticket._id}`;
+    const qrImageBase64 = await QRCode.toDataURL(qrData);
+    const base64Data = qrImageBase64.split(',')[1];
+    
     const seatsList = ticket.seats.map(s => `<li style="margin:4px 0">${s}</li>`).join('');
     await sgMail.send({
       to: toEmail,
@@ -83,7 +86,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
             </div>
             <div style="background:#f8f8f8;padding:24px;border-radius:16px;margin:24px 0;border:1px solid #eee;text-align:center">
               <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR TICKET QR CODE</p>
-              <img src="${qrUrl}" alt="Ticket QR Code" style="width:200px;height:200px;display:block;margin:0 auto;" />
+              <img src="cid:ticket-qr" alt="Ticket QR Code" style="width:200px;height:200px;display:block;margin:0 auto;" />
               <p style="font-size:12px;color:#888;margin:12px 0 0">Show this QR at the entrance</p>
             </div>
             <p style="color:#888;font-size:13px">Booking ID: <code>${ticket._id}</code></p>
@@ -92,7 +95,14 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
             &copy; 2026 ticketsmaster. All rights reserved.
           </div>
         </div>
-      `
+      `,
+      attachments: [{
+        content: base64Data,
+        filename: 'qrcode.png',
+        type: 'image/png',
+        disposition: 'inline',
+        content_id: 'ticket-qr'
+      }]
     });
   } catch (err) {
     console.error('SendGrid booking email error:', err.response?.body || err.message);
@@ -337,8 +347,9 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
     // Send email notification to recipient with QR code
     try {
       const seatString = transferredSeats.length > 0 ? transferredSeats.join(', ') : 'General Admission';
-      const qrData = encodeURIComponent(`TICKET:${ticket._id}`);
-      const qrUrl = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${qrData}`;
+      const qrData = `TICKET:${ticket._id}`;
+      const qrImageBase64 = await QRCode.toDataURL(qrData);
+      const base64Data = qrImageBase64.split(',')[1];
 
       const noteHtml = note ? `<div style="background:#fff3cd;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ffeeba"><p style="margin:0;color:#856404;font-size:14px"><strong>Note from sender:</strong><br/>${note}</p></div>` : '';
 
@@ -351,7 +362,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
           
           <div style="background:#f8f8f8;padding:24px;border-radius:16px;margin:32px 0;border:1px solid #eee;display:inline-block;">
             <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR OFFICIAL TICKET</p>
-            <img src="${qrUrl}" alt="Ticket QR Code" style="width:200px;height:200px;display:block;margin:0 auto;" />
+            <img src="cid:ticket-qr" alt="Ticket QR Code" style="width:200px;height:200px;display:block;margin:0 auto;" />
             <p style="font-size:13px;color:#333;margin:16px 0 0;font-weight:600;">Seats: ${seatString}</p>
           </div>
 
@@ -363,7 +374,14 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
         to: newEmail,
         from: FROM_EMAIL,
         subject: `🎟️ You received ${transferredSeats.length} ticket(s) for ${ticket.eventTitle}!`,
-        html: emailHtml
+        html: emailHtml,
+        attachments: [{
+          content: base64Data,
+          filename: 'qrcode.png',
+          type: 'image/png',
+          disposition: 'inline',
+          content_id: 'ticket-qr'
+        }]
       });
     } catch(e) {
       console.error('Email error during transfer:', e.message);
