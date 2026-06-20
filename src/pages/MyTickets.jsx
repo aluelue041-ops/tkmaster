@@ -435,14 +435,6 @@ function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, even
         </div>
       </div>
       
-      {/* Order Number Row */}
-      <div style={{ backgroundColor: 'white', padding: '0 16px 16px', borderBottom: '1px dashed #eee' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9f9f9', padding: '10px 14px', borderRadius: '8px' }}>
-          <span style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '0.5px' }}>BOOKING ID</span>
-          <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, fontFamily: 'monospace' }}>{ticketId}</span>
-        </div>
-      </div>
-
       {/* Action buttons - shown on tap */}
       {showActions && (
         <div style={{ backgroundColor: '#fafafa', borderTop: '1px solid #eee', display: 'flex', gap: '12px', padding: '12px 16px', justifyContent: 'center' }}>
@@ -720,7 +712,12 @@ export default function MyTickets() {
 
         {/* Ticket Stubs */}
         <div style={{ padding: '16px' }}>
-          <p style={{ color: '#888', fontSize: '13px', marginBottom: '12px' }}>x{selectedOrder.seats.length} Tickets</p>
+          <p style={{ color: '#888', fontSize: '13px', marginBottom: '4px' }}>x{selectedOrder.seats.length} Tickets</p>
+          {/* Single Booking ID for the whole order */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f4f4', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px' }}>
+            <span style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '0.5px' }}>BOOKING ID</span>
+            <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, fontFamily: 'monospace' }}>{selectedOrder._id}</span>
+          </div>
           {activeTab === 'Tickets' && selectedOrder.seats.map((seatStr, idx) => (
             <TicketStub
               key={idx}
