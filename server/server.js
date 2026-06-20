@@ -83,7 +83,13 @@ async function generateQRAndUpload(ticketId) {
 
 async function sendBookingConfirmationEmail(toEmail, ticket) {
   try {
-    const qrUrl = await generateQRAndUpload(ticket._id);
+    let qrUrl;
+    try {
+      qrUrl = await generateQRAndUpload(ticket._id);
+    } catch (qrErr) {
+      console.error('QR upload failed, using fallback:', qrErr.message);
+      qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('TICKET:' + ticket._id)}`;
+    }
     const formattedSeats = formatSeatsForEmail(ticket.seats);
     await sgMail.send({
       to: toEmail,
@@ -360,7 +366,14 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
     try {
       const cleanSeats = transferredSeats.map(s => s.replace(/Section:\s*Section/i, 'Section').replace(/Seat Number:/i, 'Seat:'));
       const seatString = cleanSeats.length > 0 ? cleanSeats.join('<br/>') : 'General Admission';
-      const qrUrl = await generateQRAndUpload(ticket._id);
+      
+      let qrUrl;
+      try {
+        qrUrl = await generateQRAndUpload(ticket._id);
+      } catch (qrErr) {
+        console.error('QR upload failed, using fallback:', qrErr.message);
+        qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('TICKET:' + ticket._id)}`;
+      }
 
       const noteHtml = note ? `<div style="background:#fff3cd;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ffeeba"><p style="margin:0;color:#856404;font-size:14px"><strong>Note from sender:</strong><br/>${note}</p></div>` : '';
 
