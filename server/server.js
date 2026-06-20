@@ -65,31 +65,10 @@ function formatSeatsForEmail(seats) {
   }).join('<br/>');
 }
 
-async function generateQRAndUpload(ticketId) {
-  // Generate QR as PNG buffer
-  const qrBuffer = await QRCode.toBuffer(`TICKET:${ticketId}`, { width: 300, margin: 2 });
-  // Upload to Cloudinary and return a permanent https URL
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: 'ticketsmaster/qrcodes', public_id: `qr_${ticketId}`, resource_type: 'image', overwrite: true },
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result.secure_url);
-      }
-    );
-    stream.end(qrBuffer);
-  });
-}
-
 async function sendBookingConfirmationEmail(toEmail, ticket) {
   try {
-    let qrUrl;
-    try {
-      qrUrl = await generateQRAndUpload(ticket._id);
-    } catch (qrErr) {
-      console.error('QR upload failed, using fallback:', qrErr.message);
-      qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('TICKET:' + ticket._id)}`;
-    }
+    const qrData = encodeURIComponent(`TICKET:${ticket._id}`);
+    const qrUrl = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${qrData}`;
     const formattedSeats = formatSeatsForEmail(ticket.seats);
     await sgMail.send({
       to: toEmail,
@@ -367,13 +346,8 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
       const cleanSeats = transferredSeats.map(s => s.replace(/Section:\s*Section/i, 'Section').replace(/Seat Number:/i, 'Seat:'));
       const seatString = cleanSeats.length > 0 ? cleanSeats.join('<br/>') : 'General Admission';
       
-      let qrUrl;
-      try {
-        qrUrl = await generateQRAndUpload(ticket._id);
-      } catch (qrErr) {
-        console.error('QR upload failed, using fallback:', qrErr.message);
-        qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('TICKET:' + ticket._id)}`;
-      }
+      const qrData = encodeURIComponent(`TICKET:${ticket._id}`);
+      const qrUrl = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${qrData}`;
 
       const noteHtml = note ? `<div style="background:#fff3cd;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ffeeba"><p style="margin:0;color:#856404;font-size:14px"><strong>Note from sender:</strong><br/>${note}</p></div>` : '';
 
