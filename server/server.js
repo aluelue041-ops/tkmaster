@@ -123,7 +123,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
       `
     });
   } catch (err) {
-    console.error('SendGrid booking email error:', err.response?.body || err.message);
+    console.error('SendGrid booking email error:', err.response ? err.response.body : err);
   }
 }
 
@@ -401,7 +401,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
         html: emailHtml
       });
     } catch(e) {
-      console.error('Email error during transfer:', e.message);
+      console.error('Email error during transfer:', e.response ? e.response.body : e);
     }
 
     if (newUser) {
