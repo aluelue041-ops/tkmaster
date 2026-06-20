@@ -28,6 +28,10 @@ function parseSeat(seatString) {
   if (sectionName.includes('-') && !sectionName.toLowerCase().includes('vip')) {
     sectionName = sectionName.split('-').pop().trim();
   }
+  
+  if (sectionName.toLowerCase().startsWith('section ')) {
+    sectionName = sectionName.replace(/section\s+/i, '').trim();
+  }
 
   return {
     section: sectionName,
