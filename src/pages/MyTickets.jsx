@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -65,7 +67,6 @@ function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, 
   };
 
   if (transferComplete) {
-    const qrData = encodeURIComponent(`TICKET:${ticketId}`);
     return (
       <div style={{
         position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
@@ -84,7 +85,9 @@ function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, 
           </p>
           
           <div style={{ padding: '16px', backgroundColor: '#f8f8f8', borderRadius: '16px', marginBottom: '24px', border: '1px solid #eee' }}>
-            <img src={`https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl=${qrData}`} alt="Ticket QR Code" style={{ width: '180px', height: '180px', margin: '0 auto', display: 'block' }} />
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <QRCodeSVG value={`TICKET:${ticketId}`} size={180} />
+            </div>
             <p style={{ fontSize: '11px', color: '#888', marginTop: '12px', fontWeight: 600 }}>SCAN TO VERIFY TRANSFER</p>
           </div>
 
@@ -304,7 +307,7 @@ function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, even
   const [showSellModal, setShowSellModal] = useState(false);
   const parsed = parseSeat(seatString);
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     // A5 landscape: 210mm x 148mm — plenty of room
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a5' });
     const W = 210;
@@ -382,9 +385,9 @@ function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, even
     doc.text(String(ticketId), 80, 102, { maxWidth: 80 });
 
     // QR code box on the right
-    const qrData = encodeURIComponent(`TICKET:${ticketId}`);
-    const qrUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${qrData}`;
-    doc.addImage(qrUrl, 'PNG', W - 52, 32, 38, 38);
+    const rawQrData = `TICKET:${ticketId}`;
+    const qrDataUrl = await QRCode.toDataURL(rawQrData, { width: 200, margin: 1 });
+    doc.addImage(qrDataUrl, 'PNG', W - 52, 32, 38, 38);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6);
     doc.setTextColor(160, 160, 160);
