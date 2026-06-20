@@ -84,7 +84,7 @@ function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, 
           </p>
           
           <div style={{ padding: '16px', backgroundColor: '#f8f8f8', borderRadius: '16px', marginBottom: '24px', border: '1px solid #eee' }}>
-            <img src={`https://quickchart.io/qr?size=180x180&text=${qrData}`} alt="Ticket QR Code" style={{ width: '180px', height: '180px', margin: '0 auto', display: 'block' }} />
+            <img src={`https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl=${qrData}`} alt="Ticket QR Code" style={{ width: '180px', height: '180px', margin: '0 auto', display: 'block' }} />
             <p style={{ fontSize: '11px', color: '#888', marginTop: '12px', fontWeight: 600 }}>SCAN TO VERIFY TRANSFER</p>
           </div>
 
@@ -383,7 +383,7 @@ function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, even
 
     // QR code box on the right
     const qrData = encodeURIComponent(`TICKET:${ticketId}`);
-    const qrUrl = `https://quickchart.io/qr?size=200x200&text=${qrData}`;
+    const qrUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${qrData}`;
     doc.addImage(qrUrl, 'PNG', W - 52, 32, 38, 38);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6);
