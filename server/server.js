@@ -68,7 +68,7 @@ function formatSeatsForEmail(seats) {
 async function sendBookingConfirmationEmail(toEmail, ticket) {
   try {
     const qrData = encodeURIComponent(`TICKET:${ticket._id}`);
-    const qrUrl = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${qrData}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrData}`;
     const formattedSeats = formatSeatsForEmail(ticket.seats);
     await sgMail.send({
       to: toEmail,
@@ -347,7 +347,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
       const seatString = cleanSeats.length > 0 ? cleanSeats.join('<br/>') : 'General Admission';
       
       const qrData = encodeURIComponent(`TICKET:${ticket._id}`);
-      const qrUrl = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${qrData}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrData}`;
 
       const noteHtml = note ? `<div style="background:#fff3cd;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ffeeba"><p style="margin:0;color:#856404;font-size:14px"><strong>Note from sender:</strong><br/>${note}</p></div>` : '';
 
