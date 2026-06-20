@@ -17,9 +17,9 @@ services:
       - key: SENDGRID_API_KEY
         sync: false
       - key: FROM_EMAIL
-        value: info.ticketsmasters@gmail.com
+        sync: false
       - key: ADMIN_EMAIL
-        value: info.ticketsmasters@gmail.com
+        sync: false
 
   # ─── Frontend: React Static Site ────────────────────────────────────────────
   - type: web
