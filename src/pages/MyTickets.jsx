@@ -689,24 +689,27 @@ export default function MyTickets() {
         </div>
 
         {/* Event Info (Dark section) */}
-        <div style={{ backgroundColor: '#222', padding: '16px 20px 0' }}>
-          <h2 style={{ fontSize: '22px', fontWeight: 900, margin: '0 0 16px', textTransform: 'uppercase', lineHeight: 1.2, color: 'white' }}>{selectedOrder.eventTitle}</h2>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div style={{ color: '#aaa', fontSize: '13px' }}>
-              {eventMeta?.location || 'Venue'}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'white', fontSize: '14px', fontWeight: 700 }}>
-              <TicketIcon size={18} color="#ccc" />
-              <span>x{selectedOrder.seats.length}</span>
+        <div style={{ backgroundColor: '#222' }}>
+          {/* Padded content: title + venue */}
+          <div style={{ padding: '16px 20px 20px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 900, margin: '0 0 16px', textTransform: 'uppercase', lineHeight: 1.2, color: 'white' }}>{selectedOrder.eventTitle}</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ color: '#aaa', fontSize: '13px' }}>
+                {eventMeta?.location || 'Venue'}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'white', fontSize: '14px', fontWeight: 700 }}>
+                <TicketIcon size={18} color="#ccc" />
+                <span>x{selectedOrder.seats.length}</span>
+              </div>
             </div>
           </div>
 
-          {/* View Tickets CTA */}
-          <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', padding: '14px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          {/* Full-bleed View Tickets button — no side padding */}
+          <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', margin: 0, padding: '14px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxSizing: 'border-box' }}>
             <span style={{ fontFamily: 'monospace', letterSpacing: '-1px', marginRight: '4px', opacity: 0.8 }}>|||||</span> View Tickets
           </button>
         </div>
+
 
         {/* White background section below */}
         <div style={{ backgroundColor: 'white' }}>
