@@ -44,29 +44,6 @@ function parseSeat(seatString) {
   };
 }
 
-const ThreadsEmbed = ({ postId, username }) => {
-  useEffect(() => {
-    const existingScript = document.getElementById('threads-embed-script');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.id = 'threads-embed-script';
-      script.src = 'https://www.threads.net/embed.js';
-      script.async = true;
-      document.body.appendChild(script);
-    } else if (window.threads && window.threads.process) {
-      window.threads.process();
-    }
-  }, []);
-
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', margin: '20px auto', width: '100%', maxWidth: '400px', backgroundColor: 'white', borderRadius: '12px', padding: '10px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-      <blockquote className="threads-embed" data-text-post-id={postId}>
-        <a href={`https://www.threads.net/@${username}/post/${postId}`}>Post on Threads</a>
-      </blockquote>
-    </div>
-  );
-};
-
 // Custom Transfer Modal — no browser prompt
 function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCancel }) {
   const [name, setName] = useState('');
@@ -741,21 +718,30 @@ export default function MyTickets() {
             <span style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '0.5px' }}>BOOKING ID</span>
             <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, fontFamily: 'monospace' }}>{selectedOrder._id}</span>
           </div>
-          {activeTab === 'Tickets' && selectedOrder.seats.map((seatStr, idx) => (
-            <TicketStub
-              key={idx}
-              seatString={seatStr}
-              ticketId={selectedOrder._id}
-              onTransfer={handleTransfer}
-              onSell={handleSell}
-              eventImage={image}
-              eventTitle={selectedOrder.eventTitle}
-              currency={selectedOrder.currency}
-              totalPrice={selectedOrder.totalPrice}
-              status={selectedOrder.status}
-              allSeats={selectedOrder.seats}
-            />
-          ))}
+          {activeTab === 'Tickets' && (
+            ['Approved', 'Active', 'Transferred'].includes(selectedOrder.status) ? (
+              selectedOrder.seats.map((seatStr, idx) => (
+                <TicketStub
+                  key={idx}
+                  seatString={seatStr}
+                  ticketId={selectedOrder._id}
+                  onTransfer={handleTransfer}
+                  onSell={handleSell}
+                  eventImage={image}
+                  eventTitle={selectedOrder.eventTitle}
+                  currency={selectedOrder.currency}
+                  totalPrice={selectedOrder.totalPrice}
+                  status={selectedOrder.status}
+                  allSeats={selectedOrder.seats}
+                />
+              ))
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: '#fff8e1', borderRadius: '12px', border: '1px solid #ffe082', marginTop: '16px' }}>
+                <p style={{ margin: 0, color: '#f57f17', fontWeight: 600, fontSize: '15px' }}>⏳ Pending Approval</p>
+                <p style={{ margin: '8px 0 0', color: '#666', fontSize: '13px', lineHeight: 1.5 }}>Your ticket order is currently being processed. The ticket contents and QR code will be available here once approved by the administrator.</p>
+              </div>
+            )
+          )}
           {activeTab === 'Extras' && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#aaa' }}>No extras available for this order.</div>
           )}
@@ -770,8 +756,6 @@ export default function MyTickets() {
       <div style={{ backgroundColor: 'white', padding: '20px 16px', borderBottom: '1px solid #eee' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>My Tickets</h1>
       </div>
-
-      <ThreadsEmbed postId="DZ0yRFDili6" username="hellenawarren_" />
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px', color: '#aaa' }}>Loading tickets...</div>
