@@ -170,7 +170,8 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ limit: '5mb', extended: true }));
-app.use(mongoSanitize()); // Strips $ and . operators from req.body, params, query
+// Removed express-mongo-sanitize due to "Cannot set property query" TypeError in production
+
 
 
 // Database Connection
