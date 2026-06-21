@@ -704,9 +704,11 @@ export default function MyTickets() {
             </div>
           </div>
 
-          {/* Full-bleed View Tickets button — no side padding */}
-          <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', margin: 0, padding: '14px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxSizing: 'border-box' }}>
-            <span style={{ fontFamily: 'monospace', letterSpacing: '-1px', marginRight: '4px', opacity: 0.8 }}>|||||</span> View Tickets
+          {/* Full-bleed View Tickets button with white border */}
+          <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: '2px solid white', margin: 0, padding: '14px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box' }}>
+            {/* Barcode scan icon */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '2px solid white', borderRadius: '3px', padding: '2px 4px', fontSize: '13px', fontFamily: 'monospace', letterSpacing: '-1.5px', lineHeight: 1 }}>|||||</span>
+            View Tickets
           </button>
         </div>
 
