@@ -44,6 +44,33 @@ function parseSeat(seatString) {
   };
 }
 
+export function generateOrderStr(ticketId, location) {
+  if (!ticketId) return '#00-000000VEN';
+  let idStr = String(ticketId);
+  const orderNum = parseInt(idStr.slice(-4), 16) || Math.floor(Math.random() * 9999);
+  
+  let dateObj = new Date();
+  if (idStr.length === 24) {
+    const timestamp = parseInt(idStr.slice(0, 8), 16);
+    if (!isNaN(timestamp)) {
+      dateObj = new Date(timestamp * 1000);
+    }
+  }
+  
+  const yy = String(dateObj.getFullYear()).slice(-2);
+  const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const dd = String(dateObj.getDate()).padStart(2, '0');
+  const dateStr = `${yy}${mm}${dd}`;
+
+  let venueStr = "XXX";
+  if (location) {
+    const letters = location.replace(/[^A-Za-z]/g, '');
+    if (letters.length >= 3) venueStr = letters.substring(0, 3).toUpperCase();
+  }
+  
+  return `#${orderNum}-${dateStr}${venueStr}`;
+}
+
 // Custom Transfer Modal — no browser prompt
 function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCancel }) {
   const [name, setName] = useState('');
@@ -301,7 +328,7 @@ function SellModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCa
   );
 }
 
-function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats }) {
+function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats }) {
   const [showActions, setShowActions] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
@@ -372,7 +399,7 @@ function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, even
     doc.setFontSize(8);
     doc.setTextColor(130, 130, 130);
     doc.text('TOTAL PAID', 14, 93);
-    doc.text('BOOKING ID', 80, 93);
+    doc.text('ORDER #', 80, 93);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
@@ -382,7 +409,7 @@ function TicketStub({ seatString, ticketId, onTransfer, onSell, eventImage, even
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(60, 60, 60);
-    doc.text(String(ticketId), 80, 102, { maxWidth: 80 });
+    doc.text(String(orderNumber || ticketId), 80, 102, { maxWidth: 80 });
 
     // QR code box on the right
     const rawQrData = `TICKET:${ticketId}`;
@@ -715,8 +742,8 @@ export default function MyTickets() {
           <p style={{ color: '#888', fontSize: '13px', marginBottom: '4px' }}>x{selectedOrder.seats.length} Tickets</p>
           {/* Single Booking ID for the whole order */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f4f4', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px' }}>
-            <span style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '0.5px' }}>BOOKING ID</span>
-            <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, fontFamily: 'monospace' }}>{selectedOrder._id}</span>
+            <span style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '0.5px' }}>ORDER #</span>
+            <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, fontFamily: 'monospace' }}>{generateOrderStr(selectedOrder._id, eventMeta?.location)}</span>
           </div>
           {activeTab === 'Tickets' && (
             ['Approved', 'Active', 'Transferred'].includes(selectedOrder.status) ? (
@@ -725,6 +752,7 @@ export default function MyTickets() {
                   key={idx}
                   seatString={seatStr}
                   ticketId={selectedOrder._id}
+                  orderNumber={generateOrderStr(selectedOrder._id, eventMeta?.location)}
                   onTransfer={handleTransfer}
                   onSell={handleSell}
                   eventImage={image}
