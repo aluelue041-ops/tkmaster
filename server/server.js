@@ -8,10 +8,15 @@ const sgMail = require('@sendgrid/mail');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const QRCode = require('qrcode');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const crypto = require('crypto');
 
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
 const Event = require('./models/Event');
+
 
 // SendGrid setup
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -28,7 +33,15 @@ cloudinary.config({
 // Multer — store upload in memory, then stream to Cloudinary
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, WebP, and GIF images are allowed.'));
+    }
+  }
 });
 
 // Email Helpers
@@ -131,14 +144,34 @@ io.on('connection', (socket) => {
   });
 });
 
-// Middleware
+// --- Rate Limiters ---
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  message: { error: 'Too many attempts. Please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  message: { error: 'Too many password reset requests. Please wait an hour before trying again.' }
+});
+
+// --- Security Middleware ---
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' } // allow Cloudinary images
+}));
 app.use(cors({
-  origin: '*',
+  origin: process.env.APP_URL || 'https://tkmaster.onrender.com',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ limit: '5mb', extended: true }));
+app.use(mongoSanitize()); // Strips $ and . operators from req.body, params, query
+
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
@@ -162,7 +195,7 @@ const authMiddleware = (req, res, next) => {
 const adminMiddleware = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
-    if (user.role !== 'admin') {
+    if (!user || user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access denied' });
     }
     next();
@@ -174,7 +207,7 @@ const adminMiddleware = async (req, res, next) => {
 // --- ROUTES ---
 
 // 1. Register
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     let user = await User.findOne({ email });
@@ -197,7 +230,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // 2. Login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -228,7 +261,7 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
 });
 
 // 3b. Forgot Password — sends reset link via email
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', forgotPasswordLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
@@ -236,13 +269,17 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     // Generate a secure random token
     const crypto = require('crypto');
-    const token = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = token;
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    
+    // Hash token before saving to DB
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordToken = hashedToken;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
     const APP_URL = process.env.APP_URL || 'https://tkmaster.onrender.com';
-    const resetUrl = `${APP_URL}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+    // Send the UNHASHED token via email
+    const resetUrl = `${APP_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
     await sgMail.send({
       to: email,
@@ -277,13 +314,19 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
     const { email, token, newPassword } = req.body;
+    
+    // Hash the incoming token to compare with DB
+    const crypto = require('crypto');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
     const user = await User.findOne({
       email,
-      resetPasswordToken: token,
+      resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() }
     });
 
     if (!user) return res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' });
+
 
     user.password = newPassword;
     user.resetPasswordToken = undefined;
