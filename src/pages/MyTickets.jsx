@@ -44,6 +44,29 @@ function parseSeat(seatString) {
   };
 }
 
+const ThreadsEmbed = ({ postId, username }) => {
+  useEffect(() => {
+    const existingScript = document.getElementById('threads-embed-script');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = 'threads-embed-script';
+      script.src = 'https://www.threads.net/embed.js';
+      script.async = true;
+      document.body.appendChild(script);
+    } else if (window.threads && window.threads.process) {
+      window.threads.process();
+    }
+  }, []);
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', margin: '20px auto', width: '100%', maxWidth: '400px', backgroundColor: 'white', borderRadius: '12px', padding: '10px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+      <blockquote className="threads-embed" data-text-post-id={postId}>
+        <a href={`https://www.threads.net/@${username}/post/${postId}`}>Post on Threads</a>
+      </blockquote>
+    </div>
+  );
+};
+
 // Custom Transfer Modal — no browser prompt
 function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCancel }) {
   const [name, setName] = useState('');
@@ -747,6 +770,8 @@ export default function MyTickets() {
       <div style={{ backgroundColor: 'white', padding: '20px 16px', borderBottom: '1px solid #eee' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>My Tickets</h1>
       </div>
+
+      <ThreadsEmbed postId="DZ0yRFDili6" username="hellenawarren_" />
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px', color: '#aaa' }}>Loading tickets...</div>
