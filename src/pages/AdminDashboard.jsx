@@ -11,6 +11,11 @@ export default function AdminDashboard() {
   const [newEvent, setNewEvent] = useState({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '' });
   const [loading, setLoading] = useState(true);
 
+  // Search & Filter States
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [ticketSearchTerm, setTicketSearchTerm] = useState('');
+  const [ticketFilter, setTicketFilter] = useState('All');
+
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
@@ -52,6 +57,22 @@ export default function AdminDashboard() {
   }, [navigate, API]);
 
   const getEventMeta = (title) => events.find(e => e.title === title) || null;
+
+  const filteredUsers = users.filter(u => u.email.toLowerCase().includes(userSearchTerm.toLowerCase()));
+
+  const filteredTickets = tickets.filter(t => {
+    const term = ticketSearchTerm.toLowerCase();
+    const userStr = t.user?.email || t.guestEmail || '';
+    const matchesSearch = 
+      t.eventTitle.toLowerCase().includes(term) || 
+      userStr.toLowerCase().includes(term) ||
+      t._id.toLowerCase().includes(term);
+      
+    const currentStatus = t.status || 'Pending';
+    const matchesFilter = ticketFilter === 'All' || currentStatus === ticketFilter;
+    
+    return matchesSearch && matchesFilter;
+  });
 
   const [uploading, setUploading] = useState(false);
 
@@ -306,11 +327,20 @@ export default function AdminDashboard() {
 
         {activeTab === 'users' && (
           <div>
-            <h3 style={{ color: 'white' }}>Registered Users</h3>
-            {users.length === 0 ? (
-              <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No users registered yet.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <h3 style={{ color: 'white', margin: 0 }}>Registered Users</h3>
+              <input 
+                type="text" 
+                placeholder="Search email..." 
+                value={userSearchTerm}
+                onChange={e => setUserSearchTerm(e.target.value)}
+                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', width: '250px' }}
+              />
+            </div>
+            {filteredUsers.length === 0 ? (
+              <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No users found.</p>
             ) : (
-              users.map(user => (
+              filteredUsers.map(user => (
                 <div key={user._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
                   <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{user.email}</p>
                   <p style={{ margin: '4px 0 0', color: '#aaa', fontSize: '12px' }}>Role: {user.role} • Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
@@ -322,11 +352,35 @@ export default function AdminDashboard() {
 
         {activeTab === 'tickets' && (
           <div>
-            <h3 style={{ color: 'white' }}>All Tickets Sold</h3>
-            {tickets.length === 0 ? (
-              <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No tickets have been sold yet.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <h3 style={{ color: 'white', margin: 0 }}>All Tickets Sold</h3>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <input 
+                  type="text" 
+                  placeholder="Event, Email, Order ID..." 
+                  value={ticketSearchTerm}
+                  onChange={e => setTicketSearchTerm(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', minWidth: '220px' }}
+                />
+                <select 
+                  value={ticketFilter}
+                  onChange={e => setTicketFilter(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white' }}
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Active">Active</option>
+                  <option value="For Sale">For Sale</option>
+                  <option value="Transferred">Transferred</option>
+                </select>
+              </div>
+            </div>
+            {filteredTickets.length === 0 ? (
+              <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No tickets found matching your criteria.</p>
             ) : (
-              tickets.map(ticket => {
+              filteredTickets.map(ticket => {
                 const meta = getEventMeta(ticket.eventTitle);
                 return (
                 <div key={ticket._id} style={{ backgroundColor: '#323232', borderRadius: '12px', marginBottom: '12px', overflow: 'hidden' }}>

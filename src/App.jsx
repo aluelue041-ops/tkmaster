@@ -22,6 +22,7 @@ import EventDetails from './pages/EventDetails';
 import SeatSelection from './pages/SeatSelection';
 import SignIn from './pages/SignIn';
 import AdminDashboard from './pages/AdminDashboard';
+import ResetPassword from './pages/ResetPassword';
 
 function BottomNav() {
   const navigate = useNavigate();
@@ -139,6 +140,7 @@ function App() {
             <Route path="/event/:id" element={<EventDetails />} />
             <Route path="/seat-selection/:id" element={<SeatSelection />} />
             <Route path="/signin" element={<SignIn />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
         </main>

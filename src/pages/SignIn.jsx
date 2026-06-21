@@ -11,6 +11,10 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [serverReady, setServerReady] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMsg, setForgotMsg] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const [toastMessage, setToastMessage] = useState('');
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -65,20 +69,76 @@ export default function SignIn() {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotMsg('');
+    try {
+      const res = await fetch(`${API}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setForgotMsg('✅ Reset link sent! Check your email inbox.');
+      } else {
+        setForgotMsg(`❌ ${data.error}`);
+      }
+    } catch {
+      setForgotMsg('❌ Failed to send reset email. Please try again.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   return (
     <div className="page auth-page" style={{ paddingBottom: '80px', backgroundColor: 'var(--bg-color)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ backgroundColor: 'white', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <button 
-          onClick={() => navigate(-1)}
+          onClick={() => showForgot ? setShowForgot(false) : navigate(-1)}
           style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #eaeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'white', cursor: 'pointer' }}
         >
           <ChevronLeft size={24} color="#333" />
         </button>
-        <h2 style={{ fontSize: '18px', fontWeight: 700 }}>{isLogin ? 'Sign In' : 'Create Account'}</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: 700 }}>{showForgot ? 'Forgot Password' : isLogin ? 'Sign In' : 'Create Account'}</h2>
       </div>
 
       <div style={{ flex: 1, padding: '32px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ backgroundColor: 'white', padding: '32px', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+
+          {/* Forgot Password View */}
+          {showForgot ? (
+            <>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', textAlign: 'center' }}>Reset Password</h1>
+              <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '28px', fontSize: '14px' }}>Enter your email and we'll send you a reset link.</p>
+              <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>Email</label>
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={e => setForgotEmail(e.target.value)}
+                    required
+                    style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '16px', boxSizing: 'border-box' }}
+                    placeholder="Enter your email"
+                  />
+                </div>
+                {forgotMsg && (
+                  <div style={{ padding: '12px', borderRadius: '8px', fontSize: '14px', textAlign: 'center', backgroundColor: forgotMsg.startsWith('✅') ? '#e8f5e9' : '#ffebee', color: forgotMsg.startsWith('✅') ? '#2e7d32' : '#c62828' }}>
+                    {forgotMsg}
+                  </div>
+                )}
+                <button type="submit" className="btn-primary" disabled={forgotLoading} style={{ width: '100%', opacity: forgotLoading ? 0.8 : 1 }}>
+                  {forgotLoading ? 'Sending...' : 'Send Reset Link'}
+                </button>
+              </form>
+              <div style={{ marginTop: '20px', textAlign: 'center' }}>
+                <button onClick={() => setShowForgot(false)} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>Back to Sign In</button>
+              </div>
+            </>
+          ) : (
+          <>
           <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '8px', textAlign: 'center' }}>
             {isLogin ? 'Welcome Back' : 'Join Us'}
           </h1>
@@ -101,7 +161,12 @@ export default function SignIn() {
               />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>Password</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label style={{ fontWeight: 600, fontSize: '14px' }}>Password</label>
+                {isLogin && (
+                  <button type="button" onClick={() => setShowForgot(true)} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', padding: 0 }}>Forgot password?</button>
+                )}
+              </div>
               <div style={{ position: 'relative' }}>
                 <input 
                   type={showPassword ? "text" : "password"} 
@@ -144,16 +209,18 @@ export default function SignIn() {
           </form>
 
           <div style={{ marginTop: '24px', textAlign: 'center' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
-            </span>
-            <button 
-              onClick={() => setIsLogin(!isLogin)} 
-              style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}
-            >
-              {isLogin ? 'Create one' : 'Sign in'}
-            </button>
-          </div>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                {isLogin ? "Don't have an account? " : "Already have an account? "}
+              </span>
+              <button 
+                onClick={() => setIsLogin(!isLogin)} 
+                style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}
+              >
+                {isLogin ? 'Create one' : 'Sign in'}
+              </button>
+            </div>
+          </>
+          )}
         </div>
       </div>
 

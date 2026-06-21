@@ -227,6 +227,78 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
   }
 });
 
+// 3b. Forgot Password — sends reset link via email
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'No account with that email exists.' });
+
+    // Generate a secure random token
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    const APP_URL = process.env.APP_URL || 'https://tkmaster.onrender.com';
+    const resetUrl = `${APP_URL}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+
+    await sgMail.send({
+      to: email,
+      from: FROM_EMAIL,
+      subject: 'Reset your ticketsmaster password 🔑',
+      html: `
+        <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
+          <div style="background:#026cdf;padding:32px;text-align:center">
+            <h1 style="color:white;font-style:italic;margin:0;font-size:32px">ticketsmaster</h1>
+          </div>
+          <div style="padding:32px;background:white">
+            <h2 style="color:#1a1a1a">Reset your password</h2>
+            <p style="color:#555;line-height:1.6">You requested a password reset. Click the button below to set a new password. This link expires in 1 hour.</p>
+            <a href="${resetUrl}" style="display:inline-block;margin-top:16px;padding:14px 32px;background:#026cdf;color:white;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">Reset Password</a>
+            <p style="color:#aaa;font-size:12px;margin-top:24px">If you didn't request this, you can safely ignore this email.</p>
+          </div>
+          <div style="padding:16px 32px;background:#eee;font-size:12px;color:#999;text-align:center">
+            &copy; 2026 ticketsmaster. All rights reserved.
+          </div>
+        </div>
+      `
+    });
+
+    res.json({ success: true, message: 'Password reset email sent!' });
+  } catch (err) {
+    console.error('Forgot password error:', err.response?.body || err.message);
+    res.status(500).json({ error: 'Failed to send reset email.' });
+  }
+});
+
+// 3c. Reset Password — validates token and saves new password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, token, newPassword } = req.body;
+    const user = await User.findOne({
+      email,
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) return res.status(400).json({ error: 'Invalid or expired reset link. Please request a new one.' });
+
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ success: true, message: 'Password reset successfully! You can now sign in.' });
+  } catch (err) {
+    console.error('Reset password error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+
 // 4. Book Tickets
 app.post('/api/tickets/book', authMiddleware, async (req, res) => {
   try {
