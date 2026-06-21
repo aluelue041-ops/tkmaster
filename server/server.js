@@ -347,6 +347,11 @@ app.post('/api/auth/reset-password', async (req, res) => {
 app.post('/api/tickets/book', authMiddleware, async (req, res) => {
   try {
     const { eventId, eventTitle, seats, totalPrice, currency } = req.body;
+
+    // Auto-increment order number
+    const orderCount = await Ticket.countDocuments();
+    const orderNumber = orderCount + 1;
+
     const newTicket = new Ticket({
       user: req.user.id,
       eventId,
@@ -354,7 +359,8 @@ app.post('/api/tickets/book', authMiddleware, async (req, res) => {
       seats,
       totalPrice,
       currency: currency || '$',
-      status: 'Active'
+      status: 'Active',
+      orderNumber
     });
 
     await newTicket.save();

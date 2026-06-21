@@ -20,7 +20,8 @@ const TicketSchema = new mongoose.Schema({
     default: 'Active'
   },
   resalePrice: { type: Number },
-  ticketType: { type: String }
+  ticketType: { type: String },
+  orderNumber: { type: Number } // Sequential order number e.g. 1, 2, 3...
 });
 
 module.exports = mongoose.model('Ticket', TicketSchema);

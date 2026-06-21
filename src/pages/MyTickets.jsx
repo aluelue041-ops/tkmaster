@@ -44,10 +44,10 @@ function parseSeat(seatString) {
   };
 }
 
-export function generateOrderStr(ticketId, location) {
+export function generateOrderStr(ticketId, location, orderNumber) {
   if (!ticketId) return '#00-000000VEN';
   let idStr = String(ticketId);
-  const orderNum = parseInt(idStr.slice(-4), 16) || Math.floor(Math.random() * 9999);
+  const orderNum = orderNumber ? orderNumber : (parseInt(idStr.slice(-4), 16) || Math.floor(Math.random() * 9999));
   
   let dateObj = new Date();
   if (idStr.length === 24) {
@@ -68,7 +68,7 @@ export function generateOrderStr(ticketId, location) {
     if (letters.length >= 3) venueStr = letters.substring(0, 3).toUpperCase();
   }
   
-  return `#${orderNum}-${dateStr}/${venueStr}`;
+  return `#${orderNum}-${dateStr}${venueStr}`;
 }
 
 // Custom Transfer Modal — no browser prompt
@@ -736,7 +736,7 @@ export default function MyTickets() {
           {/* Order ID & Tickets List */}
           <div style={{ padding: '24px 16px 16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Order {generateOrderStr(selectedOrder._id, eventMeta?.location)}</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Order {generateOrderStr(selectedOrder._id, eventMeta?.location, selectedOrder.orderNumber)}</h3>
               <MoreVertical size={20} color="#333" />
             </div>
             <p style={{ color: '#888', fontSize: '13px', margin: '0 0 16px' }}>x{selectedOrder.seats.length} Tickets</p>
@@ -748,7 +748,7 @@ export default function MyTickets() {
                   key={idx}
                   seatString={seatStr}
                   ticketId={selectedOrder._id}
-                  orderNumber={generateOrderStr(selectedOrder._id, eventMeta?.location)}
+                  orderNumber={generateOrderStr(selectedOrder._id, eventMeta?.location, selectedOrder.orderNumber)}
                   onTransfer={handleTransfer}
                   onSell={handleSell}
                   eventImage={image}
