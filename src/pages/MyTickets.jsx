@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical, Scan } from 'lucide-react';
+import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical, ScanBarcode } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { QRCodeSVG } from 'qrcode.react';
 import QRCode from 'qrcode';
@@ -706,7 +706,7 @@ export default function MyTickets() {
 
           {/* Full-bleed View Tickets button with white border */}
           <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: '2px solid white', margin: 0, padding: '14px', fontSize: '16px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box', letterSpacing: '0.3px' }}>
-            <Scan size={22} strokeWidth={2.5} color="white" />
+            <ScanBarcode size={24} strokeWidth={2.5} color="white" />
             View Tickets
           </button>
         </div>
