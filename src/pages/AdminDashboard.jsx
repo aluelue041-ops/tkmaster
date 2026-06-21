@@ -415,7 +415,7 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Action buttons */}
-                    {(!ticket.status || ticket.status === 'Pending') && (
+                    {(!ticket.status || ticket.status === 'Pending' || ticket.status === 'Active') && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
                         <button
                           onClick={() => handleApproveTicket(ticket._id)}

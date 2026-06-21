@@ -359,7 +359,7 @@ app.post('/api/tickets/book', authMiddleware, async (req, res) => {
       seats,
       totalPrice,
       currency: currency || '$',
-      status: 'Active',
+      status: 'Pending',
       orderNumber
     });
 
