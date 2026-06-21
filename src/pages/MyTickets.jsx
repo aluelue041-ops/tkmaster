@@ -766,6 +766,7 @@ export default function MyTickets() {
           {activeTab === 'Extras' && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#aaa' }}>No extras available for this order.</div>
           )}
+          </div>
         </div>
       </div>
     );
