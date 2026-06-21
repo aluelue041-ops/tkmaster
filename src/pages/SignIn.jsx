@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Eye, EyeOff } from 'lucide-react';
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ export default function SignIn() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [serverReady, setServerReady] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [toastMessage, setToastMessage] = useState('');
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -24,6 +25,16 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!isLogin) {
+      // Strong password validation
+      const strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])(?=.{8,})");
+      if (!strongRegex.test(password)) {
+        setError('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+        return;
+      }
+    }
+
     setLoading(true);
     
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
@@ -91,14 +102,23 @@ export default function SignIn() {
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>Password</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '16px' }}
-                placeholder="Enter your password"
-              />
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '12px 40px 12px 16px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '16px', boxSizing: 'border-box' }}
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
+                >
+                  {showPassword ? <EyeOff size={20} color="#666" /> : <Eye size={20} color="#666" />}
+                </button>
+              </div>
             </div>
 
             <button 
