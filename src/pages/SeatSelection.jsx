@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ChevronLeft, Check, Plus, Minus } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function SeatSelection() {
   const navigate = useNavigate();
@@ -177,7 +178,7 @@ export default function SeatSelection() {
     
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('Please sign in to book tickets!');
+      toast.error('Please sign in to book tickets!');
       navigate('/signin');
       return;
     }
@@ -210,10 +211,10 @@ export default function SeatSelection() {
       }
       
       const numTickets = selectedSection.isGA ? quantity : selectedSpecificSeats.length;
-      alert(`Successfully booked ${numTickets} ticket(s) in ${selectedSection.name} for $${totalPrice}!`);
+      toast.success(`Successfully booked ${numTickets} ticket(s) in ${selectedSection.name} for $${totalPrice}!`);
       navigate('/mytickets');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -222,7 +223,7 @@ export default function SeatSelection() {
   const handleResaleCheckout = async (ticketId) => {
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('Please sign in to book tickets!');
+      toast.error('Please sign in to book tickets!');
       navigate('/signin');
       return;
     }
@@ -240,7 +241,7 @@ export default function SeatSelection() {
       // Real-time toast will handle the success message from App.jsx socket
       navigate('/mytickets');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
       setResaleLoading(null);
     }
   };

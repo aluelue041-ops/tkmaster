@@ -629,11 +629,11 @@ export default function MyTickets() {
         setTickets(prev => prev.filter(t => t._id !== ticketId));
         return true;
       } else {
-        alert(`❌ ${data.error}`);
+        toast.error(`❌ ${data.error}`);
         return false;
       }
     } catch (err) {
-      alert('Transfer failed. Please try again.');
+      toast.error('Transfer failed. Please try again.');
       return false;
     }
   };

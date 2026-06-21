@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Ticket, Calendar, Trash2, Plus } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function AdminDashboard() {
         ]);
 
         if (usersRes.status === 403) {
-          alert('Admin access denied!');
+          toast.error('Admin access denied!');
           navigate('/');
           return;
         }
@@ -80,7 +81,7 @@ export default function AdminDashboard() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      alert('File size must be less than 10MB.');
+      toast.error('File size must be less than 10MB.');
       return;
     }
     setUploading(true);
@@ -97,10 +98,10 @@ export default function AdminDashboard() {
       if (res.ok) {
         setNewEvent(prev => ({ ...prev, image: data.url }));
       } else {
-        alert(data.error || 'Upload failed');
+        toast.error(data.error || 'Upload failed');
       }
     } catch (err) {
-      alert('Upload failed. Please try a URL instead.');
+      toast.error('Upload failed. Please try a URL instead.');
     } finally {
       setUploading(false);
     }
@@ -123,7 +124,7 @@ export default function AdminDashboard() {
         setEvents([data, ...events]);
         setNewEvent({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '' });
       } else {
-        alert(data.error);
+        toast.error(data.error);
       }
     } catch (err) {
       console.error(err);
@@ -166,10 +167,10 @@ export default function AdminDashboard() {
       if (res.ok) {
         const updated = await res.json();
         setTickets(tickets.map(t => t._id === id ? updated : t));
-        alert('✅ Ticket approved! Client has been notified by email.');
+        toast.success('✅ Ticket approved! Client has been notified by email.');
       } else {
         const data = await res.json();
-        alert(data.error);
+        toast.error(data.error);
       }
     } catch (err) {
       console.error(err);
@@ -187,10 +188,10 @@ export default function AdminDashboard() {
       if (res.ok) {
         const updated = await res.json();
         setTickets(tickets.map(t => t._id === id ? updated : t));
-        alert('❌ Ticket rejected. Client has been notified by email.');
+        toast.success('❌ Ticket rejected. Client has been notified by email.');
       } else {
         const data = await res.json();
-        alert(data.error);
+        toast.error(data.error);
       }
     } catch (err) {
       console.error(err);
@@ -214,10 +215,10 @@ export default function AdminDashboard() {
       if (res.ok) {
         const updated = await res.json();
         setTickets(tickets.map(t => t._id === id ? updated : t));
-        alert(`Ticket successfully transferred to ${newEmail}!`);
+        toast.success(`Ticket successfully transferred to ${newEmail}!`);
       } else {
         const data = await res.json();
-        alert(data.error);
+        toast.error(data.error);
       }
     } catch (err) {
       console.error(err);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { DollarSign, Tag, ShieldCheck } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function Sell() {
   return (
@@ -16,7 +17,7 @@ export default function Sell() {
           </p>
           <button 
             style={{ backgroundColor: 'white', color: 'var(--primary-color)', border: 'none', padding: '14px 32px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', width: '100%' }}
-            onClick={() => alert('Opening ticket listing form...')}
+            onClick={() => toast.info('Opening ticket listing form...')}
           >
             List Your Tickets
           </button>
