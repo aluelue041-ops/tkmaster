@@ -126,7 +126,7 @@ const { Server } = require('socket.io');
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: ['http://localhost:5173', 'http://localhost:5174', process.env.APP_URL || 'https://tkmaster.onrender.com'],
     methods: ["GET", "POST", "PUT", "DELETE"]
   }
 });
@@ -164,7 +164,7 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' } // allow Cloudinary images
 }));
 app.use(cors({
-  origin: process.env.APP_URL || 'https://tkmaster.onrender.com',
+  origin: ['http://localhost:5173', 'http://localhost:5174', process.env.APP_URL || 'https://tkmaster.onrender.com'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));

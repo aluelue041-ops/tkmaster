@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone } from 'lucide-react';
+import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { QRCodeSVG } from 'qrcode.react';
 import QRCode from 'qrcode';
@@ -68,7 +68,7 @@ export function generateOrderStr(ticketId, location) {
     if (letters.length >= 3) venueStr = letters.substring(0, 3).toUpperCase();
   }
   
-  return `#${orderNum}-${dateStr}${venueStr}`;
+  return `#${orderNum}-${dateStr}/${venueStr}`;
 }
 
 // Custom Transfer Modal — no browser prompt
@@ -670,8 +670,8 @@ export default function MyTickets() {
         {/* Banner */}
         <div style={{ position: 'relative' }}>
           {image
-            ? <img src={image} alt={selectedOrder.eventTitle} style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }} />
-            : <div style={{ width: '100%', height: '220px', background: 'linear-gradient(135deg, #026cdf, #004aad)' }} />
+            ? <img src={image} alt={selectedOrder.eventTitle} style={{ width: '100%', height: '240px', objectFit: 'cover', display: 'block' }} />
+            : <div style={{ width: '100%', height: '240px', background: 'linear-gradient(135deg, #026cdf, #004aad)' }} />
           }
           {/* Back button */}
           <button
@@ -680,52 +680,44 @@ export default function MyTickets() {
           >
             <ChevronLeft size={20} color="white" />
           </button>
-          <button style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'transparent', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Help</button>
+          <button style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: '20px', padding: '6px 16px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Help</button>
+
+          {/* Date Label overlay on bottom left of banner */}
+          <div style={{ position: 'absolute', bottom: '0', left: '0', backgroundColor: '#222', padding: '10px 16px', color: '#ccc', fontSize: '11px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+            {eventMeta?.date || 'Upcoming Event'}
+          </div>
         </div>
 
-        {/* Event Info */}
-        <div style={{ backgroundColor: 'white', padding: '16px 20px 0' }}>
-          <p style={{ color: '#026cdf', fontSize: '13px', fontWeight: 600, margin: '0 0 6px' }}>
-            {eventMeta?.date || 'Upcoming Event'}
-          </p>
-          <h2 style={{ fontSize: '22px', fontWeight: 900, margin: '0 0 6px', textTransform: 'uppercase', lineHeight: 1.2 }}>{selectedOrder.eventTitle}</h2>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#555', fontSize: '13px' }}>
-              <MapPin size={14} />
-              {eventMeta?.mapLink ? (
-                <a href={eventMeta.mapLink} target="_blank" rel="noreferrer" style={{ color: '#026cdf', textDecoration: 'none', fontWeight: 600 }}>
-                  {eventMeta?.location || 'Venue'}
-                </a>
-              ) : (
-                <span>{eventMeta?.location || 'Venue'}</span>
-              )}
+        {/* Event Info (Dark section) */}
+        <div style={{ backgroundColor: '#222', padding: '16px 20px 0' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 900, margin: '0 0 16px', textTransform: 'uppercase', lineHeight: 1.2, color: 'white' }}>{selectedOrder.eventTitle}</h2>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ color: '#aaa', fontSize: '13px' }}>
+              {eventMeta?.location || 'Venue'}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#333', fontSize: '13px', fontWeight: 600 }}>
-              <TicketIcon size={16} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'white', fontSize: '14px', fontWeight: 700 }}>
+              <TicketIcon size={18} color="#ccc" />
               <span>x{selectedOrder.seats.length}</span>
             </div>
           </div>
 
-          {/* Order ID - tightly attached */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f4f4', padding: '9px 12px', borderRadius: '8px', marginTop: '12px' }}>
-            <span style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '0.5px' }}>ORDER #</span>
-            <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, fontFamily: 'monospace' }}>{generateOrderStr(selectedOrder._id, eventMeta?.location)}</span>
-          </div>
-
           {/* View Tickets CTA */}
-          <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '8px', padding: '14px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <TicketIcon size={18} />
-            View Tickets
+          <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', padding: '14px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <span style={{ fontFamily: 'monospace', letterSpacing: '-1px', marginRight: '4px', opacity: 0.8 }}>|||||</span> View Tickets
           </button>
+        </div>
 
+        {/* White background section below */}
+        <div style={{ backgroundColor: 'white' }}>
           {/* Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #e5e5e5' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid #eee' }}>
             {['Tickets', 'Extras'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 style={{
-                  flex: 1, padding: '12px', border: 'none', background: 'none', cursor: 'pointer',
+                  flex: 1, padding: '16px', border: 'none', background: 'none', cursor: 'pointer',
                   fontSize: '15px', fontWeight: 700,
                   color: activeTab === tab ? '#111' : '#aaa',
                   borderBottom: activeTab === tab ? '3px solid #111' : '3px solid transparent',
@@ -736,11 +728,15 @@ export default function MyTickets() {
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Ticket Stubs */}
-        <div style={{ padding: '16px' }}>
-          <p style={{ color: '#888', fontSize: '13px', marginBottom: '12px' }}>x{selectedOrder.seats.length} Tickets</p>
+          {/* Order ID & Tickets List */}
+          <div style={{ padding: '24px 16px 16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Order {generateOrderStr(selectedOrder._id, eventMeta?.location)}</h3>
+              <MoreVertical size={20} color="#333" />
+            </div>
+            <p style={{ color: '#888', fontSize: '13px', margin: '0 0 16px' }}>x{selectedOrder.seats.length} Tickets</p>
+
           {activeTab === 'Tickets' && (
             ['Approved', 'Active', 'Transferred'].includes(selectedOrder.status) ? (
               selectedOrder.seats.map((seatStr, idx) => (
