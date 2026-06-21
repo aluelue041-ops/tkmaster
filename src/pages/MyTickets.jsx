@@ -689,7 +689,7 @@ export default function MyTickets() {
             {eventMeta?.date || 'Upcoming Event'}
           </p>
           <h2 style={{ fontSize: '22px', fontWeight: 900, margin: '0 0 6px', textTransform: 'uppercase', lineHeight: 1.2 }}>{selectedOrder.eventTitle}</h2>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#555', fontSize: '13px' }}>
               <MapPin size={14} />
               {eventMeta?.mapLink ? (
@@ -704,6 +704,12 @@ export default function MyTickets() {
               <TicketIcon size={16} />
               <span>x{selectedOrder.seats.length}</span>
             </div>
+          </div>
+
+          {/* Order ID - tightly attached */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f4f4', padding: '9px 12px', borderRadius: '8px', marginTop: '12px' }}>
+            <span style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '0.5px' }}>ORDER #</span>
+            <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, fontFamily: 'monospace' }}>{generateOrderStr(selectedOrder._id, eventMeta?.location)}</span>
           </div>
 
           {/* View Tickets CTA */}
@@ -734,12 +740,7 @@ export default function MyTickets() {
 
         {/* Ticket Stubs */}
         <div style={{ padding: '16px' }}>
-          <p style={{ color: '#888', fontSize: '13px', marginBottom: '4px' }}>x{selectedOrder.seats.length} Tickets</p>
-          {/* Single Booking ID for the whole order */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f4f4', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px' }}>
-            <span style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '0.5px' }}>ORDER #</span>
-            <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, fontFamily: 'monospace' }}>{generateOrderStr(selectedOrder._id, eventMeta?.location)}</span>
-          </div>
+          <p style={{ color: '#888', fontSize: '13px', marginBottom: '12px' }}>x{selectedOrder.seats.length} Tickets</p>
           {activeTab === 'Tickets' && (
             ['Approved', 'Active', 'Transferred'].includes(selectedOrder.status) ? (
               selectedOrder.seats.map((seatStr, idx) => (
