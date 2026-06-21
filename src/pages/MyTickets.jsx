@@ -328,7 +328,7 @@ function SellModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCa
   );
 }
 
-function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats }) {
+function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats, ticketType }) {
   const [showActions, setShowActions] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
@@ -435,7 +435,7 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
     <div style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e8e8e8', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
       {/* Ticket type header */}
       <div style={{ backgroundColor: '#f0f0f0', padding: '10px 16px', fontWeight: 700, fontSize: '13px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        {parsed.type}
+        {ticketType || parsed.type}
       </div>
 
       {/* Section / Row / Seat row */}
@@ -756,6 +756,7 @@ export default function MyTickets() {
                   totalPrice={selectedOrder.totalPrice}
                   status={selectedOrder.status}
                   allSeats={selectedOrder.seats}
+                  ticketType={selectedOrder.ticketType}
                 />
               ))
             ) : (

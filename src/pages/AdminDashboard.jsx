@@ -126,11 +126,21 @@ export default function AdminDashboard() {
   };
 
   const handleApproveTicket = async (id) => {
+    const ticketType = window.prompt(
+      "Enter Ticket Type for Approval (e.g., Verified Fan Presale, ARMY MEMBERSHIP PRESALE):",
+      "Verified Fan Presale"
+    );
+    if (ticketType === null) return; // cancelled
+
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API}/api/tickets/${id}/approve`, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ticketType })
       });
       if (res.ok) {
         const updated = await res.json();

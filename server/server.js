@@ -596,6 +596,9 @@ app.put('/api/tickets/:id/approve', authMiddleware, adminMiddleware, async (req,
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
     ticket.status = 'Approved';
+    if (req.body && req.body.ticketType) {
+      ticket.ticketType = req.body.ticketType;
+    }
     await ticket.save();
     const updatedTicket = await Ticket.findById(ticket._id).populate('user', 'email');
 

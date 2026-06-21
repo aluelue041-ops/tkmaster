@@ -19,7 +19,8 @@ const TicketSchema = new mongoose.Schema({
     enum: ['Active', 'Transferred', 'Expired', 'Pending', 'Approved', 'Rejected', 'For Sale'],
     default: 'Active'
   },
-  resalePrice: { type: Number }
+  resalePrice: { type: Number },
+  ticketType: { type: String }
 });
 
 module.exports = mongoose.model('Ticket', TicketSchema);
