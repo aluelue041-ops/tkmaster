@@ -100,7 +100,7 @@ export default function SeatSelection() {
   const getSeatedRows = (section) => {
     if (!section || !section.config) return [];
     
-    const useLetters = event?.rowLabelType === 'letters';
+    const useLetters = event?.rowLabelType === 'letters' && !section.id.toLowerCase().includes('vip');
     
     return Array.from({ length: section.config.rows }, (_, rIndex) => {
       let rowId;
