@@ -508,6 +508,7 @@ export default function SeatSelection() {
                     return (
                       <button
                         key={seat}
+                        title={`Row ${row.id}, Seat ${seat}`}
                         onClick={() => toggleSeat(row.id, seat)}
                         disabled={isBooked}
                         style={{
@@ -518,7 +519,7 @@ export default function SeatSelection() {
                           padding: 0
                         }}
                       >
-                        {isSelected ? <Check size={16} color="white" /> : <span style={{ fontSize: '10px', color: isBooked ? '#999' : '#666' }}>{seat}</span>}
+                        {isSelected ? <Check size={16} color="white" /> : <span style={{ fontSize: '9px', color: isBooked ? '#999' : '#666', fontWeight: 600 }}>{row.id}{seat}</span>}
                       </button>
                     );
                   })}
