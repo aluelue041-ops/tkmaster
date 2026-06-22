@@ -483,8 +483,8 @@ export default function SeatSelection() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', overflowX: 'auto', padding: '0 16px 32px' }}>
             {seatedRows.map(row => (
-              <div key={row.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '20px', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '14px' }}>{row.id}</div>
+              <div key={row.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '28px', fontWeight: 700, color: '#555', fontSize: '13px', textAlign: 'right' }}>{row.id}</div>
                 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {row.seats.map(seat => {
@@ -512,20 +512,23 @@ export default function SeatSelection() {
                         onClick={() => toggleSeat(row.id, seat)}
                         disabled={isBooked}
                         style={{
-                          width: '32px', height: '32px', borderRadius: '8px',
-                          backgroundColor: bgColor, border: `1px solid ${borderColor}`,
-                          color: color, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          width: '40px', height: '40px', borderRadius: '8px',
+                          backgroundColor: bgColor, border: `1.5px solid ${borderColor}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: isBooked ? 'not-allowed' : 'pointer', transition: 'all 0.1s',
-                          padding: 0
+                          padding: 0, flexShrink: 0
                         }}
                       >
-                        {isSelected ? <Check size={16} color="white" /> : <span style={{ fontSize: '9px', color: isBooked ? '#999' : '#666', fontWeight: 600 }}>{row.id}{seat}</span>}
+                        {isSelected 
+                          ? <Check size={16} color="white" /> 
+                          : <span style={{ fontSize: '11px', color: isBooked ? '#bbb' : '#333', fontWeight: 700, lineHeight: 1 }}>{row.id}{seat}</span>
+                        }
                       </button>
                     );
                   })}
                 </div>
                 
-                <div style={{ width: '20px', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '14px' }}>{row.id}</div>
+                <div style={{ width: '28px', fontWeight: 700, color: '#555', fontSize: '13px', textAlign: 'left' }}>{row.id}</div>
               </div>
             ))}
           </div>
