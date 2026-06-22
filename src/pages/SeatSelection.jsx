@@ -44,17 +44,17 @@ export default function SeatSelection() {
     
     // 4. Gold (115-127)
     range(115, 127).forEach(num => {
-      list.push({ id: `gold_${num}`, name: `Gold - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 3), color: '#ffc107', isGA: false, config: { rows: 30, seats: 40 } });
+      list.push({ id: `gold_${num}`, name: `Gold - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 3), color: '#ffc107', isGA: false, config: { rows: 26, seats: 40 } });
     });
 
     // 5. Silver (105-109, 133-138)
     [...range(105, 109), ...range(133, 138)].forEach(num => {
-      list.push({ id: `silver_${num}`, name: `Silver - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 2.5), color: '#a1a1aa', isGA: false, config: { rows: 30, seats: 35 } });
+      list.push({ id: `silver_${num}`, name: `Silver - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 2.5), color: '#a1a1aa', isGA: false, config: { rows: 26, seats: 35 } });
     });
 
     // 6. Bronze (102-104, 139-156)
     [...range(102, 104), ...range(139, 156)].forEach(num => {
-      list.push({ id: `bronze_${num}`, name: `Bronze - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 2), color: '#cd7f32', isGA: false, config: { rows: 35, seats: 40 } });
+      list.push({ id: `bronze_${num}`, name: `Bronze - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 2), color: '#cd7f32', isGA: false, config: { rows: 26, seats: 40 } });
     });
 
     // 7. Club London (M1-M16)
@@ -74,7 +74,7 @@ export default function SeatSelection() {
 
     // 10. Upper Bronze (201-204, 241-256)
     [...range(201, 204), ...range(241, 256)].forEach(num => {
-      list.push({ id: `upper_bronze_${num}`, name: `Upper Bronze - Section ${num}`, ticketName: `Section ${num}`, price: base, color: '#b45309', isGA: false, config: { rows: 30, seats: 40 } });
+      list.push({ id: `upper_bronze_${num}`, name: `Upper Bronze - Section ${num}`, ticketName: `Section ${num}`, price: base, color: '#b45309', isGA: false, config: { rows: 26, seats: 40 } });
     });
 
     return list;
