@@ -99,10 +99,27 @@ export default function SeatSelection() {
 
   const getSeatedRows = (section) => {
     if (!section || !section.config) return [];
-    return Array.from({ length: section.config.rows }, (_, rIndex) => ({
-      id: String(rIndex + 1),
-      seats: Array.from({ length: section.config.seats }, (_, sIndex) => sIndex + 1)
-    }));
+    
+    const useLetters = event?.rowLabelType === 'letters';
+    
+    return Array.from({ length: section.config.rows }, (_, rIndex) => {
+      let rowId;
+      if (useLetters) {
+        let n = rIndex;
+        rowId = '';
+        while (n >= 0) {
+          rowId = String.fromCharCode((n % 26) + 65) + rowId;
+          n = Math.floor(n / 26) - 1;
+        }
+      } else {
+        rowId = String(rIndex + 1);
+      }
+
+      return {
+        id: rowId,
+        seats: Array.from({ length: section.config.seats }, (_, sIndex) => sIndex + 1)
+      };
+    });
   };
 
   const seatedRows = getSeatedRows(selectedSection);

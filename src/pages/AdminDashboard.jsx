@@ -9,7 +9,8 @@ export default function AdminDashboard() {
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
   const [activeTab, setActiveTab] = useState('events'); // events, users, tickets
-  const [newEvent, setNewEvent] = useState({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '' });
+  const [newEvent, setNewEvent] = useState({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '', rowLabelType: 'numbers' });
+  const [editingEventId, setEditingEventId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Search & Filter States
@@ -111,8 +112,12 @@ export default function AdminDashboard() {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API}/api/events`, {
-        method: 'POST',
+      const isEditing = !!editingEventId;
+      const url = isEditing ? `${API}/api/events/${editingEventId}` : `${API}/api/events`;
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -121,14 +126,39 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (res.ok) {
-        setEvents([data, ...events]);
-        setNewEvent({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '' });
+        if (isEditing) {
+          setEvents(events.map(ev => ev._id === editingEventId ? data : ev));
+          toast.success('Event updated successfully!');
+        } else {
+          setEvents([data, ...events]);
+          toast.success('Event created successfully!');
+        }
+        setNewEvent({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '', rowLabelType: 'numbers' });
+        setEditingEventId(null);
       } else {
         toast.error(data.error);
       }
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleEditClick = (event) => {
+    setEditingEventId(event._id);
+    setNewEvent({
+      title: event.title || '',
+      date: event.date || '',
+      eventDate: event.eventDate ? new Date(event.eventDate).toISOString().slice(0, 16) : '',
+      location: event.location || '',
+      image: event.image || '',
+      category: event.category || 'Concerts',
+      currency: event.currency || '$',
+      basePrice: event.basePrice || 80,
+      mapLink: event.mapLink || '',
+      rowLabelType: event.rowLabelType || 'numbers'
+    });
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteEvent = async (id) => {
@@ -261,7 +291,9 @@ export default function AdminDashboard() {
         {activeTab === 'events' && (
           <div>
             <div style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '16px', marginBottom: '24px' }}>
-              <h3 style={{ color: 'white', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Plus size={20} /> Add New Event</h3>
+              <h3 style={{ color: 'white', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Plus size={20} /> {editingEventId ? 'Edit Event' : 'Add New Event'}
+              </h3>
               <form onSubmit={handleAddEvent} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <input type="text" placeholder="Event Title" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} required style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -296,13 +328,31 @@ export default function AdminDashboard() {
                     <img src={newEvent.image} alt="preview" style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
                   )}
                 </div>
-                <select value={newEvent.category} onChange={e => setNewEvent({...newEvent, category: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: 'none' }}>
-                  <option value="Concerts">Concerts</option>
-                  <option value="Sports">Sports</option>
-                  <option value="Arts & Theater">Arts & Theater</option>
-                  <option value="Family">Family</option>
-                </select>
-                <button type="submit" style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary-color)', color: 'white', fontWeight: 600, cursor: 'pointer' }}>Add Event</button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select value={newEvent.category} onChange={e => setNewEvent({...newEvent, category: e.target.value})} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }}>
+                    <option value="Concerts">Concerts</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Arts & Theater">Arts & Theater</option>
+                    <option value="Family">Family</option>
+                  </select>
+                  <select value={newEvent.rowLabelType} onChange={e => setNewEvent({...newEvent, rowLabelType: e.target.value})} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }}>
+                    <option value="numbers">Rows: Numbers (1, 2, 3...)</option>
+                    <option value="letters">Rows: Letters (A, B, C...)</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary-color)', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+                    {editingEventId ? 'Update Event' : 'Add Event'}
+                  </button>
+                  {editingEventId && (
+                    <button type="button" onClick={() => {
+                      setEditingEventId(null);
+                      setNewEvent({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '', rowLabelType: 'numbers' });
+                    }} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#555', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
 
@@ -317,9 +367,14 @@ export default function AdminDashboard() {
                     <h4 style={{ margin: '0 0 4px', color: 'white', fontSize: '16px' }}>{event.title}</h4>
                     <p style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>{event.date}</p>
                   </div>
-                  <button onClick={() => handleDeleteEvent(event._id)} style={{ background: '#ff3b3022', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}>
-                    <Trash2 color="#ff3b30" size={20} />
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => handleEditClick(event)} style={{ background: '#026cdf22', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}>
+                      <span style={{ fontSize: '16px' }}>✏️</span>
+                    </button>
+                    <button onClick={() => handleDeleteEvent(event._id)} style={{ background: '#ff3b3022', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}>
+                      <Trash2 color="#ff3b30" size={20} />
+                    </button>
+                  </div>
                 </div>
               ))
             )}

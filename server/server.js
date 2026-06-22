@@ -695,6 +695,18 @@ app.post('/api/events', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// 7b. Update Event (Admin)
+app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const updatedEvent = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updatedEvent) return res.status(404).json({ error: 'Event not found' });
+    res.json(updatedEvent);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // 8. Delete Event (Admin)
 app.delete('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {

@@ -10,6 +10,7 @@ const EventSchema = new mongoose.Schema({
   currency: { type: String, default: '$' },
   basePrice: { type: Number, default: 80 },
   mapLink: { type: String },
+  rowLabelType: { type: String, enum: ['numbers', 'letters'], default: 'numbers' }, // Admin toggle for row labels
   bookedSeats: [{ type: String }],                 // stores "sectionId:row-seat" for real-time availability
   createdAt: { type: Date, default: Date.now }
 });
