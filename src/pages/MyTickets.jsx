@@ -667,48 +667,50 @@ export default function MyTickets() {
 
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
-        {/* Banner */}
-        <div style={{ position: 'relative' }}>
+        {/* Banner Container */}
+        <div style={{ position: 'relative', minHeight: '380px' }}>
+          {/* Background Image */}
           {image
-            ? <img src={image} alt={selectedOrder.eventTitle} style={{ width: '100%', height: '260px', objectFit: 'cover', display: 'block' }} />
-            : <div style={{ width: '100%', height: '260px', background: 'linear-gradient(135deg, #026cdf, #004aad)' }} />
+            ? <img src={image} alt={selectedOrder.eventTitle} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            : <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, #026cdf, #004aad)' }} />
           }
+          
           {/* Back button */}
           <button
             onClick={() => setSelectedOrder(null)}
-            style={{ position: 'absolute', top: '24px', left: '16px', width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            style={{ position: 'absolute', top: '24px', left: '16px', width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}
           >
             <ChevronLeft size={24} color="white" />
           </button>
-          <button style={{ position: 'absolute', top: '24px', right: '16px', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: '24px', padding: '8px 20px', border: 'none', color: 'white', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}>Help</button>
+          <button style={{ position: 'absolute', top: '24px', right: '16px', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: '24px', padding: '8px 20px', border: 'none', color: 'white', fontSize: '15px', fontWeight: 600, cursor: 'pointer', zIndex: 10 }}>Help</button>
 
-          {/* Date Label overlay on bottom left of banner */}
-          <div style={{ position: 'absolute', bottom: '0', left: '0', backgroundColor: '#282828', padding: '12px 20px', color: '#fff', fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', borderTopRightRadius: '4px' }}>
-            {eventMeta?.date || 'Upcoming Event'}
-          </div>
-        </div>
-
-        {/* Event Info (Dark section) */}
-        <div style={{ backgroundColor: '#282828' }}>
-          {/* Padded content: title + venue */}
-          <div style={{ padding: '20px 20px 24px' }}>
-            <h2 style={{ fontSize: '26px', fontWeight: 900, margin: '0 0 20px', textTransform: 'uppercase', lineHeight: 1.2, color: 'white' }}>{selectedOrder.eventTitle}</h2>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ color: '#fff', fontSize: '16px' }}>
-                {eventMeta?.location || 'Venue'}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', fontSize: '20px', fontWeight: 800 }}>
-                <TicketIcon size={24} color="white" />
-                <span>x{selectedOrder.seats.length}</span>
+          {/* Floating Event Info Card */}
+          <div style={{ position: 'absolute', bottom: '0', left: '20px', right: '20px', zIndex: 10 }}>
+            {/* Date Tab */}
+            <div style={{ display: 'inline-block', backgroundColor: '#282828', padding: '12px 16px', color: '#fff', fontSize: '12px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
+              {eventMeta?.date || 'Upcoming Event'}
+            </div>
+            
+            {/* Event Info (Dark section) */}
+            <div style={{ backgroundColor: '#282828', padding: '20px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 900, margin: '0 0 16px', textTransform: 'uppercase', lineHeight: 1.2, color: 'white' }}>{selectedOrder.eventTitle}</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ color: '#fff', fontSize: '15px' }}>
+                  {eventMeta?.location || 'Venue'}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', fontSize: '18px', fontWeight: 800 }}>
+                  <TicketIcon size={20} color="white" />
+                  <span>x{selectedOrder.seats.length}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Full-bleed View Tickets button */}
-          <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', margin: 0, padding: '18px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box' }}>
-            <ScanBarcode size={24} strokeWidth={2} color="white" />
-            View Tickets
-          </button>
+            {/* View Tickets button */}
+            <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', margin: 0, padding: '16px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box' }}>
+              <ScanBarcode size={24} strokeWidth={2} color="white" />
+              View Tickets
+            </button>
+          </div>
         </div>
 
 
