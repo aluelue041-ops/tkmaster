@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical, ScanBarcode } from 'lucide-react';
+import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical, ScanBarcode, Navigation } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { QRCodeSVG } from 'qrcode.react';
 import QRCode from 'qrcode';
@@ -721,7 +721,7 @@ export default function MyTickets() {
             </div>
 
             {/* View Tickets button */}
-            <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', margin: 0, padding: '16px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box' }}>
+            <button className="interactive-btn" style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', margin: 0, padding: '16px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box' }}>
               <CustomBarcodeIcon size={24} color="white" />
               View Tickets
             </button>
@@ -799,11 +799,13 @@ export default function MyTickets() {
                   title="Event Location"
                 ></iframe>
                 <button 
+                  className="interactive-btn"
                   onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(eventMeta?.location || 'New York')}`, '_blank')}
-                  style={{ width: '100%', padding: '16px', border: 'none', backgroundColor: '#f0f0f0', color: '#111', fontSize: '16px', fontWeight: 700, cursor: 'pointer', transition: 'background-color 0.2s' }}
-                  onMouseOver={(e) => e.target.style.backgroundColor = '#e0e0e0'}
-                  onMouseOut={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                  style={{ width: '100%', padding: '16px', border: 'none', backgroundColor: '#f0f0f0', color: '#111', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
                 >
+                  <Navigation size={18} color="#111" />
                   Get Directions
                 </button>
               </div>
