@@ -6,6 +6,21 @@ import { QRCodeSVG } from 'qrcode.react';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 
+const CustomBarcodeIcon = ({ size = 24, color = "white" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+    <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+    <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+    <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+    <line x1="7" y1="8" x2="7" y2="16" />
+    <line x1="9" y1="8" x2="9" y2="16" />
+    <line x1="11" y1="8" x2="11" y2="16" />
+    <line x1="13" y1="8" x2="13" y2="16" />
+    <line x1="15" y1="8" x2="15" y2="16" />
+    <line x1="17" y1="8" x2="17" y2="16" />
+  </svg>
+);
+
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Parse seat string into section/row/seat
@@ -707,7 +722,7 @@ export default function MyTickets() {
 
             {/* View Tickets button */}
             <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', margin: 0, padding: '16px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box' }}>
-              <ScanBarcode size={24} strokeWidth={2} color="white" />
+              <CustomBarcodeIcon size={24} color="white" />
               View Tickets
             </button>
           </div>
