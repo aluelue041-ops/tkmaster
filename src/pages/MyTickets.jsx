@@ -670,43 +670,43 @@ export default function MyTickets() {
         {/* Banner */}
         <div style={{ position: 'relative' }}>
           {image
-            ? <img src={image} alt={selectedOrder.eventTitle} style={{ width: '100%', height: '240px', objectFit: 'cover', display: 'block' }} />
-            : <div style={{ width: '100%', height: '240px', background: 'linear-gradient(135deg, #026cdf, #004aad)' }} />
+            ? <img src={image} alt={selectedOrder.eventTitle} style={{ width: '100%', height: '260px', objectFit: 'cover', display: 'block' }} />
+            : <div style={{ width: '100%', height: '260px', background: 'linear-gradient(135deg, #026cdf, #004aad)' }} />
           }
           {/* Back button */}
           <button
             onClick={() => setSelectedOrder(null)}
-            style={{ position: 'absolute', top: '16px', left: '16px', width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.5)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            style={{ position: 'absolute', top: '24px', left: '16px', width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
-            <ChevronLeft size={20} color="white" />
+            <ChevronLeft size={24} color="white" />
           </button>
-          <button style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: '20px', padding: '6px 16px', border: 'none', color: 'white', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Help</button>
+          <button style={{ position: 'absolute', top: '24px', right: '16px', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: '24px', padding: '8px 20px', border: 'none', color: 'white', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}>Help</button>
 
           {/* Date Label overlay on bottom left of banner */}
-          <div style={{ position: 'absolute', bottom: '0', left: '0', backgroundColor: '#222', padding: '10px 16px', color: '#ccc', fontSize: '11px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          <div style={{ position: 'absolute', bottom: '0', left: '0', backgroundColor: '#282828', padding: '12px 20px', color: '#fff', fontSize: '13px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', borderTopRightRadius: '4px' }}>
             {eventMeta?.date || 'Upcoming Event'}
           </div>
         </div>
 
         {/* Event Info (Dark section) */}
-        <div style={{ backgroundColor: '#222' }}>
+        <div style={{ backgroundColor: '#282828' }}>
           {/* Padded content: title + venue */}
-          <div style={{ padding: '16px 20px 20px' }}>
-            <h2 style={{ fontSize: '22px', fontWeight: 900, margin: '0 0 16px', textTransform: 'uppercase', lineHeight: 1.2, color: 'white' }}>{selectedOrder.eventTitle}</h2>
+          <div style={{ padding: '20px 20px 24px' }}>
+            <h2 style={{ fontSize: '26px', fontWeight: 900, margin: '0 0 20px', textTransform: 'uppercase', lineHeight: 1.2, color: 'white' }}>{selectedOrder.eventTitle}</h2>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ color: '#aaa', fontSize: '13px' }}>
+              <div style={{ color: '#fff', fontSize: '16px' }}>
                 {eventMeta?.location || 'Venue'}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'white', fontSize: '14px', fontWeight: 700 }}>
-                <TicketIcon size={18} color="#ccc" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', fontSize: '20px', fontWeight: 800 }}>
+                <TicketIcon size={24} color="white" />
                 <span>x{selectedOrder.seats.length}</span>
               </div>
             </div>
           </div>
 
-          {/* Full-bleed View Tickets button with white border */}
-          <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: '2px solid white', margin: 0, padding: '14px', fontSize: '16px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box', letterSpacing: '0.3px' }}>
-            <ScanBarcode size={24} strokeWidth={2.5} color="white" />
+          {/* Full-bleed View Tickets button */}
+          <button style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', margin: 0, padding: '18px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box' }}>
+            <ScanBarcode size={24} strokeWidth={2} color="white" />
             View Tickets
           </button>
         </div>
@@ -772,12 +772,21 @@ export default function MyTickets() {
 
               {/* Map & Directions */}
               <div style={{ border: '1px solid #eee', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'white' }}>
-                <img 
-                  src="https://www.google.com/maps/d/thumbnail?mid=1fW8-U7961zP0K-Q-sB5cE_1s1c0&hl=en" 
-                  alt="Map" 
-                  style={{ width: '100%', height: '160px', objectFit: 'cover', display: 'block', objectPosition: 'center' }} 
-                />
-                <button style={{ width: '100%', padding: '16px', border: 'none', backgroundColor: '#f0f0f0', color: '#111', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>
+                <iframe
+                  width="100%"
+                  height="180"
+                  frameBorder="0"
+                  style={{ border: 0, display: 'block' }}
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(eventMeta?.location || 'New York')}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                  allowFullScreen
+                  title="Event Location"
+                ></iframe>
+                <button 
+                  onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(eventMeta?.location || 'New York')}`, '_blank')}
+                  style={{ width: '100%', padding: '16px', border: 'none', backgroundColor: '#f0f0f0', color: '#111', fontSize: '16px', fontWeight: 700, cursor: 'pointer', transition: 'background-color 0.2s' }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#e0e0e0'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                >
                   Get Directions
                 </button>
               </div>
