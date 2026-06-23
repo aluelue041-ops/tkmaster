@@ -742,30 +742,78 @@ export default function MyTickets() {
             <p style={{ color: '#888', fontSize: '13px', margin: '0 0 16px' }}>x{selectedOrder.seats.length} Tickets</p>
 
           {activeTab === 'Tickets' && (
-            ['Approved', 'Active', 'Transferred'].includes(selectedOrder.status) ? (
-              selectedOrder.seats.map((seatStr, idx) => (
-                <TicketStub
-                  key={idx}
-                  seatString={seatStr}
-                  ticketId={selectedOrder._id}
-                  orderNumber={generateOrderStr(selectedOrder._id, eventMeta?.location, selectedOrder.orderNumber)}
-                  onTransfer={handleTransfer}
-                  onSell={handleSell}
-                  eventImage={image}
-                  eventTitle={selectedOrder.eventTitle}
-                  currency={selectedOrder.currency}
-                  totalPrice={selectedOrder.totalPrice}
-                  status={selectedOrder.status}
-                  allSeats={selectedOrder.seats}
-                  ticketType={selectedOrder.ticketType}
-                />
-              ))
-            ) : (
-              <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: '#fff8e1', borderRadius: '12px', border: '1px solid #ffe082', marginTop: '16px' }}>
-                <p style={{ margin: 0, color: '#f57f17', fontWeight: 600, fontSize: '15px' }}>⏳ Pending Approval</p>
-                <p style={{ margin: '8px 0 0', color: '#666', fontSize: '13px', lineHeight: 1.5 }}>Your ticket order is currently being processed. The ticket contents and QR code will be available here once approved by the administrator.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                {['Approved', 'Active', 'Transferred'].includes(selectedOrder.status) ? (
+                  selectedOrder.seats.map((seatStr, idx) => (
+                    <TicketStub
+                      key={idx}
+                      seatString={seatStr}
+                      ticketId={selectedOrder._id}
+                      orderNumber={generateOrderStr(selectedOrder._id, eventMeta?.location, selectedOrder.orderNumber)}
+                      onTransfer={handleTransfer}
+                      onSell={handleSell}
+                      eventImage={image}
+                      eventTitle={selectedOrder.eventTitle}
+                      currency={selectedOrder.currency}
+                      totalPrice={selectedOrder.totalPrice}
+                      status={selectedOrder.status}
+                      allSeats={selectedOrder.seats}
+                      ticketType={selectedOrder.ticketType}
+                    />
+                  ))
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: '#fff8e1', borderRadius: '12px', border: '1px solid #ffe082', marginTop: '16px' }}>
+                    <p style={{ margin: 0, color: '#f57f17', fontWeight: 600, fontSize: '15px' }}>⏳ Pending Approval</p>
+                    <p style={{ margin: '8px 0 0', color: '#666', fontSize: '13px', lineHeight: 1.5 }}>Your ticket order is currently being processed. The ticket contents and QR code will be available here once approved by the administrator.</p>
+                  </div>
+                )}
               </div>
-            )
+
+              {/* Map & Directions */}
+              <div style={{ border: '1px solid #eee', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'white' }}>
+                <img 
+                  src="https://www.google.com/maps/d/thumbnail?mid=1fW8-U7961zP0K-Q-sB5cE_1s1c0&hl=en" 
+                  alt="Map" 
+                  style={{ width: '100%', height: '160px', objectFit: 'cover', display: 'block', objectPosition: 'center' }} 
+                />
+                <button style={{ width: '100%', padding: '16px', border: 'none', backgroundColor: '#f0f0f0', color: '#111', fontSize: '16px', fontWeight: 700, cursor: 'pointer' }}>
+                  Get Directions
+                </button>
+              </div>
+
+              {/* Promotion Banner */}
+              <div style={{ border: '1px solid #eee', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'white' }}>
+                <div style={{ display: 'flex', backgroundColor: '#111', color: 'white', minHeight: '160px' }}>
+                   {/* Left side: Image and details */}
+                   <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                     {image ? (
+                       <img src={image} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }} />
+                     ) : (
+                       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #026cdf, #004aad)', opacity: 0.4 }}></div>
+                     )}
+                     <div style={{ position: 'relative', zIndex: 1, padding: '20px 16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)', boxSizing: 'border-box' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#ccc', marginBottom: '6px', letterSpacing: '0.5px' }}>{eventMeta?.date?.toUpperCase() || 'UPCOMING EVENT'}</div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, lineHeight: 1.3, marginBottom: '6px', textTransform: 'uppercase' }}>{selectedOrder.eventTitle}</div>
+                        <div style={{ fontSize: '11px', color: '#aaa' }}>{eventMeta?.location || 'Venue'}</div>
+                     </div>
+                   </div>
+                   {/* Right side: YOU GOT TICKETS! */}
+                   <div style={{ flex: '0 0 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backgroundColor: '#1a1a1a', borderLeft: '1px solid #333' }}>
+                     <div style={{ textAlign: 'center', letterSpacing: '0.5px' }}>
+                       <div style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.4 }}>YOU GOT</div>
+                       <div style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.4, borderBottom: '3px solid white', display: 'inline-block' }}>TICKETS!</div>
+                     </div>
+                   </div>
+                </div>
+                <div style={{ padding: '20px 16px', backgroundColor: '#f0f0f0' }}>
+                  <h4 style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 800, color: '#111' }}>Post on Social Media</h4>
+                  <p style={{ margin: 0, color: '#666', fontSize: '14px', lineHeight: 1.5 }}>
+                    Build hype for the event, and share that you got tickets with your friends and family
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
           {activeTab === 'Extras' && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#aaa' }}>No extras available for this order.</div>
