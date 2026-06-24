@@ -134,8 +134,9 @@ const { Server } = require('socket.io');
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    origin: process.env.APP_URL || "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   }
 });
 
@@ -168,18 +169,31 @@ const forgotPasswordLimiter = rateLimit({
 });
 
 // --- Security Middleware ---
+// 1. Helmet for secure HTTP headers
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' } // allow Cloudinary images
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow Cloudinary images
+  contentSecurityPolicy: false, // Let frontend handle CSP or configure properly if serving static
 }));
+
+// 2. CORS configuration (Restricted to known origins)
 app.use(cors({
-  origin: '*', // Allows all domains including your custom one
+  origin: process.env.APP_URL || '*', // Restrict to frontend URL in production
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
+
+// 3. Body parsers with limits
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ limit: '5mb', extended: true }));
-// Removed express-mongo-sanitize due to "Cannot set property query" TypeError in production
 
+// 4. Prevent NoSQL Injection (Safe implementation for Express 5)
+app.use((req, res, next) => {
+  if (req.body) mongoSanitize.sanitize(req.body, { replaceWith: '_' });
+  if (req.params) mongoSanitize.sanitize(req.params, { replaceWith: '_' });
+  // Note: req.query is skipped due to Express 5 getter constraints
+  next();
+});
 
 
 // Database Connection
