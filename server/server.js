@@ -20,8 +20,8 @@ const Event = require('./models/Event');
 
 // SendGrid setup
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@ticketsmaster.app';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@ticketsmaster.app';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@ticketmaster.app';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@ticketmaster.app';
 
 // Cloudinary setup
 cloudinary.config({
@@ -50,11 +50,11 @@ async function sendWelcomeEmail(toEmail) {
     await sgMail.send({
       to: toEmail,
       from: FROM_EMAIL,
-      subject: 'Welcome to ticketsmaster! 🎟️',
+      subject: 'Welcome to Ticketmaster! 🎟️',
       html: `
         <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
           <div style="background:#026cdf;padding:32px;text-align:center">
-            <h1 style="color:white;font-style:italic;margin:0;font-size:32px">ticketsmaster</h1>
+            <h1 style="color:white;font-style:italic;margin:0;font-size:32px">Ticketmaster</h1>
           </div>
           <div style="padding:32px">
             <h2 style="color:#1a1a1a">Welcome aboard! 🎉</h2>
@@ -62,7 +62,7 @@ async function sendWelcomeEmail(toEmail) {
             <a href="https://tkmaster.onrender.com" style="display:inline-block;margin-top:16px;padding:12px 28px;background:#026cdf;color:white;border-radius:8px;text-decoration:none;font-weight:bold">Browse Events</a>
           </div>
           <div style="padding:16px 32px;background:#eee;font-size:12px;color:#999;text-align:center">
-            &copy; 2026 ticketsmaster. All rights reserved.
+            &copy; 2026 Ticketmaster. All rights reserved.
           </div>
         </div>
       `
@@ -91,7 +91,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
       html: `
         <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
           <div style="background:#026cdf;padding:32px;text-align:center">
-            <h1 style="color:white;font-style:italic;margin:0;font-size:32px">ticketsmaster</h1>
+            <h1 style="color:white;font-style:italic;margin:0;font-size:32px">Ticketmaster</h1>
           </div>
           <div style="padding:32px;background:white">
             <h2 style="color:#1a1a1a;margin-top:0">Booking Confirmed! ✅</h2>
@@ -110,7 +110,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
             <p style="color:#888;font-size:13px">Booking ID: <code>${ticket._id}</code></p>
           </div>
           <div style="padding:16px 32px;background:#eee;font-size:12px;color:#999;text-align:center">
-            &copy; 2026 ticketsmaster. All rights reserved.
+            &copy; 2026 Ticketmaster. All rights reserved.
           </div>
         </div>
       `,
@@ -293,11 +293,11 @@ app.post('/api/auth/forgot-password', forgotPasswordLimiter, async (req, res) =>
     await sgMail.send({
       to: email,
       from: FROM_EMAIL,
-      subject: 'Reset your ticketsmaster password 🔑',
+      subject: 'Reset your Ticketmaster password 🔑',
       html: `
         <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
           <div style="background:#026cdf;padding:32px;text-align:center">
-            <h1 style="color:white;font-style:italic;margin:0;font-size:32px">ticketsmaster</h1>
+            <h1 style="color:white;font-style:italic;margin:0;font-size:32px">Ticketmaster</h1>
           </div>
           <div style="padding:32px;background:white">
             <h2 style="color:#1a1a1a">Reset your password</h2>
@@ -306,7 +306,7 @@ app.post('/api/auth/forgot-password', forgotPasswordLimiter, async (req, res) =>
             <p style="color:#aaa;font-size:12px;margin-top:24px">If you didn't request this, you can safely ignore this email.</p>
           </div>
           <div style="padding:16px 32px;background:#eee;font-size:12px;color:#999;text-align:center">
-            &copy; 2026 ticketsmaster. All rights reserved.
+            &copy; 2026 Ticketmaster. All rights reserved.
           </div>
         </div>
       `
@@ -483,7 +483,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
       const noteHtml = note ? `<div style="background:#fff3cd;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ffeeba"><p style="margin:0;color:#856404;font-size:14px"><strong>Note from sender:</strong><br/>${note}</p></div>` : '';
 
       let emailHtml = `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;border:1px solid #eaeaea;border-radius:12px;overflow:hidden;">
-        <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">ticketsmaster</h1></div>
+        <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">Ticketmaster</h1></div>
         <div style="padding:32px 24px;background:white;text-align:center;">
           <h2 style="margin-top:0;">Hi ${name || 'there'}, you've received ${transferredSeats.length} ticket(s)! 🎟️</h2>
           <p style="color:#555;font-size:16px;"><strong>${senderEmail}</strong> has transferred their ticket(s) for <strong>${ticket.eventTitle}</strong> to you.</p>
@@ -627,7 +627,7 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
     // Stream buffer to Cloudinary
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { folder: 'ticketsmaster/events', resource_type: 'image' },
+        { folder: 'ticketmaster/events', resource_type: 'image' },
         (error, result) => {
           if (error) reject(error);
           else resolve(result);
@@ -760,7 +760,7 @@ app.put('/api/tickets/:id/approve', authMiddleware, adminMiddleware, async (req,
           from: FROM_EMAIL,
           subject: `Your ticket for "${ticket.eventTitle}" has been approved ✅`,
           html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
-            <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">ticketsmaster</h1></div>
+            <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">Ticketmaster</h1></div>
             <div style="padding:24px">
               <h2>Your booking is approved! 🎉</h2>
               <p>Your ticket(s) for <strong>${ticket.eventTitle}</strong> have been approved by the admin.</p>
@@ -799,7 +799,7 @@ app.put('/api/tickets/:id/reject', authMiddleware, adminMiddleware, async (req, 
           from: FROM_EMAIL,
           subject: `Your ticket for "${ticket.eventTitle}" was not approved ❌`,
           html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
-            <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">ticketsmaster</h1></div>
+            <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">Ticketmaster</h1></div>
             <div style="padding:24px">
               <h2>Booking Update</h2>
               <p>Unfortunately, your booking for <strong>${ticket.eventTitle}</strong> could not be approved at this time.</p>

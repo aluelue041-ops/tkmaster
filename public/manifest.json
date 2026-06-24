@@ -1,6 +1,6 @@
 {
-  "name": "ticketsmaster",
-  "short_name": "ticketsmaster",
+  "name": "Ticketmaster",
+  "short_name": "Ticketmaster",
   "description": "Discover and buy tickets for the best live events.",
   "start_url": "/",
   "display": "standalone",

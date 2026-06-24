@@ -76,7 +76,7 @@ function Header() {
     <header className="global-header">
       <div className="logo-container" onClick={() => navigate('/')}>
         <img src="/logo.svg" alt="logo" className="logo-img" />
-        <h1 className="logo-text">ticketsmaster</h1>
+        <h1 className="logo-text">Ticketmaster</h1>
       </div>
       
       {/* Desktop Nav Links */}

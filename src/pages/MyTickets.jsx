@@ -359,11 +359,11 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
     doc.setFillColor(2, 108, 223);
     doc.rect(0, 0, W, 28, 'F');
 
-    // ticketsmaster branding
+    // Ticketmaster branding
     doc.setFont('helvetica', 'bolditalic');
     doc.setFontSize(22);
     doc.setTextColor(255, 255, 255);
-    doc.text('ticketsmaster', 14, 19);
+    doc.text('Ticketmaster', 14, 19);
 
     // Status badge in header
     const statusLabel = (status || 'Active').toUpperCase();
@@ -441,7 +441,7 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(160, 160, 160);
-    doc.text('© 2026 ticketsmaster — Present this ticket at the entrance', W / 2, H - 6, { align: 'center' });
+    doc.text('© 2026 Ticketmaster — Present this ticket at the entrance', W / 2, H - 6, { align: 'center' });
 
     doc.save(`ticket-${parsed.section || 'ticket'}.pdf`);
   };
