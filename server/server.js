@@ -168,11 +168,35 @@ const forgotPasswordLimiter = rateLimit({
   message: { error: 'Too many password reset requests. Please wait an hour before trying again.' }
 });
 
+const ticketActionLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 10,
+  message: { error: 'Too many ticketing actions. Please slow down.' }
+});
+
+// Input Validation Middleware
+const validateAuth = (req, res, next) => {
+  const { email, password } = req.body;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) return res.status(400).json({ error: 'A valid email is required' });
+  if (!password || password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  next();
+};
+
 // --- Security Middleware ---
-// 1. Helmet for secure HTTP headers
+// 1. Helmet for secure HTTP headers with strict CSP
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow Cloudinary images
-  contentSecurityPolicy: false, // Let frontend handle CSP or configure properly if serving static
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+      connectSrc: ["'self'", process.env.APP_URL || "*"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+    }
+  }
 }));
 
 // 2. CORS configuration (Restricted to known origins)
@@ -230,7 +254,7 @@ const adminMiddleware = async (req, res, next) => {
 // --- ROUTES ---
 
 // 1. Register
-app.post('/api/auth/register', authLimiter, async (req, res) => {
+app.post('/api/auth/register', authLimiter, validateAuth, async (req, res) => {
   try {
     const { email, password } = req.body;
     let user = await User.findOne({ email });
@@ -366,7 +390,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 
 // 4. Book Tickets
-app.post('/api/tickets/book', authMiddleware, async (req, res) => {
+app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, res) => {
   try {
     const { eventId, eventTitle, seats, totalPrice, currency } = req.body;
 
@@ -419,7 +443,7 @@ app.get('/api/tickets/my-tickets', authMiddleware, async (req, res) => {
 });
 
 // 5b. Transfer Own Ticket (Client)
-app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
+app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, async (req, res) => {
   try {
     const { newEmail, name, phone, quantity, note, selectedSeat } = req.body;
     const ticket = await Ticket.findById(req.params.id).populate('user', 'email');
@@ -543,7 +567,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, async (req, res) => {
 });
 
 // 5c. Sell Ticket (Client)
-app.put('/api/tickets/:id/sell', authMiddleware, async (req, res) => {
+app.put('/api/tickets/:id/sell', authMiddleware, ticketActionLimiter, async (req, res) => {
   try {
     const { quantity, resalePrice, selectedSeat } = req.body;
     const ticket = await Ticket.findById(req.params.id);
@@ -603,7 +627,7 @@ app.put('/api/tickets/:id/sell', authMiddleware, async (req, res) => {
 });
 
 // 5d. Buy Resale Ticket (Client)
-app.post('/api/tickets/:id/buy-resale', authMiddleware, async (req, res) => {
+app.post('/api/tickets/:id/buy-resale', authMiddleware, ticketActionLimiter, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id).populate('user', 'email');
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
@@ -660,9 +684,13 @@ app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res)
 // 6. Get All Events (Public) - excludes expired events
 app.get('/api/events', async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;
+    const skip = (page - 1) * limit;
+    
     const now = new Date();
     // Fetch all events, filter out those with a real eventDate in the past
-    const events = await Event.find().sort({ createdAt: -1 });
+    const events = await Event.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
     const active = events.filter(ev => {
       if (ev.eventDate && ev.eventDate < now) return false;
       return true;
@@ -746,7 +774,11 @@ app.get('/api/users', authMiddleware, adminMiddleware, async (req, res) => {
 // 10. Get All Tickets (Admin)
 app.get('/api/tickets', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const tickets = await Ticket.find().populate('user', 'email').sort({ purchaseDate: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 200;
+    const skip = (page - 1) * limit;
+
+    const tickets = await Ticket.find().populate('user', 'email').sort({ purchaseDate: -1 }).skip(skip).limit(limit);
     res.json(tickets);
   } catch (err) {
     console.error(err);
