@@ -128,6 +128,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
 }
 
 const app = express();
+app.set('trust proxy', 1); // Required for express-rate-limit behind Render/proxies
 const http = require('http');
 const { Server } = require('socket.io');
 
@@ -446,7 +447,8 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
     await newTicket.save();
 
     // Mark seats as booked on the event document for real-time availability
-    if (eventId && eventId !== 'trending') {
+    const mongoose = require('mongoose');
+    if (eventId && eventId !== 'trending' && mongoose.Types.ObjectId.isValid(eventId)) {
       try {
         await Event.findByIdAndUpdate(eventId, {
           $push: { bookedSeats: { $each: seats } }
@@ -739,6 +741,9 @@ app.get('/api/events', async (req, res) => {
 // 6b. Get booked seats for an event
 app.get('/api/events/:id/booked-seats', async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.json([]);
+    }
     const event = await Event.findById(req.params.id).select('bookedSeats');
     if (!event) return res.status(404).json({ error: 'Event not found' });
     res.json(event.bookedSeats || []);
@@ -751,6 +756,9 @@ app.get('/api/events/:id/booked-seats', async (req, res) => {
 // 6c. Get resale tickets for an event
 app.get('/api/events/:id/resale-tickets', async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.json([]);
+    }
     const tickets = await Ticket.find({ eventId: req.params.id, status: 'For Sale' }).populate('user', 'email');
     res.json(tickets);
   } catch (err) {
@@ -774,6 +782,7 @@ app.post('/api/events', authMiddleware, adminMiddleware, async (req, res) => {
 // 7b. Update Event (Admin)
 app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Event not found' });
     const updatedEvent = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updatedEvent) return res.status(404).json({ error: 'Event not found' });
     res.json(updatedEvent);
@@ -786,6 +795,7 @@ app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => 
 // 8. Delete Event (Admin)
 app.delete('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Event not found' });
     await Event.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
