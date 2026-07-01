@@ -925,12 +925,110 @@ app.put('/api/tickets/:id/transfer', authMiddleware, adminMiddleware, async (req
     await ticket.save();
 
     const updatedTicket = await Ticket.findById(ticket._id).populate('user', 'email');
+
+    // Email notification would go here if needed...
     res.json(updatedTicket);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+// --- PAYHERO M-PESA INTEGRATION ---
+
+// Initiate STK Push
+app.post('/api/payhero/stk-push', authMiddleware, async (req, res) => {
+  try {
+    const { phoneNumber, amount, plan } = req.body;
+    
+    if (!phoneNumber || !amount || !plan) {
+      return res.status(400).json({ error: 'Missing required payment details' });
+    }
+
+    const reference = `SUB_${req.user.id}_${Date.now()}`;
+
+    // Use PAYHERO_API_USER, PAYHERO_API_PASS, and PAYHERO_CHANNEL_ID from your .env
+    const apiUser = process.env.PAYHERO_API_USER;
+    const apiPass = process.env.PAYHERO_API_PASS;
+    const channelId = process.env.PAYHERO_CHANNEL_ID;
+    
+    if (!apiUser || !apiPass || !channelId) {
+      // Simulate successful payment if no PayHero credentials exist (for demo purposes)
+      console.log(`[Demo] Simulating PayHero STK Push for ${phoneNumber} (${amount} KES). Upgrading user to ${plan}.`);
+      await User.findByIdAndUpdate(req.user.id, { subscription: plan });
+      return res.json({ success: true, message: 'STK Push Initiated (Simulated)' });
+    }
+
+    // Base64 encode the user and pass for Basic Auth
+    const payheroAuth = Buffer.from(`${apiUser}:${apiPass}`).toString('base64');
+
+    // Actual PayHero API Call
+    const response = await fetch('https://backend.payhero.co.ke/api/v2/payments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${payheroAuth}`
+      },
+      body: JSON.stringify({
+        amount: amount,
+        phone_number: phoneNumber,
+        channel_id: channelId,
+        provider: 'm-pesa',
+        external_reference: reference,
+        callback_url: `${process.env.APP_URL || 'https://tkmaster.onrender.com'}/api/payhero/callback`
+      })
+    });
+
+    const data = await response.json();
+    if (response.ok && data.success) {
+      // Save pending transaction to DB if you have a Transaction model
+      res.json({ success: true, message: 'STK Push Initiated. Please check your phone.', reference });
+    } else {
+      res.status(400).json({ error: data.message || 'Payment initiation failed' });
+    }
+  } catch (err) {
+    console.error('PayHero error:', err);
+    res.status(500).json({ error: 'Failed to initiate M-Pesa STK Push' });
+  }
+});
+
+// PayHero Webhook Callback
+app.post('/api/payhero/callback', async (req, res) => {
+  try {
+    const callbackData = req.body;
+    
+    console.log('PayHero Callback Received:', callbackData);
+
+    // Verify transaction status
+    if (callbackData && callbackData.status === 'Success') {
+      const extRef = callbackData.external_reference; // e.g. "SUB_user123_162384728"
+      
+      if (extRef && extRef.startsWith('SUB_')) {
+        const parts = extRef.split('_');
+        const userId = parts[1];
+
+        // Determine plan based on amount paid (You could also encode this in the reference)
+        const amount = callbackData.amount;
+        let plan = 'Free';
+        if (amount >= 50000) plan = 'VIP';
+        else if (amount >= 30000) plan = 'Premium';
+        else if (amount >= 15000) plan = 'Basic';
+
+        if (userId) {
+          await User.findByIdAndUpdate(userId, { subscription: plan });
+          console.log(`User ${userId} successfully upgraded to ${plan} via PayHero.`);
+        }
+      }
+    }
+    
+    res.status(200).send('OK');
+  } catch (err) {
+    console.error('Webhook processing error:', err);
+    res.status(500).send('Error');
+  }
+});
+
+// --- REJECT TICKET (ADMIN) ---
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, MapPin, Globe, Heart, CreditCard, HelpCircle, MessageSquare, BookOpen, ChevronRight, Bell, Download } from 'lucide-react';
+import { Mail, MapPin, Globe, Heart, CreditCard, HelpCircle, MessageSquare, BookOpen, ChevronRight, Bell, Download, Zap } from 'lucide-react';
 
 export default function MyAccount() {
   const [receiveNotifs, setReceiveNotifs] = useState(false);
@@ -163,6 +163,14 @@ export default function MyAccount() {
             <div className="settings-item-left">
               <CreditCard size={20} color="#666" />
               <span>Saved Payment Methods</span>
+            </div>
+            <ChevronRight size={20} color="#ccc" />
+          </div>
+
+          <div className="settings-item" onClick={() => navigate('/pricing')} style={{ cursor: 'pointer' }}>
+            <div className="settings-item-left">
+              <Zap size={20} color="#026cdf" />
+              <span style={{ fontWeight: 600, color: '#026cdf' }}>Subscription Plans (M-Pesa)</span>
             </div>
             <ChevronRight size={20} color="#ccc" />
           </div>

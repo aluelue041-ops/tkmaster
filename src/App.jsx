@@ -23,6 +23,7 @@ import SeatSelection from './pages/SeatSelection';
 import SignIn from './pages/SignIn';
 import AdminDashboard from './pages/AdminDashboard';
 import ResetPassword from './pages/ResetPassword';
+import Pricing from './pages/Pricing';
 
 function BottomNav() {
   const navigate = useNavigate();
@@ -142,6 +143,7 @@ function App() {
             <Route path="/signin" element={<SignIn />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/pricing" element={<Pricing />} />
           </Routes>
         </main>
         <BottomNav />
