@@ -12,6 +12,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const crypto = require('crypto');
+const cron = require('node-cron');
 
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
@@ -404,7 +405,13 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
 
     // Check user subscription for auto-approval and limits
     const user = await User.findById(req.user.id);
-    const subscription = user ? (user.subscription || 'Free') : 'Free';
+
+    // Check if subscription has expired → revert to Free
+    let subscription = user ? (user.subscription || 'Free') : 'Free';
+    if (subscription !== 'Free' && user.subscriptionExpiresAt && new Date() > user.subscriptionExpiresAt) {
+      subscription = 'Free';
+      await User.findByIdAndUpdate(req.user.id, { subscription: 'Free', subscriptionExpiresAt: null });
+    }
     const autoApprove = subscription !== 'Free';
 
     // Calculate seats bought this month
@@ -822,7 +829,14 @@ app.get('/api/users', authMiddleware, adminMiddleware, async (req, res) => {
 app.put('/api/users/:id/subscription', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { subscription } = req.body;
-    const user = await User.findByIdAndUpdate(req.params.id, { subscription }, { new: true }).select('-password');
+    const expiresAt = subscription === 'Free' || subscription === 'None'
+      ? null
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { subscription, subscriptionExpiresAt: expiresAt },
+      { new: true }
+    ).select('-password');
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (err) {
@@ -1031,8 +1045,9 @@ app.post('/api/payhero/callback', async (req, res) => {
         else if (amount >= 15000) plan = 'Basic';
 
         if (userId) {
-          await User.findByIdAndUpdate(userId, { subscription: plan });
-          console.log(`User ${userId} successfully upgraded to ${plan} via PayHero.`);
+          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+          await User.findByIdAndUpdate(userId, { subscription: plan, subscriptionExpiresAt: expiresAt });
+          console.log(`User ${userId} upgraded to ${plan} via PayHero. Expires: ${expiresAt}`);
         }
       }
     }
@@ -1045,6 +1060,22 @@ app.post('/api/payhero/callback', async (req, res) => {
 });
 
 // --- REJECT TICKET (ADMIN) ---
+
+// --- CRON: Reset expired subscriptions daily at midnight ---
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const now = new Date();
+    const result = await User.updateMany(
+      { subscription: { $nin: ['Free', 'None'] }, subscriptionExpiresAt: { $lt: now } },
+      { $set: { subscription: 'Free', subscriptionExpiresAt: null } }
+    );
+    if (result.modifiedCount > 0) {
+      console.log(`[CRON] Reset ${result.modifiedCount} expired subscription(s) to Free.`);
+    }
+  } catch (err) {
+    console.error('[CRON] Subscription reset error:', err.message);
+  }
+});
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

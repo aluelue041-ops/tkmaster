@@ -6,31 +6,31 @@ export default function MyAccount() {
   const [receiveNotifs, setReceiveNotifs] = useState(false);
   const [locationContent, setLocationContent] = useState(true);
   const [user, setUser] = useState(null);
+  const [liveUser, setLiveUser] = useState(null);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const navigate = useNavigate();
-
   const [toastMessage, setToastMessage] = useState('');
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    if (storedUser) setUser(JSON.parse(storedUser));
+
+    // Fetch live user data for subscription info
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch(`${API}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(u => setLiveUser(u))
+        .catch(() => {});
     }
 
-    // Check if already installed as PWA
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-    }
-
-    // Capture the install prompt event
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
+    if (window.matchMedia('(display-mode: standalone)').matches) setIsInstalled(true);
+    const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+  }, [API]);
 
   const handleInstallApp = async () => {
     if (deferredPrompt) {
@@ -67,6 +67,36 @@ export default function MyAccount() {
       <div className="profile-header">
         <h2 className="profile-name">{user ? user.email.split('@')[0] : 'Guest'}</h2>
         <p className="profile-email">{user ? user.email : 'Please sign in'}</p>
+
+        {/* Subscription Badge */}
+        {liveUser && (() => {
+          const sub = liveUser.subscription || 'Free';
+          const expires = liveUser.subscriptionExpiresAt ? new Date(liveUser.subscriptionExpiresAt) : null;
+          const daysLeft = expires ? Math.max(0, Math.ceil((expires - new Date()) / (1000 * 60 * 60 * 24))) : null;
+          const badgeColors = {
+            Free: { bg: '#e0e0e0', color: '#555', emoji: '⚪' },
+            Basic: { bg: '#dbeafe', color: '#1d4ed8', emoji: '🔵' },
+            Premium: { bg: '#ede9fe', color: '#7c3aed', emoji: '🟣' },
+            VIP: { bg: '#fef9c3', color: '#a16207', emoji: '⭐' },
+          };
+          const badge = badgeColors[sub] || badgeColors.Free;
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '12px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: badge.bg, color: badge.color, borderRadius: '20px', padding: '6px 16px', fontSize: '13px', fontWeight: 700 }}>
+                <span>{badge.emoji}</span>
+                <span>{sub.toUpperCase()} PLAN</span>
+              </div>
+              {sub !== 'Free' && daysLeft !== null && (
+                <p style={{ margin: 0, fontSize: '12px', color: daysLeft <= 5 ? '#ef4444' : '#888' }}>
+                  {daysLeft <= 5 ? `⚠️ Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}` : `Renews in ${daysLeft} days`}
+                </p>
+              )}
+              {sub === 'Free' && (
+                <button onClick={() => navigate('/pricing')} style={{ background: 'none', border: 'none', color: '#026cdf', fontSize: '12px', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>Upgrade Plan →</button>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="settings-list">

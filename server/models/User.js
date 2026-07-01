@@ -23,8 +23,12 @@ const UserSchema = new mongoose.Schema({
   resetPasswordExpires: Date,
   subscription: {
     type: String,
-    enum: ['None', 'Basic', 'Premium', 'VIP'],
-    default: 'None'
+    enum: ['None', 'Free', 'Basic', 'Premium', 'VIP'],
+    default: 'Free'
+  },
+  subscriptionExpiresAt: {
+    type: Date,
+    default: null
   }
 });
 

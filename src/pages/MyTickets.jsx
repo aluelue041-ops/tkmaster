@@ -865,10 +865,60 @@ export default function MyTickets() {
   }
 
   // Orders list view
+  const currentMonthStart = new Date();
+  currentMonthStart.setDate(1);
+  currentMonthStart.setHours(0, 0, 0, 0);
+
+  const usedThisMonth = tickets.reduce((total, ticket) => {
+    const tDate = new Date(ticket.purchaseDate || ticket.createdAt || new Date());
+    if (tDate >= currentMonthStart) {
+      return total + (ticket.seats ? ticket.seats.length : 1);
+    }
+    return total;
+  }, 0);
+
+  let limit = 2; // Free
+  if (userSubscription === 'Basic') limit = 40;
+  if (userSubscription === 'Premium') limit = 100;
+  const isVIP = userSubscription === 'VIP';
+
+  const usagePercent = isVIP ? 0 : Math.min(100, (usedThisMonth / limit) * 100);
+
   return (
     <div className="page my-tickets-page" style={{ backgroundColor: '#f8f8f8', minHeight: '100vh' }}>
       <div style={{ backgroundColor: 'white', padding: '20px 16px', borderBottom: '1px solid #eee' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>My Tickets</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 16px' }}>My Tickets</h1>
+        
+        {/* Usage Progress */}
+        <div style={{ backgroundColor: '#f8f9fa', borderRadius: '12px', padding: '16px', border: '1px solid #eaeaea' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monthly Usage</div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#111', marginTop: '2px' }}>
+                {isVIP ? `${usedThisMonth} Tickets (Unlimited)` : `${usedThisMonth} of ${limit} Tickets`}
+              </div>
+            </div>
+            {!isVIP && (
+              <button 
+                onClick={() => navigate('/pricing')}
+                style={{ background: 'none', border: 'none', color: '#026cdf', fontSize: '13px', fontWeight: 700, padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Upgrade Plan
+              </button>
+            )}
+          </div>
+          {!isVIP && (
+            <div style={{ width: '100%', height: '8px', backgroundColor: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
+              <div style={{ width: `${usagePercent}%`, height: '100%', backgroundColor: usagePercent >= 100 ? '#ef4444' : usagePercent >= 80 ? '#f59e0b' : '#026cdf', transition: 'width 0.3s' }}></div>
+            </div>
+          )}
+          {!isVIP && limit - usedThisMonth <= 5 && limit - usedThisMonth > 0 && (
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#f59e0b', fontWeight: 600 }}>⚠️ Only {limit - usedThisMonth} ticket{limit - usedThisMonth !== 1 ? 's' : ''} left this month!</p>
+          )}
+          {!isVIP && limit - usedThisMonth <= 0 && (
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>⚠️ You have reached your monthly booking limit.</p>
+          )}
+        </div>
       </div>
 
       {loading ? (
