@@ -426,7 +426,10 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
     else if (subscription === 'VIP') limit = Infinity;
 
     if (seatsBoughtThisMonth + numSeatsRequested > limit) {
-      return res.status(400).json({ error: `Monthly limit exceeded. Your ${subscription} plan allows ${limit} tickets/month. You have already booked ${seatsBoughtThisMonth}.` });
+      return res.status(400).json({ 
+        error: `Monthly limit exceeded. Your ${subscription} plan allows ${limit} tickets/month. You have already booked ${seatsBoughtThisMonth}.`,
+        limitExceeded: true
+      });
     }
 
     const newTicket = new Ticket({

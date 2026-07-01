@@ -16,6 +16,10 @@ export default function SeatSelection() {
   const [selectedSpecificSeats, setSelectedSpecificSeats] = useState([]);
   const [viewMode, setViewMode] = useState('sections'); // 'sections' or 'seats'
 
+  // Limit modal state
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitMessage, setLimitMessage] = useState('');
+
   const basePrice = event?.basePrice || 80;
 
   const generateSections = (base) => {
@@ -224,6 +228,11 @@ export default function SeatSelection() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
+        if (errData.limitExceeded) {
+          setLimitMessage(errData.error);
+          setShowLimitModal(true);
+          return;
+        }
         throw new Error(errData.error || `Server error (${res.status})`);
       }
       
