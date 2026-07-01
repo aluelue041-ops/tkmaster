@@ -623,6 +623,35 @@ export default function SeatSelection() {
         </div>
       </div>
 
+      {/* Limit Exceeded / Upgrade Modal */}
+      {showLimitModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '24px', padding: '36px 28px', width: '100%', maxWidth: '380px', boxShadow: '0 24px 64px rgba(0,0,0,0.25)', textAlign: 'center' }}>
+            <div style={{ fontSize: '52px', marginBottom: '16px' }}>🔒</div>
+            <h3 style={{ margin: '0 0 12px', fontSize: '22px', fontWeight: 900, color: '#111' }}>Booking Limit Reached</h3>
+            <p style={{ margin: '0 0 28px', color: '#666', fontSize: '14px', lineHeight: 1.6 }}>
+              {limitMessage}
+            </p>
+            <p style={{ margin: '0 0 24px', color: '#026cdf', fontWeight: 700, fontSize: '14px' }}>
+              Upgrade your plan to book more tickets this month.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={() => navigate('/pricing')}
+                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: '#026cdf', color: 'white', fontSize: '16px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px rgba(2,108,223,0.3)' }}
+              >
+                View Packages & Upgrade ✨
+              </button>
+              <button
+                onClick={() => setShowLimitModal(false)}
+                style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #e0e0e0', backgroundColor: 'white', color: '#666', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
