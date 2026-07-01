@@ -156,23 +156,26 @@ io.on('connection', (socket) => {
 
 // --- Rate Limiters ---
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 20,
   message: { error: 'Too many attempts. Please try again after 15 minutes.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
 });
 
 const forgotPasswordLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000,
   max: 5,
-  message: { error: 'Too many password reset requests. Please wait an hour before trying again.' }
+  message: { error: 'Too many password reset requests. Please wait an hour before trying again.' },
+  validate: { xForwardedForHeader: false }
 });
 
 const ticketActionLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 10,
-  message: { error: 'Too many ticketing actions. Please slow down.' }
+  windowMs: 5 * 60 * 1000,
+  max: 30,
+  message: { error: 'Too many ticketing actions. Please slow down.' },
+  validate: { xForwardedForHeader: false }
 });
 
 // Input Validation Middleware

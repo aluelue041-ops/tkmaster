@@ -14,7 +14,8 @@ export default function SeatSelection() {
   const [selectedSection, setSelectedSection] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedSpecificSeats, setSelectedSpecificSeats] = useState([]);
-  const [viewMode, setViewMode] = useState('sections'); // 'sections' or 'seats'
+  const [viewMode, setViewMode] = useState('sections');
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   // Limit modal state
   const [showLimitModal, setShowLimitModal] = useState(false);
@@ -196,6 +197,7 @@ export default function SeatSelection() {
   const handleCheckout = async () => {
     if (!selectedSection) return;
     if (!selectedSection.isGA && selectedSpecificSeats.length === 0) return;
+    if (checkoutLoading) return;
     
     const token = localStorage.getItem('token');
     if (!token) {
@@ -209,6 +211,7 @@ export default function SeatSelection() {
       ? Array.from({ length: quantity }, (_, i) => `Section: ${selectedSection.ticketName}, Ticket Number: ${i + 1} (General Admission)`)
       : selectedSpecificSeats.map(s => `Section: ${selectedSection.ticketName}, Row: ${s.row}, Seat Number: ${s.num}`);
 
+    setCheckoutLoading(true);
     try {
       const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const res = await fetch(`${API}/api/tickets/book`, {
@@ -237,10 +240,12 @@ export default function SeatSelection() {
       }
       
       const numTickets = selectedSection.isGA ? quantity : selectedSpecificSeats.length;
-      toast.success(`Successfully booked ${numTickets} ticket(s) in ${selectedSection.name} for $${totalPrice}!`);
+      toast.success(`Successfully booked ${numTickets} ticket(s)!`);
       navigate('/mytickets');
     } catch (err) {
       toast.error(err.message);
+    } finally {
+      setCheckoutLoading(false);
     }
   };
 
@@ -605,14 +610,15 @@ export default function SeatSelection() {
             className="btn-primary" 
             style={{ 
               width: 'auto', padding: '14px 32px', margin: 0, 
-              opacity: !selectedSection ? 0.5 : 1, 
-              cursor: !selectedSection ? 'not-allowed' : 'pointer',
-              backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '16px'
+              opacity: (!selectedSection || checkoutLoading) ? 0.7 : 1, 
+              cursor: (!selectedSection || checkoutLoading) ? 'not-allowed' : 'pointer',
+              backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '16px',
+              transition: 'opacity 0.2s'
             }} 
             onClick={handleCheckout}
-            disabled={!selectedSection || (!selectedSection.isGA && selectedSpecificSeats.length === 0)}
+            disabled={!selectedSection || (!selectedSection.isGA && selectedSpecificSeats.length === 0) || checkoutLoading}
           >
-            Checkout
+            {checkoutLoading ? 'Booking...' : 'Checkout'}
           </button>
         </div>
       </div>
