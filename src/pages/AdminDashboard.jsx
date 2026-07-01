@@ -255,6 +255,31 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUpdateSubscription = async (userId, newSubscription) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/api/users/${userId}/subscription`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ subscription: newSubscription })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        setUsers(users.map(u => u._id === userId ? updatedUser : u));
+        toast.success(`Subscription updated to ${newSubscription}!`);
+      } else {
+        const data = await res.json();
+        toast.error(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update subscription');
+    }
+  };
+
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>Loading Dashboard...</div>;
 
   return (
@@ -397,9 +422,24 @@ export default function AdminDashboard() {
               <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No users found.</p>
             ) : (
               filteredUsers.map(user => (
-                <div key={user._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
-                  <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{user.email}</p>
-                  <p style={{ margin: '4px 0 0', color: '#aaa', fontSize: '12px' }}>Role: {user.role} • Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
+                <div key={user._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{user.email}</p>
+                    <p style={{ margin: '4px 0 0', color: '#aaa', fontSize: '12px' }}>Role: {user.role} • Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#aaa', fontSize: '13px' }}>Package:</span>
+                    <select
+                      value={user.subscription || 'Free'}
+                      onChange={(e) => handleUpdateSubscription(user._id, e.target.value)}
+                      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', outline: 'none' }}
+                    >
+                      <option value="Free">Free (2 tickets)</option>
+                      <option value="Basic">Basic (40 tickets)</option>
+                      <option value="Premium">Premium (100 tickets)</option>
+                      <option value="VIP">VIP (Unlimited)</option>
+                    </select>
+                  </div>
                 </div>
               ))
             )}

@@ -343,7 +343,7 @@ function SellModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCa
   );
 }
 
-function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats, ticketType }) {
+function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats, ticketType, userSubscription }) {
   const [showActions, setShowActions] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
@@ -447,7 +447,12 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
   };
 
   return (
-    <div style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e8e8e8', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+    <div style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e8e8e8', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', position: 'relative' }}>
+      {userSubscription === 'Free' && (
+        <div style={{ padding: '6px', backgroundColor: '#ffcc00', color: '#111', fontSize: '11px', fontWeight: 700, textAlign: 'center', letterSpacing: '0.5px' }}>
+          ⚠️ SCREEN RECORDING / SCREENSHOTS PROHIBITED ON FREE TIER
+        </div>
+      )}
       {/* Ticket type header */}
       <div style={{ backgroundColor: '#f0f0f0', padding: '10px 16px', fontWeight: 700, fontSize: '13px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
         {ticketType || parsed.type}
@@ -559,6 +564,7 @@ export default function MyTickets() {
   const [activeTab, setActiveTab] = useState('Tickets');
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
+  const [userSubscription, setUserSubscription] = useState('Free');
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const navigate = useNavigate();
@@ -567,9 +573,10 @@ export default function MyTickets() {
     const token = localStorage.getItem('token');
     const fetchData = async () => {
       try {
-        const [ticketRes, eventRes] = await Promise.all([
+        const [ticketRes, eventRes, userRes] = await Promise.all([
           token ? fetch(`${API}/api/tickets/my-tickets`, { headers: { 'Authorization': `Bearer ${token}` } }) : Promise.resolve({ ok: false }),
-          fetch(`${API}/api/events`)
+          fetch(`${API}/api/events`),
+          token ? fetch(`${API}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } }) : Promise.resolve({ ok: false })
         ]);
         if (ticketRes.ok) {
           const tData = await ticketRes.json();
@@ -578,6 +585,10 @@ export default function MyTickets() {
         if (eventRes.ok) {
           const eData = await eventRes.json();
           setEvents(eData);
+        }
+        if (userRes.ok) {
+          const uData = await userRes.json();
+          setUserSubscription(uData.subscription || 'Free');
         }
       } catch (err) {
         console.error(err);
@@ -777,6 +788,7 @@ export default function MyTickets() {
                       status={selectedOrder.status}
                       allSeats={selectedOrder.seats}
                       ticketType={selectedOrder.ticketType}
+                      userSubscription={userSubscription}
                     />
                   ))
                 ) : (

@@ -20,7 +20,12 @@ const UserSchema = new mongoose.Schema({
     default: 'user'
   },
   resetPasswordToken: String,
-  resetPasswordExpires: Date
+  resetPasswordExpires: Date,
+  subscription: {
+    type: String,
+    enum: ['None', 'Basic', 'Premium', 'VIP'],
+    default: 'None'
+  }
 });
 
 UserSchema.pre('save', async function() {

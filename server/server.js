@@ -398,6 +398,37 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
     const orderCount = await Ticket.countDocuments();
     const orderNumber = orderCount + 1;
 
+    // Check user subscription for auto-approval and limits
+    const user = await User.findById(req.user.id);
+    const subscription = user ? (user.subscription || 'Free') : 'Free';
+    const autoApprove = subscription !== 'Free';
+
+    // Calculate seats bought this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const userTicketsThisMonth = await Ticket.find({
+      user: req.user.id,
+      purchaseDate: { $gte: startOfMonth }
+    });
+
+    let seatsBoughtThisMonth = 0;
+    userTicketsThisMonth.forEach(t => {
+      seatsBoughtThisMonth += (t.seats ? t.seats.length : 1);
+    });
+
+    const numSeatsRequested = seats ? seats.length : 1;
+
+    let limit = 2; // Free tier
+    if (subscription === 'Basic') limit = 40;
+    else if (subscription === 'Premium') limit = 100;
+    else if (subscription === 'VIP') limit = Infinity;
+
+    if (seatsBoughtThisMonth + numSeatsRequested > limit) {
+      return res.status(400).json({ error: `Monthly limit exceeded. Your ${subscription} plan allows ${limit} tickets/month. You have already booked ${seatsBoughtThisMonth}.` });
+    }
+
     const newTicket = new Ticket({
       user: req.user.id,
       eventId,
@@ -405,7 +436,7 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       seats,
       totalPrice,
       currency: currency || '$',
-      status: 'Pending',
+      status: autoApprove ? 'Approved' : 'Pending',
       orderNumber
     });
 
@@ -421,8 +452,8 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
     }
 
     // Send booking confirmation email with QR code
-    const user = await User.findById(req.user.id).select('email');
-    if (user) sendBookingConfirmationEmail(user.email, newTicket);
+    const emailUser = await User.findById(req.user.id).select('email');
+    if (emailUser) sendBookingConfirmationEmail(emailUser.email, newTicket);
 
     res.json(newTicket);
   } catch (err) {
@@ -765,6 +796,19 @@ app.get('/api/users', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 9b. Update User Subscription (Admin)
+app.put('/api/users/:id/subscription', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { subscription } = req.body;
+    const user = await User.findByIdAndUpdate(req.params.id, { subscription }, { new: true }).select('-password');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
