@@ -118,32 +118,33 @@ export default function EventDetails() {
           </p>
         </div>
 
-        {/* Location Map Placeholder */}
+        {/* Location Map */}
         <div style={{ marginTop: '32px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px' }}>Location</h2>
-          {event.mapLink ? (
-            <a href={event.mapLink} target="_blank" rel="noreferrer" style={{ display: 'block', textDecoration: 'none' }}>
-              <div style={{ 
-                width: '100%', height: '180px', backgroundColor: '#e0e0e0', borderRadius: '16px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', cursor: 'pointer'
-              }}>
-                <div style={{ position: 'absolute', inset: 0, opacity: 0.5, backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                <div style={{ zIndex: 2, padding: '12px', backgroundColor: 'white', borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                   <MapPin size={24} color="#026cdf" />
-                </div>
-              </div>
+          <div style={{ border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden', backgroundColor: 'var(--card-bg)' }}>
+            <iframe
+              width="100%"
+              height="180"
+              frameBorder="0"
+              style={{ border: 0, display: 'block' }}
+              src={`https://maps.google.com/maps?q=${encodeURIComponent((event.location || 'New York').replace(' • ', ', '))}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+              allowFullScreen
+              title="Event Location"
+            ></iframe>
+            <a
+              href={event.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((event.location || 'New York').replace(' • ', ', '))}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', 
+                width: '100%', padding: '16px', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', 
+                fontSize: '16px', fontWeight: 700, textDecoration: 'none', borderTop: '1px solid var(--border-color)' 
+              }}
+            >
+              <MapPin size={18} />
+              Get Directions
             </a>
-          ) : (
-            <div style={{ 
-              width: '100%', height: '180px', backgroundColor: '#e0e0e0', borderRadius: '16px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden'
-            }}>
-              <div style={{ position: 'absolute', inset: 0, opacity: 0.5, backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-              <div style={{ zIndex: 2, padding: '12px', backgroundColor: 'white', borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                 <MapPin size={24} color="var(--primary-color)" />
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 

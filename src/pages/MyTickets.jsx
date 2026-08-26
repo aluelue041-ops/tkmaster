@@ -806,13 +806,13 @@ export default function MyTickets() {
                   height="180"
                   frameBorder="0"
                   style={{ border: 0, display: 'block' }}
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent(eventMeta?.location || 'New York')}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent((eventMeta?.location || 'New York').replace(' • ', ', '))}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
                   allowFullScreen
                   title="Event Location"
                 ></iframe>
                 <button 
                   className="interactive-btn"
-                  onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(eventMeta?.location || 'New York')}`, '_blank')}
+                  onClick={() => window.open(eventMeta?.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((eventMeta?.location || 'New York').replace(' • ', ', '))}`, '_blank')}
                   style={{ width: '100%', padding: '16px', border: 'none', backgroundColor: '#f0f0f0', color: '#111', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
                   onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
