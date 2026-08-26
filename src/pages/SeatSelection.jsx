@@ -138,19 +138,19 @@ export default function SeatSelection() {
     if (!id || id === 'trending') return;
     const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     
-    // Fetch booked seats
     fetch(`${API}/api/events/${id}/booked-seats`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
           // seats stored as full strings like "Section: VIP - Floor A, Row: 1, Seat Number: 5"
-          // Build a set of row-seat keys using section+row+seat
+          // Build a set of section-row-seat keys
           const seatSet = new Set();
           data.forEach(s => {
+            const secMatch = s.match(/Section:\s*([^,]+)/);
             const rowMatch = s.match(/Row:\s*([^,]+)/);
             const seatMatch = s.match(/Seat Number:\s*(\d+)/);
-            if (rowMatch && seatMatch) {
-              seatSet.add(`${rowMatch[1].trim()}-${seatMatch[1]}`);
+            if (secMatch && rowMatch && seatMatch) {
+              seatSet.add(`${secMatch[1].trim()}-${rowMatch[1].trim()}-${seatMatch[1]}`);
             }
           });
           setBookedSeats(seatSet);
@@ -177,7 +177,7 @@ export default function SeatSelection() {
   };
 
   const toggleSeat = (rowId, seatNum) => {
-    const seatId = `${rowId}-${seatNum}`;
+    const seatId = `${selectedSection.ticketName}-${rowId}-${seatNum}`;
     if (bookedSeats.has(seatId)) return;
 
     setSelectedSpecificSeats(prev => {
@@ -502,7 +502,7 @@ export default function SeatSelection() {
                 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {row.seats.map(seat => {
-                    const seatId = `${row.id}-${seat}`;
+                    const seatId = `${selectedSection.ticketName}-${row.id}-${seat}`;
                     const isBooked = bookedSeats.has(seatId);
                     const isSelected = selectedSpecificSeats.some(s => s.id === seatId);
                     

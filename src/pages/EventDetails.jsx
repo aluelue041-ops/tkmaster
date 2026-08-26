@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, MapPin, Calendar, Clock, Share2, Heart, CheckCircle } from 'lucide-react';
+import { getMapIframeSrc } from '../utils/mapUtils';
 
 export default function EventDetails() {
   const navigate = useNavigate();
@@ -127,7 +128,7 @@ export default function EventDetails() {
               height="180"
               frameBorder="0"
               style={{ border: 0, display: 'block' }}
-              src={`https://maps.google.com/maps?q=${encodeURIComponent((event.location || 'New York').replace(' • ', ', '))}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+              src={getMapIframeSrc(event.location, event.mapLink)}
               allowFullScreen
               title="Event Location"
             ></iframe>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical, ScanBarcode, Navigation } from 'lucide-react';
+import { getMapIframeSrc } from '../utils/mapUtils';
 import { toast } from 'react-toastify';
 import { QRCodeSVG } from 'qrcode.react';
 import QRCode from 'qrcode';
@@ -806,7 +807,7 @@ export default function MyTickets() {
                   height="180"
                   frameBorder="0"
                   style={{ border: 0, display: 'block' }}
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent((eventMeta?.location || 'New York').replace(' • ', ', '))}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                  src={getMapIframeSrc(eventMeta?.location, eventMeta?.mapLink)}
                   allowFullScreen
                   title="Event Location"
                 ></iframe>

@@ -832,13 +832,22 @@ app.put('/api/users/:id/subscription', authMiddleware, adminMiddleware, async (r
     const expiresAt = subscription === 'Free' || subscription === 'None'
       ? null
       : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-    const user = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       { subscription, subscriptionExpiresAt: expiresAt },
       { new: true }
     ).select('-password');
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
+
+    if (!updatedUser) return res.status(404).json({ error: 'User not found' });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(req.params.id).emit('subscription_success', {
+        message: `Your subscription has been updated to ${subscription} by an admin.`
+      });
+    }
+
+    res.json(updatedUser);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -985,7 +994,15 @@ app.post('/api/payhero/stk-push', authMiddleware, async (req, res) => {
     if (!apiUser || !apiPass || !channelId) {
       // Simulate successful payment if no PayHero credentials exist (for demo purposes)
       console.log(`[Demo] Simulating PayHero STK Push for ${phoneNumber} (${amount} KES). Upgrading user to ${plan}.`);
-      await User.findByIdAndUpdate(req.user.id, { subscription: plan });
+      await User.findByIdAndUpdate(req.user.id, { subscription: plan, subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
+      
+      const io = req.app.get('io');
+      if (io) {
+        io.to(req.user.id).emit('subscription_success', {
+          message: `Your subscription has been upgraded to ${plan} successfully! (Simulated)`
+        });
+      }
+
       return res.json({ success: true, message: 'STK Push Initiated (Simulated)' });
     }
 
@@ -1048,6 +1065,13 @@ app.post('/api/payhero/callback', async (req, res) => {
           const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
           await User.findByIdAndUpdate(userId, { subscription: plan, subscriptionExpiresAt: expiresAt });
           console.log(`User ${userId} upgraded to ${plan} via PayHero. Expires: ${expiresAt}`);
+          
+          const io = req.app.get('io');
+          if (io) {
+            io.to(userId).emit('subscription_success', {
+              message: `Your subscription has been upgraded to ${plan} successfully!`
+            });
+          }
         }
       }
     }

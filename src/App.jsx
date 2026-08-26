@@ -116,6 +116,11 @@ function App() {
     socket.on('ticket_received', (data) => toast.success(data.message));
     socket.on('ticket_approved', (data) => toast.success(data.message));
     socket.on('ticket_rejected', (data) => toast.error(data.message));
+    socket.on('subscription_success', (data) => {
+      toast.success(data.message);
+      // Reload the page to reflect the new subscription status across the app
+      setTimeout(() => window.location.reload(), 2000);
+    });
 
     return () => {
       socket.off('ticket_bought');
@@ -123,6 +128,7 @@ function App() {
       socket.off('ticket_received');
       socket.off('ticket_approved');
       socket.off('ticket_rejected');
+      socket.off('subscription_success');
     };
   }, []);
 
