@@ -29,8 +29,8 @@ export default function SeatSelection() {
     if (event?.venueLayout === 'concert-oval' && event?.seatConfig) {
       const c = event.seatConfig;
       if (c.vipStanding?.enabled) {
-        list.push({ id: 'vip_standing_a', name: 'VIP Standing Pen A', ticketName: 'VIP Stand A', price: Math.round(base * 4.6), color: '#e040fb', isGA: true, config: c.vipStanding });
-        list.push({ id: 'vip_standing_b', name: 'VIP Standing Pen B', ticketName: 'VIP Stand B', price: Math.round(base * 4.6), color: '#e040fb', isGA: true, config: c.vipStanding });
+        list.push({ id: 'vip_standing_a', name: 'VIP STANDING PEN A', ticketName: 'VIP STANDING PEN A', price: Math.round(base * 4.6), color: '#e040fb', isGA: true, config: c.vipStanding });
+        list.push({ id: 'vip_standing_b', name: 'VIP STANDING PEN B', ticketName: 'VIP STANDING PEN B', price: Math.round(base * 4.6), color: '#e040fb', isGA: true, config: c.vipStanding });
       }
       if (c.vipSeated?.enabled) {
         list.push({ id: 'vip_seated', name: 'VIP Seated', ticketName: 'VIP Seated', price: Math.round(base * 4.7), color: '#06b6d4', isGA: false, config: c.vipSeated });
@@ -514,7 +514,7 @@ export default function SeatSelection() {
             {/* Color Legend */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', justifyContent: 'center', marginTop: '12px' }}>
               {[
-                { label: 'VIP Standing', color: '#e040fb' },
+                { label: 'VIP STANDING', color: '#e040fb' },
                 { label: 'VIP Seated', color: '#06b6d4' },
                 { label: 'CAT 1', color: '#fdd835' },
                 { label: 'CAT 2', color: '#42a5f5' },
@@ -537,7 +537,7 @@ export default function SeatSelection() {
                 : ['All', 'VIP', 'Floor', 'Level 100', 'Level 200']
               ).map(zone => {
                 let label = zone;
-                if (zone === 'vip_standing') label = 'VIP Standing';
+                if (zone === 'vip_standing') label = 'VIP STANDING';
                 else if (zone === 'vip_seated') label = 'VIP Seated';
                 else if (zone.startsWith('cat')) label = zone.replace('cat', 'CAT ');
                 
