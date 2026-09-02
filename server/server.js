@@ -17,6 +17,7 @@ const cron = require('node-cron');
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
 const Event = require('./models/Event');
+const Notification = require('./models/Notification');
 
 
 // SendGrid setup
@@ -807,11 +808,33 @@ app.get('/api/events/:id/resale-tickets', async (req, res) => {
   }
 });
 
-// 7. Create Event (Admin)
+// 7. Create Event (Admin / Event Manager)
 app.post('/api/events', authMiddleware, eventManagerMiddleware, async (req, res) => {
   try {
     const newEvent = new Event(req.body);
     await newEvent.save();
+
+    // Create a global notification for all users
+    const notification = new Notification({
+      userId: null, // null = global (all users)
+      type: 'new_event',
+      title: '🎟️ New Event Posted!',
+      message: `${newEvent.title} — ${newEvent.date} at ${newEvent.location}`,
+      eventId: newEvent._id.toString(),
+      eventImage: newEvent.image || null
+    });
+    await notification.save();
+
+    // Broadcast to all connected clients in real-time
+    io.emit('new_event', {
+      _id: notification._id,
+      title: notification.title,
+      message: notification.message,
+      eventId: newEvent._id,
+      eventImage: newEvent.image || null,
+      createdAt: notification.createdAt
+    });
+
     res.json(newEvent);
   } catch (err) {
     console.error(err);
@@ -840,6 +863,43 @@ app.delete('/api/events/:id', authMiddleware, eventManagerMiddleware, async (req
     res.json({ success: true });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- NOTIFICATION ROUTES ---
+
+// Get notifications for logged-in user (global + personal)
+app.get('/api/notifications', authMiddleware, async (req, res) => {
+  try {
+    const notifications = await Notification.find({
+      $or: [{ userId: null }, { userId: req.user.id }]
+    }).sort({ createdAt: -1 }).limit(30);
+    res.json(notifications);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Mark a notification as read
+app.put('/api/notifications/:id/read', authMiddleware, async (req, res) => {
+  try {
+    await Notification.findByIdAndUpdate(req.params.id, { read: true });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Mark all notifications as read for the user
+app.put('/api/notifications/read-all', authMiddleware, async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { $or: [{ userId: null }, { userId: req.user.id }], read: false },
+      { read: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
 });
