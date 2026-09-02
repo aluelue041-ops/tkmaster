@@ -52,16 +52,20 @@ export default function AdminDashboard() {
           fetch(`${API}/api/events`)
         ]);
 
-        if (usersRes.status === 403) {
+        if (ticketsRes.status === 403) {
           toast.error('Admin access denied!');
           navigate('/');
           return;
         }
 
         const meData = await meRes.json();
-        const usersData = await usersRes.json();
         const ticketsData = await ticketsRes.json();
         const eventsData = await eventsRes.json();
+        
+        let usersData = [];
+        if (usersRes.ok) {
+          usersData = await usersRes.json();
+        }
 
         if (meRes.ok) setCurrentUser(meData);
         setUsers(usersData);
@@ -339,11 +343,13 @@ export default function AdminDashboard() {
           <h3 style={{ fontSize: '24px', margin: 0, color: 'white' }}>{events.length}</h3>
           <p style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>Events</p>
         </div>
-        <div style={{ flex: 1, minWidth: '120px', backgroundColor: '#323232', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
-          <Users color="#00c853" size={24} style={{ marginBottom: '8px' }} />
-          <h3 style={{ fontSize: '24px', margin: 0, color: 'white' }}>{users.length}</h3>
-          <p style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>Users</p>
-        </div>
+        {currentUser?.role === 'superadmin' && (
+          <div style={{ flex: 1, minWidth: '120px', backgroundColor: '#323232', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
+            <Users color="#00c853" size={24} style={{ marginBottom: '8px' }} />
+            <h3 style={{ fontSize: '24px', margin: 0, color: 'white' }}>{users.length}</h3>
+            <p style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>Users</p>
+          </div>
+        )}
         <div style={{ flex: 1, minWidth: '120px', backgroundColor: '#323232', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
           <Ticket color="#ff9800" size={24} style={{ marginBottom: '8px' }} />
           <h3 style={{ fontSize: '24px', margin: 0, color: 'white' }}>{tickets.length}</h3>
@@ -353,7 +359,9 @@ export default function AdminDashboard() {
 
       <div style={{ padding: '0 16px 16px', display: 'flex', gap: '8px' }}>
         <button onClick={() => setActiveTab('events')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'events' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Events</button>
-        <button onClick={() => setActiveTab('users')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'users' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Users</button>
+        {currentUser?.role === 'superadmin' && (
+          <button onClick={() => setActiveTab('users')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'users' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Users</button>
+        )}
         <button onClick={() => setActiveTab('tickets')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'tickets' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Tickets</button>
       </div>
 

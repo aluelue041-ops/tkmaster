@@ -2,7 +2,9 @@
  * One-time script to promote a user to superadmin.
  * Usage: node server/scripts/setSuperAdmin.js your@email.com
  */
-require('dotenv').config();
+const path = require('path');
+// Load .env from the server directory (works whether run from root or server/)
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const mongoose = require('mongoose');
 const User = require('../models/User');
 
