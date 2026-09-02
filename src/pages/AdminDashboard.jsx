@@ -9,7 +9,22 @@ export default function AdminDashboard() {
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
   const [activeTab, setActiveTab] = useState('events'); // events, users, tickets
-  const [newEvent, setNewEvent] = useState({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '', rowLabelType: 'numbers' });
+  const DEFAULT_EVENT = {
+    title: '', date: '', eventDate: '', location: '', image: '',
+    category: 'Concerts', currency: '$', basePrice: 80, mapLink: '', rowLabelType: 'numbers',
+    venueLayout: 'concert-oval',
+    seatConfig: {
+      vipStanding:  { rows: 0,  seats: 0,  enabled: true  },
+      vipSeated:    { rows: 8,  seats: 20, enabled: true  },
+      cat1:         { rows: 10, seats: 30, enabled: true  },
+      cat2:         { rows: 12, seats: 35, enabled: true  },
+      cat3:         { rows: 13, seats: 40, enabled: true  },
+      cat4:         { rows: 13, seats: 35, enabled: true  },
+      cat5:         { rows: 10, seats: 30, enabled: true  },
+      cat6:         { rows: 8,  seats: 25, enabled: false },
+    }
+  };
+  const [newEvent, setNewEvent] = useState(DEFAULT_EVENT);
   const [editingEventId, setEditingEventId] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -133,7 +148,7 @@ export default function AdminDashboard() {
           setEvents([data, ...events]);
           toast.success('Event created successfully!');
         }
-        setNewEvent({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '', rowLabelType: 'numbers' });
+        setNewEvent(DEFAULT_EVENT);
         setEditingEventId(null);
       } else {
         toast.error(data.error);
@@ -155,9 +170,10 @@ export default function AdminDashboard() {
       currency: event.currency || '$',
       basePrice: event.basePrice || 80,
       mapLink: event.mapLink || '',
-      rowLabelType: event.rowLabelType || 'numbers'
+      rowLabelType: event.rowLabelType || 'numbers',
+      venueLayout: event.venueLayout || 'concert-oval',
+      seatConfig: event.seatConfig || DEFAULT_EVENT.seatConfig,
     });
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -365,6 +381,61 @@ export default function AdminDashboard() {
                     <option value="letters">Rows: Letters (A, B, C...)</option>
                   </select>
                 </div>
+                <div style={{ marginTop: '16px', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#ccc' }}>Stadium Layout & Seat Config</h3>
+                  
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                    <select 
+                      value={newEvent.venueLayout} 
+                      onChange={e => setNewEvent({...newEvent, venueLayout: e.target.value})} 
+                      style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }}
+                    >
+                      <option value="concert-oval">Concert Oval (e.g., Stadium with Stage)</option>
+                      <option value="arena">Sports Arena</option>
+                      <option value="theater">Theater</option>
+                      <option value="flat">General Admission (Flat)</option>
+                    </select>
+                  </div>
+                  
+                  {newEvent.venueLayout === 'concert-oval' && newEvent.seatConfig && (
+                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                      {Object.keys(newEvent.seatConfig).map((cat) => (
+                        <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '6px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 'bold', textTransform: 'capitalize', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            {cat.replace(/([A-Z])/g, ' $1').trim()}
+                            <input 
+                              type="checkbox" 
+                              title="Enable Zone"
+                              checked={newEvent.seatConfig[cat].enabled}
+                              onChange={(e) => setNewEvent(prev => ({
+                                ...prev, 
+                                seatConfig: { 
+                                  ...prev.seatConfig, 
+                                  [cat]: { ...prev.seatConfig[cat], enabled: e.target.checked }
+                                }
+                              }))}
+                              style={{ cursor: 'pointer' }}
+                            />
+                          </label>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: '10px', color: '#999' }}>Rows</label>
+                              <input type="number" title="Rows" value={newEvent.seatConfig[cat].rows} onChange={(e) => setNewEvent(prev => ({
+                                  ...prev, seatConfig: { ...prev.seatConfig, [cat]: { ...prev.seatConfig[cat], rows: Number(e.target.value) } }
+                                }))} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #444', background: '#222', color: 'white', fontSize: '12px' }} disabled={!newEvent.seatConfig[cat].enabled} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: '10px', color: '#999' }}>Seats/Row</label>
+                              <input type="number" title="Seats per row" value={newEvent.seatConfig[cat].seats} onChange={(e) => setNewEvent(prev => ({
+                                  ...prev, seatConfig: { ...prev.seatConfig, [cat]: { ...prev.seatConfig[cat], seats: Number(e.target.value) } }
+                                }))} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #444', background: '#222', color: 'white', fontSize: '12px' }} disabled={!newEvent.seatConfig[cat].enabled} />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button type="submit" style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary-color)', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
                     {editingEventId ? 'Update Event' : 'Add Event'}
@@ -372,7 +443,7 @@ export default function AdminDashboard() {
                   {editingEventId && (
                     <button type="button" onClick={() => {
                       setEditingEventId(null);
-                      setNewEvent({ title: '', date: '', eventDate: '', location: '', image: '', category: 'Concerts', currency: '$', basePrice: 80, mapLink: '', rowLabelType: 'numbers' });
+                      setNewEvent(DEFAULT_EVENT);
                     }} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#555', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
                       Cancel
                     </button>

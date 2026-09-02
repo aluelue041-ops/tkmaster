@@ -11,6 +11,8 @@ const EventSchema = new mongoose.Schema({
   basePrice: { type: Number, default: 80 },
   mapLink: { type: String },
   rowLabelType: { type: String, enum: ['numbers', 'letters'], default: 'numbers' }, // Admin toggle for row labels
+  venueLayout: { type: String, default: 'concert-oval' },
+  seatConfig: { type: mongoose.Schema.Types.Mixed }, // Store the category configuration
   bookedSeats: [{ type: String }],                 // stores "sectionId:row-seat" for real-time availability
   createdAt: { type: Date, default: Date.now }
 });

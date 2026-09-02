@@ -25,6 +25,25 @@ export default function SeatSelection() {
 
   const generateSections = (base) => {
     const list = [];
+    
+    if (event?.venueLayout === 'concert-oval' && event?.seatConfig) {
+      const c = event.seatConfig;
+      if (c.vipStanding?.enabled) {
+        list.push({ id: 'vip_standing_a', name: 'VIP Standing Pen A', ticketName: 'VIP Stand A', price: Math.round(base * 4.6), color: '#e040fb', isGA: true, config: c.vipStanding });
+        list.push({ id: 'vip_standing_b', name: 'VIP Standing Pen B', ticketName: 'VIP Stand B', price: Math.round(base * 4.6), color: '#e040fb', isGA: true, config: c.vipStanding });
+      }
+      if (c.vipSeated?.enabled) {
+        list.push({ id: 'vip_seated', name: 'VIP Seated', ticketName: 'VIP Seated', price: Math.round(base * 4.7), color: '#06b6d4', isGA: false, config: c.vipSeated });
+      }
+      if (c.cat1?.enabled) list.push({ id: 'cat1', name: 'CAT 1', ticketName: 'CAT 1', price: Math.round(base * 3.7), color: '#fdd835', isGA: false, config: c.cat1 });
+      if (c.cat2?.enabled) list.push({ id: 'cat2', name: 'CAT 2', ticketName: 'CAT 2', price: Math.round(base * 3.8), color: '#42a5f5', isGA: false, config: c.cat2 });
+      if (c.cat3?.enabled) list.push({ id: 'cat3', name: 'CAT 3', ticketName: 'CAT 3', price: Math.round(base * 3.2), color: '#ef5350', isGA: false, config: c.cat3 });
+      if (c.cat4?.enabled) list.push({ id: 'cat4', name: 'CAT 4', ticketName: 'CAT 4', price: Math.round(base * 2.3), color: '#66bb6a', isGA: false, config: c.cat4 });
+      if (c.cat5?.enabled) list.push({ id: 'cat5', name: 'CAT 5 (Restricted)', ticketName: 'CAT 5', price: Math.round(base * 3.2), color: '#ff9800', isGA: false, config: c.cat5 });
+      if (c.cat6?.enabled) list.push({ id: 'cat6', name: 'CAT 6 (Restricted)', ticketName: 'CAT 6', price: Math.round(base * 2.1), color: '#ab47bc', isGA: false, config: c.cat6 });
+      return list;
+    }
+
     const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i);
     const charRange = (startChar, endChar) => {
       const start = startChar.charCodeAt(0);
@@ -91,13 +110,17 @@ export default function SeatSelection() {
   const [activeZone, setActiveZone] = useState('All');
 
   const filteredSections = sections.filter(sec => {
-    // Search filter
     if (searchQuery && !sec.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    // Zone filter
     if (activeZone === 'All') return true;
+    
+    if (event?.venueLayout === 'concert-oval') {
+      return sec.id.includes(activeZone);
+    }
+    
+    // Fallback filters for legacy layout
     if (activeZone === 'VIP' && sec.name.includes('VIP')) return true;
     if (activeZone === 'Floor' && sec.name.includes('Floor') && !sec.name.includes('VIP')) return true;
-    if (activeZone === 'Level 100' && (sec.name.includes('1') && sec.name.length <= 15)) return true; // section 1xx
+    if (activeZone === 'Level 100' && (sec.name.includes('1') && sec.name.length <= 15)) return true;
     if (activeZone === 'Level 200' && sec.name.includes('2')) return true;
     return false;
   });
@@ -325,49 +348,214 @@ export default function SeatSelection() {
       {viewMode === 'sections' ? (
         activeTab === 'Standard' ? (
           <>
-            {/* Interactive Stadium Map */}
-          <div style={{ padding: '24px 16px', backgroundColor: 'white', borderBottom: '1px solid #eaeaea' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px', textAlign: 'center', color: '#111' }}>Interactive Stadium Map</h3>
-            <div style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto', height: '220px' }}>
-              <svg viewBox="0 0 200 200" style={{ width: '100%', height: '100%', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.05))' }}>
-                {/* Stage */}
-                <rect x="70" y="10" width="60" height="20" rx="4" fill="#333" />
-                <text x="100" y="23" fontSize="8" fill="white" fontWeight="bold" textAnchor="middle">STAGE</text>
-                
-                {/* VIP / Pit */}
-                <path d="M 60 40 L 140 40 Q 145 60 140 70 L 60 70 Q 55 60 60 40" fill={activeZone === 'VIP' ? '#ff3b30' : '#ffebee'} stroke="#ff3b30" strokeWidth="2" cursor="pointer" onClick={() => setActiveZone('VIP')} />
-                <text x="100" y="58" fontSize="10" fill={activeZone === 'VIP' ? 'white' : '#ff3b30'} fontWeight="bold" textAnchor="middle" pointerEvents="none">VIP</text>
+            {/* Interactive Stadium Map — Oval Concert Layout */}
+          <div style={{ padding: '20px 16px 16px', backgroundColor: 'white', borderBottom: '1px solid #eaeaea' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 14px', textAlign: 'center', color: '#111' }}>Interactive Stadium Map</h3>
+            <div style={{ position: 'relative', width: '100%', maxWidth: '480px', margin: '0 auto' }}>
+              <svg viewBox="0 0 480 310" style={{ width: '100%', height: 'auto', display: 'block' }}>
+                {/* Stadium oval background */}
+                <ellipse cx="240" cy="155" rx="225" ry="140" fill="#1e1e2e" stroke="#444" strokeWidth="1.5"/>
 
-                {/* Floor */}
-                <path d="M 50 80 L 150 80 Q 155 110 145 130 L 55 130 Q 45 110 50 80" fill={activeZone === 'Floor' ? '#026cdf' : '#e3f2fd'} stroke="#026cdf" strokeWidth="2" cursor="pointer" onClick={() => setActiveZone('Floor')} />
-                <text x="100" y="108" fontSize="10" fill={activeZone === 'Floor' ? 'white' : '#026cdf'} fontWeight="bold" textAnchor="middle" pointerEvents="none">FLOOR</text>
+                {/* Compass labels */}
+                <text x="240" y="16" textAnchor="middle" fill="#666" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="2">NORTH</text>
+                <text x="240" y="304" textAnchor="middle" fill="#666" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="2">SOUTH</text>
+                <text x="11" y="159" textAnchor="middle" fill="#666" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="2" transform="rotate(-90,11,159)">WEST</text>
+                <text x="469" y="159" textAnchor="middle" fill="#666" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="2" transform="rotate(90,469,159)">EAST</text>
 
-                {/* Level 100 */}
-                <path d="M 35 140 C 35 140, 100 170, 165 140 L 180 160 C 180 160, 100 195, 20 160 Z" fill={activeZone === 'Level 100' ? '#f5a623' : '#fff8e1'} stroke="#f5a623" strokeWidth="2" cursor="pointer" onClick={() => setActiveZone('Level 100')} />
-                <text x="100" y="165" fontSize="9" fill={activeZone === 'Level 100' ? 'white' : '#f5a623'} fontWeight="bold" textAnchor="middle" pointerEvents="none">LEVEL 100</text>
+                {/* ── STAGE (left / west side) ── */}
+                <rect x="62" y="122" width="100" height="62" rx="4" fill="#f0f0f0"/>
+                <rect x="162" y="137" width="130" height="32" rx="3" fill="#f0f0f0"/>
+                <rect x="200" y="108" width="52" height="29" rx="3" fill="#f0f0f0"/>
+                <rect x="200" y="173" width="52" height="29" rx="3" fill="#f0f0f0"/>
+                <rect x="236" y="202" width="28" height="24" rx="3" fill="#f0f0f0"/>
+                <text x="112" y="157" textAnchor="middle" fill="#333" fontFamily="sans-serif" fontSize="10" fontWeight="900" letterSpacing="1.5">STAGE</text>
 
-                {/* Level 200 */}
-                <path d="M 10 170 C 10 170, 100 210, 190 170 L 195 180 C 195 180, 100 225, 5 180 Z" fill={activeZone === 'Level 200' ? '#8e8e93' : '#f5f5f5'} stroke="#8e8e93" strokeWidth="2" cursor="pointer" onClick={() => setActiveZone('Level 200')} />
-                <text x="100" y="190" fontSize="8" fill={activeZone === 'Level 200' ? 'white' : '#8e8e93'} fontWeight="bold" textAnchor="middle" pointerEvents="none">LEVEL 200</text>
+                {/* ── VIP STANDING PEN A (magenta, right of catwalk) ── */}
+                <rect x="296" y="133" width="38" height="46" rx="4"
+                  fill={activeZone === 'vip_standing' ? '#e040fb' : 'rgba(224,64,251,0.25)'}
+                  stroke="#e040fb" strokeWidth="1.5" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'vip_standing' ? 'All' : 'vip_standing')}/>
+                <text x="315" y="153" textAnchor="middle" fill={activeZone === 'vip_standing' ? '#fff' : '#e040fb'} fontFamily="sans-serif" fontSize="6.5" fontWeight="700" pointerEvents="none">STANDING</text>
+                <text x="315" y="163" textAnchor="middle" fill={activeZone === 'vip_standing' ? '#fff' : '#e040fb'} fontFamily="sans-serif" fontSize="6.5" fontWeight="700" pointerEvents="none">PEN A</text>
+
+                {/* VIP STANDING PEN B (magenta, above/below catwalk) */}
+                <rect x="174" y="107" width="32" height="28" rx="3"
+                  fill={activeZone === 'vip_standing' ? '#e040fb' : 'rgba(224,64,251,0.25)'}
+                  stroke="#e040fb" strokeWidth="1.5" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'vip_standing' ? 'All' : 'vip_standing')}/>
+                <rect x="174" y="175" width="32" height="28" rx="3"
+                  fill={activeZone === 'vip_standing' ? '#e040fb' : 'rgba(224,64,251,0.25)'}
+                  stroke="#e040fb" strokeWidth="1.5" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'vip_standing' ? 'All' : 'vip_standing')}/>
+                <text x="190" y="120" textAnchor="middle" fill={activeZone === 'vip_standing' ? '#fff' : '#e040fb'} fontFamily="sans-serif" fontSize="5.5" fontWeight="700" pointerEvents="none">PEN B</text>
+
+                {/* ── CAT 1 — YELLOW (VIP Seated inner strip) ── */}
+                <rect x="174" y="90" width="162" height="16" rx="3"
+                  fill={activeZone === 'cat1' ? '#fdd835' : 'rgba(253,216,53,0.3)'}
+                  stroke="#fdd835" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat1' ? 'All' : 'cat1')}/>
+                <rect x="174" y="204" width="162" height="16" rx="3"
+                  fill={activeZone === 'cat1' ? '#fdd835' : 'rgba(253,216,53,0.3)'}
+                  stroke="#fdd835" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat1' ? 'All' : 'cat1')}/>
+                <text x="255" y="101" textAnchor="middle" fill={activeZone === 'cat1' ? '#333' : '#fdd835'} fontFamily="sans-serif" fontSize="6" fontWeight="700" pointerEvents="none">CAT 1</text>
+
+                {/* ── CAT 2 — BLUE (mid ring) ── */}
+                <rect x="160" y="71" width="180" height="17" rx="3"
+                  fill={activeZone === 'cat2' ? '#42a5f5' : 'rgba(66,165,245,0.25)'}
+                  stroke="#42a5f5" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat2' ? 'All' : 'cat2')}/>
+                <rect x="160" y="222" width="180" height="17" rx="3"
+                  fill={activeZone === 'cat2' ? '#42a5f5' : 'rgba(66,165,245,0.25)'}
+                  stroke="#42a5f5" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat2' ? 'All' : 'cat2')}/>
+                <text x="250" y="83" textAnchor="middle" fill={activeZone === 'cat2' ? '#fff' : '#42a5f5'} fontFamily="sans-serif" fontSize="6" fontWeight="700" pointerEvents="none">CAT 2</text>
+
+                {/* ── CAT 3 — RED (outer ring top/bottom) ── */}
+                {[144, 212, 280].map((x, i) => (
+                  <rect key={`cat3t-${i}`} x={x} y="51" width="62" height="18" rx="3"
+                    fill={activeZone === 'cat3' ? '#ef5350' : 'rgba(239,83,80,0.25)'}
+                    stroke="#ef5350" strokeWidth="1.2" cursor="pointer"
+                    onClick={() => setActiveZone(activeZone === 'cat3' ? 'All' : 'cat3')}/>
+                ))}
+                {[144, 212, 280].map((x, i) => (
+                  <rect key={`cat3b-${i}`} x={x} y="241" width="62" height="18" rx="3"
+                    fill={activeZone === 'cat3' ? '#ef5350' : 'rgba(239,83,80,0.25)'}
+                    stroke="#ef5350" strokeWidth="1.2" cursor="pointer"
+                    onClick={() => setActiveZone(activeZone === 'cat3' ? 'All' : 'cat3')}/>
+                ))}
+                <text x="238" y="63" textAnchor="middle" fill={activeZone === 'cat3' ? '#fff' : '#ef5350'} fontFamily="sans-serif" fontSize="6" fontWeight="700" pointerEvents="none">CAT 3</text>
+
+                {/* ── CAT 4 — GREEN (outer sides) ── */}
+                {/* Left / West side */}
+                <rect x="82" y="58" width="60" height="36" rx="4"
+                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
+                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
+                <rect x="54" y="100" width="88" height="30" rx="4"
+                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
+                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
+                <rect x="40" y="135" width="22" height="42" rx="4"
+                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
+                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
+                <rect x="54" y="180" width="88" height="30" rx="4"
+                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
+                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
+                <rect x="82" y="215" width="60" height="36" rx="4"
+                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
+                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
+                <text x="66" y="158" textAnchor="middle" fill={activeZone === 'cat4' ? '#fff' : '#66bb6a'} fontFamily="sans-serif" fontSize="6" fontWeight="700" pointerEvents="none">CAT 4</text>
+                {/* Right / East side */}
+                <rect x="346" y="58" width="60" height="36" rx="4"
+                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
+                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
+                <rect x="346" y="100" width="78" height="30" rx="4"
+                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
+                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
+                <rect x="424" y="135" width="22" height="42" rx="4"
+                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
+                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
+                <rect x="346" y="180" width="78" height="30" rx="4"
+                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
+                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
+                <rect x="346" y="215" width="60" height="36" rx="4"
+                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
+                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
+
+                {/* ── CAT 5 — ORANGE restricted (corner ellipses) ── */}
+                <ellipse cx="106" cy="40" rx="36" ry="18"
+                  fill={activeZone === 'cat5' ? '#fb8c00' : 'rgba(251,140,0,0.3)'}
+                  stroke="#fb8c00" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat5' ? 'All' : 'cat5')}/>
+                <ellipse cx="106" cy="272" rx="36" ry="18"
+                  fill={activeZone === 'cat5' ? '#fb8c00' : 'rgba(251,140,0,0.3)'}
+                  stroke="#fb8c00" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat5' ? 'All' : 'cat5')}/>
+                <ellipse cx="374" cy="40" rx="36" ry="18"
+                  fill={activeZone === 'cat5' ? '#fb8c00' : 'rgba(251,140,0,0.3)'}
+                  stroke="#fb8c00" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat5' ? 'All' : 'cat5')}/>
+                <ellipse cx="374" cy="272" rx="36" ry="18"
+                  fill={activeZone === 'cat5' ? '#fb8c00' : 'rgba(251,140,0,0.3)'}
+                  stroke="#fb8c00" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat5' ? 'All' : 'cat5')}/>
+                <text x="106" y="43" textAnchor="middle" fill={activeZone === 'cat5' ? '#fff' : '#fb8c00'} fontFamily="sans-serif" fontSize="6" fontWeight="700" pointerEvents="none">CAT 5</text>
+
+                {/* ── CAT 6 — PURPLE restricted (far end ellipses) ── */}
+                <ellipse cx="28" cy="130" rx="18" ry="24"
+                  fill={activeZone === 'cat6' ? '#ab47bc' : 'rgba(171,71,188,0.3)'}
+                  stroke="#ab47bc" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat6' ? 'All' : 'cat6')}/>
+                <ellipse cx="28" cy="182" rx="18" ry="24"
+                  fill={activeZone === 'cat6' ? '#ab47bc' : 'rgba(171,71,188,0.3)'}
+                  stroke="#ab47bc" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat6' ? 'All' : 'cat6')}/>
+                <ellipse cx="452" cy="130" rx="18" ry="24"
+                  fill={activeZone === 'cat6' ? '#ab47bc' : 'rgba(171,71,188,0.3)'}
+                  stroke="#ab47bc" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat6' ? 'All' : 'cat6')}/>
+                <ellipse cx="452" cy="182" rx="18" ry="24"
+                  fill={activeZone === 'cat6' ? '#ab47bc' : 'rgba(171,71,188,0.3)'}
+                  stroke="#ab47bc" strokeWidth="1.2" cursor="pointer"
+                  onClick={() => setActiveZone(activeZone === 'cat6' ? 'All' : 'cat6')}/>
+                <text x="28" y="156" textAnchor="middle" fill={activeZone === 'cat6' ? '#fff' : '#ab47bc'} fontFamily="sans-serif" fontSize="5.5" fontWeight="700" pointerEvents="none" transform="rotate(-90,28,156)">CAT 6</text>
               </svg>
             </div>
-            
-            {/* Zone Filter Chips */}
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '16px 0 4px', scrollbarWidth: 'none' }}>
-              {['All', 'VIP', 'Floor', 'Level 100', 'Level 200'].map(zone => (
-                <button
-                  key={zone}
-                  onClick={() => setActiveZone(zone)}
-                  style={{
-                    padding: '8px 16px', borderRadius: '20px', border: 'none', whiteSpace: 'nowrap',
-                    fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                    backgroundColor: activeZone === zone ? '#111' : '#f0f0f0',
-                    color: activeZone === zone ? 'white' : '#555'
-                  }}
-                >
-                  {zone}
-                </button>
+
+            {/* Color Legend */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', justifyContent: 'center', marginTop: '12px' }}>
+              {[
+                { label: 'VIP Standing', color: '#e040fb' },
+                { label: 'VIP Seated', color: '#06b6d4' },
+                { label: 'CAT 1', color: '#fdd835' },
+                { label: 'CAT 2', color: '#42a5f5' },
+                { label: 'CAT 3', color: '#ef5350' },
+                { label: 'CAT 4', color: '#66bb6a' },
+                { label: 'CAT 5', color: '#ff9800' },
+                { label: 'CAT 6', color: '#ab47bc' }
+              ].map(item => (
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600, color: '#333' }}>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: item.color }} />
+                  {item.label}
+                </div>
               ))}
+            </div>
+
+            {/* Zone Filter Chips */}
+            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '14px 0 4px', scrollbarWidth: 'none' }}>
+              {(event?.venueLayout === 'concert-oval' 
+                ? ['All', 'vip_standing', 'vip_seated', 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6'] 
+                : ['All', 'VIP', 'Floor', 'Level 100', 'Level 200']
+              ).map(zone => {
+                let label = zone;
+                if (zone === 'vip_standing') label = 'VIP Standing';
+                else if (zone === 'vip_seated') label = 'VIP Seated';
+                else if (zone.startsWith('cat')) label = zone.replace('cat', 'CAT ');
+                
+                return (
+                  <button
+                    key={zone}
+                    onClick={() => setActiveZone(zone)}
+                    style={{
+                      padding: '8px 16px', borderRadius: '20px', border: 'none', whiteSpace: 'nowrap',
+                      fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                      backgroundColor: activeZone === zone ? '#111' : '#f0f0f0',
+                      color: activeZone === zone ? 'white' : '#555'
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
