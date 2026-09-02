@@ -38,18 +38,15 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
     if (!token) {
       navigate('/signin');
       return;
     }
-    if (userStr) {
-      try { setCurrentUser(JSON.parse(userStr)); } catch(e){}
-    }
 
     const fetchData = async () => {
       try {
-        const [usersRes, ticketsRes, eventsRes] = await Promise.all([
+        const [meRes, usersRes, ticketsRes, eventsRes] = await Promise.all([
+          fetch(`${API}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch(`${API}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch(`${API}/api/tickets`, { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch(`${API}/api/events`)
@@ -61,10 +58,12 @@ export default function AdminDashboard() {
           return;
         }
 
+        const meData = await meRes.json();
         const usersData = await usersRes.json();
         const ticketsData = await ticketsRes.json();
         const eventsData = await eventsRes.json();
 
+        if (meRes.ok) setCurrentUser(meData);
         setUsers(usersData);
         setTickets(ticketsData);
         setEvents(eventsData);
@@ -535,7 +534,7 @@ export default function AdminDashboard() {
                         value={user.role || 'user'}
                         onChange={(e) => handleUpdateRole(user._id, e.target.value)}
                         style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', outline: 'none' }}
-                        disabled={currentUser?.role !== 'superadmin' || user._id === currentUser?.id}
+                        disabled={currentUser?.role !== 'superadmin' || user._id === (currentUser?._id || currentUser?.id)}
                       >
                         <option value="user">User</option>
                         <option value="admin">Admin</option>
