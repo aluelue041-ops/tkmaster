@@ -268,6 +268,18 @@ const superAdminMiddleware = async (req, res, next) => {
   }
 };
 
+const eventManagerMiddleware = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || !['admin', 'superadmin', 'event_manager'].includes(user.role)) {
+      return res.status(403).json({ error: 'Event Manager access denied' });
+    }
+    next();
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 // --- ROUTES ---
 
 // 1. Register
@@ -717,7 +729,7 @@ app.post('/api/tickets/:id/buy-resale', authMiddleware, ticketActionLimiter, asy
 // --- ADMIN & EVENT ROUTES ---
 
 // Upload image to Cloudinary
-app.post('/api/upload', authMiddleware, upload.single('image'), async (req, res) => {
+app.post('/api/upload', authMiddleware, eventManagerMiddleware, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file provided' });
 
@@ -791,7 +803,7 @@ app.get('/api/events/:id/resale-tickets', async (req, res) => {
 });
 
 // 7. Create Event (Admin)
-app.post('/api/events', authMiddleware, adminMiddleware, async (req, res) => {
+app.post('/api/events', authMiddleware, eventManagerMiddleware, async (req, res) => {
   try {
     const newEvent = new Event(req.body);
     await newEvent.save();
@@ -802,8 +814,8 @@ app.post('/api/events', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
-// 7b. Update Event (Admin)
-app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => {
+// 7b. Update Event (Admin / Event Manager)
+app.put('/api/events/:id', authMiddleware, eventManagerMiddleware, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Event not found' });
     const updatedEvent = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -815,8 +827,8 @@ app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => 
   }
 });
 
-// 8. Delete Event (Admin)
-app.delete('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => {
+// 8. Delete Event (Admin / Event Manager)
+app.delete('/api/events/:id', authMiddleware, eventManagerMiddleware, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Event not found' });
     await Event.findByIdAndDelete(req.params.id);
@@ -871,7 +883,7 @@ app.put('/api/users/:id/subscription', authMiddleware, adminMiddleware, async (r
 app.put('/api/users/:id/role', authMiddleware, superAdminMiddleware, async (req, res) => {
   try {
     const { role } = req.body;
-    if (!['user', 'admin', 'superadmin'].includes(role)) {
+    if (!['user', 'admin', 'event_manager', 'superadmin'].includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
     const updatedUser = await User.findByIdAndUpdate(

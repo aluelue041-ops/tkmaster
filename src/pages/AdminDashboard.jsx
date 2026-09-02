@@ -45,29 +45,37 @@ export default function AdminDashboard() {
 
     const fetchData = async () => {
       try {
-        const [meRes, usersRes, ticketsRes, eventsRes] = await Promise.all([
-          fetch(`${API}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${API}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${API}/api/tickets`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${API}/api/events`)
-        ]);
+        const meRes = await fetch(`${API}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const meData = await meRes.json();
 
-        if (ticketsRes.status === 403) {
+        if (!meRes.ok || !['admin', 'superadmin', 'event_manager'].includes(meData.role)) {
           toast.error('Admin access denied!');
           navigate('/');
           return;
         }
 
-        const meData = await meRes.json();
-        const ticketsData = await ticketsRes.json();
-        const eventsData = await eventsRes.json();
-        
-        let usersData = [];
-        if (usersRes.ok) {
-          usersData = await usersRes.json();
-        }
+        setCurrentUser(meData);
 
-        if (meRes.ok) setCurrentUser(meData);
+        const isEventManagerOnly = meData.role === 'event_manager';
+
+        const [usersRes, ticketsRes, eventsRes] = await Promise.all([
+          meData.role === 'superadmin'
+            ? fetch(`${API}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } })
+            : Promise.resolve({ ok: false }),
+          !isEventManagerOnly
+            ? fetch(`${API}/api/tickets`, { headers: { 'Authorization': `Bearer ${token}` } })
+            : Promise.resolve({ ok: false }),
+          fetch(`${API}/api/events`)
+        ]);
+
+        const eventsData = await eventsRes.json();
+
+        let usersData = [];
+        if (usersRes.ok) usersData = await usersRes.json();
+
+        let ticketsData = [];
+        if (ticketsRes.ok) ticketsData = await ticketsRes.json();
+
         setUsers(usersData);
         setTickets(ticketsData);
         setEvents(eventsData);
@@ -350,11 +358,13 @@ export default function AdminDashboard() {
             <p style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>Users</p>
           </div>
         )}
-        <div style={{ flex: 1, minWidth: '120px', backgroundColor: '#323232', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
-          <Ticket color="#ff9800" size={24} style={{ marginBottom: '8px' }} />
-          <h3 style={{ fontSize: '24px', margin: 0, color: 'white' }}>{tickets.length}</h3>
-          <p style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>Tickets Sold</p>
-        </div>
+        {currentUser?.role !== 'event_manager' && (
+          <div style={{ flex: 1, minWidth: '120px', backgroundColor: '#323232', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
+            <Ticket color="#ff9800" size={24} style={{ marginBottom: '8px' }} />
+            <h3 style={{ fontSize: '24px', margin: 0, color: 'white' }}>{tickets.length}</h3>
+            <p style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>Tickets Sold</p>
+          </div>
+        )}
       </div>
 
       <div style={{ padding: '0 16px 16px', display: 'flex', gap: '8px' }}>
@@ -362,7 +372,9 @@ export default function AdminDashboard() {
         {currentUser?.role === 'superadmin' && (
           <button onClick={() => setActiveTab('users')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'users' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Users</button>
         )}
-        <button onClick={() => setActiveTab('tickets')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'tickets' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Tickets</button>
+        {currentUser?.role !== 'event_manager' && (
+          <button onClick={() => setActiveTab('tickets')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'tickets' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Tickets</button>
+        )}
       </div>
 
       <div style={{ padding: '16px' }}>
@@ -545,6 +557,7 @@ export default function AdminDashboard() {
                         disabled={currentUser?.role !== 'superadmin' || user._id === (currentUser?._id || currentUser?.id)}
                       >
                         <option value="user">User</option>
+                        <option value="event_manager">Event Manager</option>
                         <option value="admin">Admin</option>
                         <option value="superadmin">Super Admin</option>
                       </select>
