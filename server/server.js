@@ -315,6 +315,11 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
+    if (user.banned) {
+      const reason = user.bannedReason ? ` Reason: ${user.bannedReason}` : '';
+      return res.status(403).json({ error: `Your account has been banned.${reason}` });
+    }
+
     const payload = { user: { id: user.id } };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
@@ -892,6 +897,23 @@ app.put('/api/users/:id/role', authMiddleware, superAdminMiddleware, async (req,
       { new: true }
     ).select('-password');
 
+    if (!updatedUser) return res.status(404).json({ error: 'User not found' });
+    res.json(updatedUser);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 9d. Ban / Unban User (Super Admin only)
+app.put('/api/users/:id/ban', authMiddleware, superAdminMiddleware, async (req, res) => {
+  try {
+    const { banned, bannedReason } = req.body;
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { banned: !!banned, bannedReason: banned ? (bannedReason || '') : '' },
+      { new: true }
+    ).select('-password');
     if (!updatedUser) return res.status(404).json({ error: 'User not found' });
     res.json(updatedUser);
   } catch (err) {

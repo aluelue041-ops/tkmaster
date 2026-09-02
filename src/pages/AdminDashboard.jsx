@@ -337,6 +337,38 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleBanUser = async (userId, isBanned) => {
+    const token = localStorage.getItem('token');
+    let bannedReason = '';
+    if (!isBanned) {
+      bannedReason = window.prompt('Enter a reason for banning this user (optional):') || '';
+      if (bannedReason === null) return; // cancelled
+    } else {
+      if (!window.confirm('Are you sure you want to unban this user?')) return;
+    }
+    try {
+      const res = await fetch(`${API}/api/users/${userId}/ban`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ banned: !isBanned, bannedReason })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        setUsers(users.map(u => u._id === userId ? updatedUser : u));
+        toast.success(isBanned ? '✅ User unbanned!' : '🚫 User banned!');
+      } else {
+        const data = await res.json();
+        toast.error(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update ban status');
+    }
+  };
+
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>Loading Dashboard...</div>;
 
   return (
@@ -542,10 +574,16 @@ export default function AdminDashboard() {
               <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No users found.</p>
             ) : (
               filteredUsers.map(user => (
-                <div key={user._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div key={user._id} style={{ backgroundColor: user.banned ? '#3a1a1a' : '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', border: user.banned ? '1px solid #ff3b3044' : 'none' }}>
                   <div>
-                    <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{user.email}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <p style={{ margin: 0, color: user.banned ? '#ff6b6b' : 'white', fontWeight: 600 }}>{user.email}</p>
+                      {user.banned && <span style={{ background: '#ff3b30', color: 'white', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>BANNED</span>}
+                    </div>
                     <p style={{ margin: '4px 0 0', color: '#aaa', fontSize: '12px' }}>Role: {user.role} • Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
+                    {user.banned && user.bannedReason && (
+                      <p style={{ margin: '4px 0 0', color: '#ff6b6b', fontSize: '11px' }}>Reason: {user.bannedReason}</p>
+                    )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}>
@@ -575,6 +613,18 @@ export default function AdminDashboard() {
                         <option value="VIP">VIP (Unlimited)</option>
                       </select>
                     </div>
+                    {user._id !== (currentUser?._id || currentUser?.id) && (
+                      <button
+                        onClick={() => handleBanUser(user._id, user.banned)}
+                        style={{
+                          padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '13px',
+                          backgroundColor: user.banned ? '#34c75922' : '#ff3b3022',
+                          color: user.banned ? '#34c759' : '#ff3b30'
+                        }}
+                      >
+                        {user.banned ? '✅ Unban' : '🚫 Ban'}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

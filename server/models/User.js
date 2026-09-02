@@ -30,6 +30,14 @@ const UserSchema = new mongoose.Schema({
   subscriptionExpiresAt: {
     type: Date,
     default: null
+  },
+  banned: {
+    type: Boolean,
+    default: false
+  },
+  bannedReason: {
+    type: String,
+    default: ''
   }
 });
 
