@@ -238,7 +238,7 @@ export default function MyAccount() {
         </div>
 
         {/* Admin Dashboard (Only visible to admin) */}
-        {user?.role === 'admin' && (
+        {(user?.role === 'admin' || user?.role === 'superadmin') && (
           <div className="settings-group">
             <div className="settings-item" onClick={() => navigate('/admin')} style={{ cursor: 'pointer' }}>
               <div className="settings-item-left">

@@ -8,6 +8,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('events'); // events, users, tickets
   const DEFAULT_EVENT = {
     title: '', date: '', eventDate: '', location: '', image: '',
@@ -37,9 +38,13 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
     if (!token) {
       navigate('/signin');
       return;
+    }
+    if (userStr) {
+      try { setCurrentUser(JSON.parse(userStr)); } catch(e){}
     }
 
     const fetchData = async () => {
@@ -296,6 +301,31 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUpdateRole = async (userId, newRole) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/api/users/${userId}/role`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ role: newRole })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        setUsers(users.map(u => u._id === userId ? updatedUser : u));
+        toast.success(`Role updated to ${newRole}!`);
+      } else {
+        const data = await res.json();
+        toast.error(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update role');
+    }
+  };
+
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>Loading Dashboard...</div>;
 
   return (
@@ -498,18 +528,33 @@ export default function AdminDashboard() {
                     <p style={{ margin: 0, color: 'white', fontWeight: 600 }}>{user.email}</p>
                     <p style={{ margin: '4px 0 0', color: '#aaa', fontSize: '12px' }}>Role: {user.role} • Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: '#aaa', fontSize: '13px' }}>Package:</span>
-                    <select
-                      value={user.subscription || 'Free'}
-                      onChange={(e) => handleUpdateSubscription(user._id, e.target.value)}
-                      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', outline: 'none' }}
-                    >
-                      <option value="Free">Free (2 tickets)</option>
-                      <option value="Basic">Basic (40 tickets)</option>
-                      <option value="Premium">Premium (100 tickets)</option>
-                      <option value="VIP">VIP (Unlimited)</option>
-                    </select>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}>
+                      <span style={{ color: '#aaa', fontSize: '13px' }}>Role:</span>
+                      <select
+                        value={user.role || 'user'}
+                        onChange={(e) => handleUpdateRole(user._id, e.target.value)}
+                        style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', outline: 'none' }}
+                        disabled={currentUser?.role !== 'superadmin' || user._id === currentUser?.id}
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                        <option value="superadmin">Super Admin</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#aaa', fontSize: '13px' }}>Package:</span>
+                      <select
+                        value={user.subscription || 'Free'}
+                        onChange={(e) => handleUpdateSubscription(user._id, e.target.value)}
+                        style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', outline: 'none' }}
+                      >
+                        <option value="Free">Free (2 tickets)</option>
+                        <option value="Basic">Basic (40 tickets)</option>
+                        <option value="Premium">Premium (100 tickets)</option>
+                        <option value="VIP">VIP (Unlimited)</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               ))

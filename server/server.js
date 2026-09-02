@@ -247,8 +247,20 @@ const authMiddleware = (req, res, next) => {
 const adminMiddleware = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
-    if (!user || user.role !== 'admin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
       return res.status(403).json({ error: 'Admin access denied' });
+    }
+    next();
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+const superAdminMiddleware = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Super Admin access denied' });
     }
     next();
   } catch (err) {
@@ -847,6 +859,27 @@ app.put('/api/users/:id/subscription', authMiddleware, adminMiddleware, async (r
       });
     }
 
+    res.json(updatedUser);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 9c. Update User Role (Super Admin only)
+app.put('/api/users/:id/role', authMiddleware, superAdminMiddleware, async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!['user', 'admin', 'superadmin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true }
+    ).select('-password');
+
+    if (!updatedUser) return res.status(404).json({ error: 'User not found' });
     res.json(updatedUser);
   } catch (err) {
     console.error(err);
