@@ -23,6 +23,10 @@ const CryptoPaymentSchema = new mongoose.Schema({
     enum: ['USDT', 'BTC'],
     default: 'USDT'
   },
+  txHash: {
+    type: String,
+    default: ''
+  },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],

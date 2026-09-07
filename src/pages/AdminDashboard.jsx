@@ -846,14 +846,34 @@ export default function AdminDashboard() {
             ) : (
               cryptoPayments.filter(p => p.status === 'pending').map(payment => (
                 <div key={payment._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>{payment.user?.email || 'Unknown User'}</h3>
-                    <p style={{ margin: 0, fontSize: '13px', color: '#ccc' }}>
-                      Requested: <span style={{ color: '#026cdf', fontWeight: 'bold' }}>{payment.plan}</span>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#ccc', lineHeight: 1.7 }}>
+                      Plan: <span style={{ color: '#026cdf', fontWeight: 'bold' }}>{payment.plan}</span>
                       <br />
-                      Sent From: <code style={{ backgroundColor: '#222', padding: '2px 4px', borderRadius: '4px' }}>{payment.walletAddress}</code>
+                      Amount: <strong style={{ color: '#34c759' }}>{payment.amount} {payment.currency || 'USDT'}</strong>
                       <br />
-                      Amount: {payment.amount} {payment.currency || 'USDT'}
+                      Sent From: <code style={{ backgroundColor: '#222', padding: '2px 4px', borderRadius: '4px', fontSize: '11px', wordBreak: 'break-all' }}>{payment.walletAddress}</code>
+                      <br />
+                      TX Hash:{' '}
+                      {payment.txHash ? (
+                        <a
+                          href={
+                            payment.currency === 'BTC'
+                              ? `https://www.blockchain.com/explorer/transactions/btc/${payment.txHash}`
+                              : `https://tronscan.org/#/transaction/${payment.txHash}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#f0b429', fontSize: '11px', wordBreak: 'break-all', fontFamily: 'monospace' }}
+                        >
+                          {payment.txHash} 🔍
+                        </a>
+                      ) : (
+                        <span style={{ color: '#ff3b30' }}>No hash submitted</span>
+                      )}
+                      <br />
+                      <span style={{ color: '#888', fontSize: '11px' }}>{new Date(payment.createdAt).toLocaleString()}</span>
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -881,10 +901,28 @@ export default function AdminDashboard() {
               cryptoPayments.filter(p => p.status !== 'pending').map(payment => (
                 <div key={payment._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '16px', marginBottom: '16px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>{payment.user?.email || 'Unknown User'}</h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#ccc' }}>
-                    Plan: {payment.plan} | Amount: {payment.amount} {payment.currency || 'USDT'} | From: {payment.walletAddress}
+                  <p style={{ margin: 0, fontSize: '13px', color: '#ccc', lineHeight: 1.7 }}>
+                    Plan: <strong>{payment.plan}</strong> | Amount: <strong style={{ color: '#34c759' }}>{payment.amount} {payment.currency || 'USDT'}</strong>
+                    <br />
+                    From: <code style={{ backgroundColor: '#222', padding: '2px 4px', borderRadius: '4px', fontSize: '11px' }}>{payment.walletAddress}</code>
+                    <br />
+                    TX Hash:{' '}
+                    {payment.txHash ? (
+                      <a
+                        href={
+                          payment.currency === 'BTC'
+                            ? `https://www.blockchain.com/explorer/transactions/btc/${payment.txHash}`
+                            : `https://tronscan.org/#/transaction/${payment.txHash}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#f0b429', fontSize: '11px', fontFamily: 'monospace', wordBreak: 'break-all' }}
+                      >
+                        {payment.txHash} 🔍
+                      </a>
+                    ) : <span style={{ color: '#888' }}>N/A</span>}
                   </p>
-                  <p style={{ margin: '4px 0 0', fontSize: '13px', fontWeight: 700, color: payment.status === 'approved' ? '#34c759' : '#ff3b30' }}>
+                  <p style={{ margin: '6px 0 0', fontSize: '13px', fontWeight: 700, color: payment.status === 'approved' ? '#34c759' : '#ff3b30' }}>
                     Status: {payment.status.toUpperCase()}
                   </p>
                 </div>

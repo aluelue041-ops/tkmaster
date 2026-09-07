@@ -1214,9 +1214,12 @@ app.put('/api/settings/crypto', authMiddleware, adminMiddleware, async (req, res
 
 app.post('/api/crypto/pay', authMiddleware, async (req, res) => {
   try {
-    const { walletAddress, amount, plan, currency } = req.body;
+    const { walletAddress, amount, plan, currency, txHash } = req.body;
     if (!walletAddress || !amount || !plan) {
       return res.status(400).json({ error: 'Missing required payment details' });
+    }
+    if (!txHash || txHash.trim().length < 10) {
+      return res.status(400).json({ error: 'Please provide a valid transaction hash ID.' });
     }
     
     const newPayment = new CryptoPayment({
@@ -1225,6 +1228,7 @@ app.post('/api/crypto/pay', authMiddleware, async (req, res) => {
       amount,
       plan,
       currency: currency || 'USDT',
+      txHash: txHash.trim(),
       status: 'pending'
     });
     await newPayment.save();
