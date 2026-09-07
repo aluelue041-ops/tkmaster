@@ -1115,7 +1115,32 @@ app.put('/api/tickets/:id/transfer', authMiddleware, adminMiddleware, async (req
   }
 });
 
-// --- PAYHERO M-PESA INTEGRATION ---
+// --- PAYHERO M-PESA & CRYPTO INTEGRATION ---
+
+app.post('/api/crypto/pay', authMiddleware, async (req, res) => {
+  try {
+    const { walletAddress, amount, plan } = req.body;
+    if (!walletAddress || !amount || !plan) {
+      return res.status(400).json({ error: 'Missing required payment details' });
+    }
+    
+    // Simulate successful payment (for demo purposes)
+    console.log(`[Demo] Simulating Crypto Payment from ${walletAddress} (${amount} USDT). Upgrading user to ${plan}.`);
+    await User.findByIdAndUpdate(req.user.id, { subscription: plan, subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.to(req.user.id).emit('subscription_success', {
+        message: `Your subscription has been upgraded to ${plan} successfully via Crypto! (Simulated)`
+      });
+    }
+
+    return res.json({ success: true, message: 'Crypto Payment Processed (Simulated)' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 // Initiate STK Push
 app.post('/api/payhero/stk-push', authMiddleware, async (req, res) => {

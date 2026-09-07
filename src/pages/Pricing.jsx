@@ -8,7 +8,9 @@ export default function Pricing() {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [walletAddress, setWalletAddress] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('mpesa');
   const [userSubscription, setUserSubscription] = useState('Free');
 
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -37,6 +39,7 @@ export default function Pricing() {
     {
       name: 'VIP',
       price: '2,500',
+      cryptoPrice: '20',
       description: 'For corporate & VIPs',
       features: ['Unlimited Tickets', 'Instant Auto-Approve', 'Dedicated Account Manager', 'No screen recording limits'],
       limit: '',
@@ -44,7 +47,7 @@ export default function Pricing() {
     }
   ];
 
-  const handleUpgradeClick = (plan) => {
+  const handleUpgradeClick = (plan, method) => {
     if (plan.name === 'Free') {
       toast.info("You are already on the Free tier or it's free!");
       return;
@@ -56,6 +59,7 @@ export default function Pricing() {
       return;
     }
     setSelectedPlan(plan);
+    setPaymentMethod(method);
     setShowModal(true);
   };
 
@@ -95,6 +99,46 @@ export default function Pricing() {
       }
     } catch (err) {
       toast.error('Network error while connecting to PayHero.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCryptoSubmit = async () => {
+    if (!walletAddress || walletAddress.length < 10) {
+      toast.error('Please enter a valid Crypto wallet address.');
+      return;
+    }
+    setLoading(true);
+    const token = localStorage.getItem('token');
+
+    let amount = 0;
+    if (selectedPlan.name === 'VIP') amount = 20;
+
+    try {
+      const res = await fetch(`${API}/api/crypto/pay`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          walletAddress,
+          amount,
+          plan: selectedPlan.name
+        })
+      });
+
+      const data = await res.json();
+      
+      if (res.ok) {
+        toast.success(data.message || 'Crypto payment simulated successfully!');
+        setShowModal(false);
+      } else {
+        toast.error(data.error || 'Payment initiation failed.');
+      }
+    } catch (err) {
+      toast.error('Network error while connecting to Crypto service.');
     } finally {
       setLoading(false);
     }
@@ -150,6 +194,12 @@ export default function Pricing() {
               <div style={{ marginBottom: '32px' }}>
                 <span style={{ fontSize: '36px', fontWeight: 900, color: '#111', letterSpacing: '-1px' }}>{plan.price}</span>
                 <span style={{ fontSize: '14px', color: '#888', fontWeight: 600 }}> KES / mo</span>
+                {plan.cryptoPrice && (
+                  <div style={{ marginTop: '8px' }}>
+                    <span style={{ fontSize: '24px', fontWeight: 800, color: '#34c759', letterSpacing: '-0.5px' }}>{plan.cryptoPrice}</span>
+                    <span style={{ fontSize: '12px', color: '#888', fontWeight: 600 }}> USDT / mo</span>
+                  </div>
+                )}
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, marginBottom: '32px' }}>
@@ -171,19 +221,47 @@ export default function Pricing() {
                 )}
               </div>
 
-              <button 
-                onClick={() => handleUpgradeClick(plan)}
-                style={{ 
-                  width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
-                  backgroundColor: plan.recommended ? '#026cdf' : '#f0f0f0',
-                  color: plan.recommended ? 'white' : '#111',
-                  fontSize: '15px', fontWeight: 700, cursor: 'pointer',
-                  transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
-                }}
-              >
-                {userSubscription === plan.name ? 'Current Plan' : (plan.name === 'Free' ? 'Current Plan' : 'Upgrade via M-Pesa')}
-                {plan.name !== 'Free' && userSubscription !== plan.name && <ArrowRight size={18} />}
-              </button>
+              {userSubscription === plan.name || plan.name === 'Free' ? (
+                <button 
+                  onClick={() => handleUpgradeClick(plan, 'mpesa')}
+                  style={{ 
+                    width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
+                    backgroundColor: '#f0f0f0',
+                    color: '#111',
+                    fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+                    transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
+                  }}
+                >
+                  Current Plan
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                  <button 
+                    onClick={() => handleUpgradeClick(plan, 'mpesa')}
+                    style={{ 
+                      width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
+                      backgroundColor: '#026cdf',
+                      color: 'white',
+                      fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+                      transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
+                    }}
+                  >
+                    Upgrade via M-Pesa <ArrowRight size={18} />
+                  </button>
+                  <button 
+                    onClick={() => handleUpgradeClick(plan, 'crypto')}
+                    style={{ 
+                      width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
+                      backgroundColor: '#34c759',
+                      color: 'white',
+                      fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+                      transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
+                    }}
+                  >
+                    Upgrade via Crypto <ArrowRight size={18} />
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -205,8 +283,12 @@ export default function Pricing() {
                 <Zap size={24} color="white" />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>Pay via M-Pesa</h3>
-                <p style={{ margin: 0, color: '#666', fontSize: '13px' }}>PayHero Integration</p>
+                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>
+                  {paymentMethod === 'crypto' ? 'Pay via Crypto' : 'Pay via M-Pesa'}
+                </h3>
+                <p style={{ margin: 0, color: '#666', fontSize: '13px' }}>
+                  {paymentMethod === 'crypto' ? 'USDT (TRC20 / ERC20)' : 'PayHero Integration'}
+                </p>
               </div>
             </div>
 
@@ -217,37 +299,66 @@ export default function Pricing() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#555', fontSize: '14px' }}>Amount to Pay</span>
-                <span style={{ fontWeight: 800, color: '#026cdf' }}>{selectedPlan.price} KES</span>
+                <span style={{ fontWeight: 800, color: '#026cdf' }}>
+                  {paymentMethod === 'crypto' ? `${selectedPlan.cryptoPrice} USDT` : `${selectedPlan.price} KES`}
+                </span>
               </div>
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>M-Pesa Phone Number</label>
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '16px', top: '15px', fontSize: '15px', color: '#555', fontWeight: 700 }}>+254</span>
+            {paymentMethod === 'crypto' ? (
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Your Wallet Address</label>
                 <input 
-                  type="tel"
-                  placeholder="712345678"
-                  value={phoneNumber}
-                  onChange={e => setPhoneNumber(e.target.value)}
-                  style={{ width: '100%', padding: '14px 14px 14px 64px', borderRadius: '10px', border: '2px solid #eaeaea', fontSize: '16px', outline: 'none', boxSizing: 'border-box', fontWeight: 600, transition: 'border 0.2s' }}
+                  type="text"
+                  placeholder="0x... or T..."
+                  value={walletAddress}
+                  onChange={e => setWalletAddress(e.target.value)}
+                  style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '2px solid #eaeaea', fontSize: '16px', outline: 'none', boxSizing: 'border-box', fontWeight: 600, transition: 'border 0.2s' }}
                   onFocus={e => e.target.style.borderColor = '#34c759'}
                   onBlur={e => e.target.style.borderColor = '#eaeaea'}
                 />
+                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>Enter the address you will send from.</p>
               </div>
-              <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>Format: 7XXXXXXXX or 07XXXXXXXX</p>
-            </div>
+            ) : (
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>M-Pesa Phone Number</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '16px', top: '15px', fontSize: '15px', color: '#555', fontWeight: 700 }}>+254</span>
+                  <input 
+                    type="tel"
+                    placeholder="712345678"
+                    value={phoneNumber}
+                    onChange={e => setPhoneNumber(e.target.value)}
+                    style={{ width: '100%', padding: '14px 14px 14px 64px', borderRadius: '10px', border: '2px solid #eaeaea', fontSize: '16px', outline: 'none', boxSizing: 'border-box', fontWeight: 600, transition: 'border 0.2s' }}
+                    onFocus={e => e.target.style.borderColor = '#34c759'}
+                    onBlur={e => e.target.style.borderColor = '#eaeaea'}
+                  />
+                </div>
+                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>Format: 7XXXXXXXX or 07XXXXXXXX</p>
+              </div>
+            )}
 
-            <button 
-              onClick={handlePayHeroSubmit}
-              disabled={loading || !phoneNumber}
-              style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: loading || !phoneNumber ? '#ccc' : '#34c759', color: 'white', fontSize: '16px', fontWeight: 700, cursor: loading || !phoneNumber ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
-            >
-              {loading ? 'Initiating STK Push...' : `Pay ${selectedPlan.price} KES`}
-            </button>
+            {paymentMethod === 'crypto' ? (
+              <button 
+                onClick={handleCryptoSubmit}
+                disabled={loading || !walletAddress || walletAddress.length < 10}
+                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: (loading || !walletAddress || walletAddress.length < 10) ? '#ccc' : '#34c759', color: 'white', fontSize: '16px', fontWeight: 700, cursor: (loading || !walletAddress || walletAddress.length < 10) ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+              >
+                {loading ? 'Processing...' : `Pay ${selectedPlan.cryptoPrice} USDT`}
+              </button>
+            ) : (
+              <button 
+                onClick={handlePayHeroSubmit}
+                disabled={loading || !phoneNumber}
+                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: loading || !phoneNumber ? '#ccc' : '#34c759', color: 'white', fontSize: '16px', fontWeight: 700, cursor: loading || !phoneNumber ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+              >
+                {loading ? 'Initiating STK Push...' : `Pay ${selectedPlan.price} KES`}
+              </button>
+            )}
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '16px', color: '#aaa' }}>
               <Shield size={14} />
-              <span style={{ fontSize: '11px', fontWeight: 600 }}>Secured by PayHero</span>
+              <span style={{ fontSize: '11px', fontWeight: 600 }}>Secured by {paymentMethod === 'crypto' ? 'Crypto Network' : 'PayHero'}</span>
             </div>
           </div>
         </div>
