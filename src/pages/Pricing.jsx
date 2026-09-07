@@ -11,6 +11,7 @@ export default function Pricing() {
   const [walletAddress, setWalletAddress] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
+  const [selectedCrypto, setSelectedCrypto] = useState('USDT');
   const [userSubscription, setUserSubscription] = useState('Free');
 
   const [cryptoSettings, setCryptoSettings] = useState({ usdtAddress: '', btcAddress: '' });
@@ -137,6 +138,7 @@ export default function Pricing() {
         body: JSON.stringify({
           walletAddress,
           amount,
+          currency: selectedCrypto,
           plan: selectedPlan.name
         })
       });
@@ -312,42 +314,58 @@ export default function Pricing() {
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#555', fontSize: '14px' }}>Amount to Pay</span>
                 <span style={{ fontWeight: 800, color: '#026cdf' }}>
-                  {paymentMethod === 'crypto' ? `${selectedPlan.cryptoPrice} USDT` : `${selectedPlan.price} KES`}
+                  {paymentMethod === 'crypto' ? `${selectedPlan.cryptoPrice} ${selectedCrypto}` : `${selectedPlan.price} KES`}
                 </span>
               </div>
             </div>
 
             {paymentMethod === 'crypto' ? (
               <div style={{ marginBottom: '24px' }}>
-                <div style={{ padding: '12px', backgroundColor: '#e6f2ff', borderRadius: '8px', marginBottom: '16px' }}>
-                  <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#004aad' }}>SEND PAYMENT TO:</p>
-                  <div style={{ marginBottom: '8px' }}>
-                    <span style={{ fontSize: '11px', color: '#555', fontWeight: 600 }}>USDT (TRC20):</span>
-                    <br />
-                    <code style={{ fontSize: '12px', fontWeight: 700, wordBreak: 'break-all' }}>
-                      {cryptoSettings.usdtAddress || 'Loading...'}
-                    </code>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '11px', color: '#555', fontWeight: 600 }}>Bitcoin (BTC):</span>
-                    <br />
-                    <code style={{ fontSize: '12px', fontWeight: 700, wordBreak: 'break-all' }}>
-                      {cryptoSettings.btcAddress || 'Loading...'}
-                    </code>
-                  </div>
+                {/* Wallet Type Selector */}
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Select Wallet Type</label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                  {[
+                    { id: 'USDT', label: '💰 USDT', sub: 'TRC20 / ERC20' },
+                    { id: 'BTC', label: '₿ Bitcoin', sub: 'BTC Network' }
+                  ].map(w => (
+                    <button
+                      key={w.id}
+                      onClick={() => setSelectedCrypto(w.id)}
+                      style={{
+                        flex: 1, padding: '12px 8px', borderRadius: '10px', cursor: 'pointer',
+                        border: selectedCrypto === w.id ? '2px solid #34c759' : '2px solid #eaeaea',
+                        backgroundColor: selectedCrypto === w.id ? '#f0fff4' : '#f9f9f9',
+                        fontWeight: 700, fontSize: '14px', color: selectedCrypto === w.id ? '#1a1a1a' : '#666',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {w.label}<br />
+                      <span style={{ fontSize: '11px', fontWeight: 400, color: '#888' }}>{w.sub}</span>
+                    </button>
+                  ))}
                 </div>
 
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Confirm Your Wallet Address</label>
+                {/* Address to send payment to */}
+                <div style={{ padding: '12px', backgroundColor: '#e6f2ff', borderRadius: '8px', marginBottom: '16px' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#004aad' }}>SEND {selectedPlan.cryptoPrice} {selectedCrypto} TO:</p>
+                  <code style={{ fontSize: '13px', fontWeight: 700, wordBreak: 'break-all', color: '#111' }}>
+                    {selectedCrypto === 'USDT'
+                      ? (cryptoSettings.usdtAddress || 'Admin has not set USDT address yet.')
+                      : (cryptoSettings.btcAddress || 'Admin has not set BTC address yet.')}
+                  </code>
+                </div>
+
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Your {selectedCrypto} Wallet Address</label>
                 <input 
                   type="text"
-                  placeholder="0x... or T..."
+                  placeholder={selectedCrypto === 'USDT' ? 'T... or 0x...' : 'bc1... or 1...'}
                   value={walletAddress}
                   onChange={e => setWalletAddress(e.target.value)}
                   style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '2px solid #eaeaea', fontSize: '16px', outline: 'none', boxSizing: 'border-box', fontWeight: 600, transition: 'border 0.2s' }}
                   onFocus={e => e.target.style.borderColor = '#34c759'}
                   onBlur={e => e.target.style.borderColor = '#eaeaea'}
                 />
-                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>Enter the address you sent the crypto from so we can verify.</p>
+                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>Enter the {selectedCrypto} address you sent from so we can verify.</p>
               </div>
             ) : (
               <div style={{ marginBottom: '24px' }}>
@@ -374,7 +392,7 @@ export default function Pricing() {
                 disabled={loading || !walletAddress || walletAddress.length < 10}
                 style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: (loading || !walletAddress || walletAddress.length < 10) ? '#ccc' : '#34c759', color: 'white', fontSize: '16px', fontWeight: 700, cursor: (loading || !walletAddress || walletAddress.length < 10) ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
               >
-                {loading ? 'Processing...' : `Pay ${selectedPlan.cryptoPrice} USDT`}
+                {loading ? 'Processing...' : `Pay ${selectedPlan.cryptoPrice} ${selectedCrypto}`}
               </button>
             ) : (
               <button 

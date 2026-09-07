@@ -853,7 +853,7 @@ export default function AdminDashboard() {
                       <br />
                       Sent From: <code style={{ backgroundColor: '#222', padding: '2px 4px', borderRadius: '4px' }}>{payment.walletAddress}</code>
                       <br />
-                      Amount: {payment.amount} USDT
+                      Amount: {payment.amount} {payment.currency || 'USDT'}
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -882,7 +882,7 @@ export default function AdminDashboard() {
                 <div key={payment._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '16px', marginBottom: '16px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>{payment.user?.email || 'Unknown User'}</h3>
                   <p style={{ margin: 0, fontSize: '13px', color: '#ccc' }}>
-                    Plan: {payment.plan} | Amount: {payment.amount} USDT | From: {payment.walletAddress}
+                    Plan: {payment.plan} | Amount: {payment.amount} {payment.currency || 'USDT'} | From: {payment.walletAddress}
                   </p>
                   <p style={{ margin: '4px 0 0', fontSize: '13px', fontWeight: 700, color: payment.status === 'approved' ? '#34c759' : '#ff3b30' }}>
                     Status: {payment.status.toUpperCase()}

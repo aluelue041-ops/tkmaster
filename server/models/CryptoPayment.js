@@ -18,6 +18,11 @@ const CryptoPaymentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  currency: {
+    type: String,
+    enum: ['USDT', 'BTC'],
+    default: 'USDT'
+  },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],

@@ -1214,7 +1214,7 @@ app.put('/api/settings/crypto', authMiddleware, adminMiddleware, async (req, res
 
 app.post('/api/crypto/pay', authMiddleware, async (req, res) => {
   try {
-    const { walletAddress, amount, plan } = req.body;
+    const { walletAddress, amount, plan, currency } = req.body;
     if (!walletAddress || !amount || !plan) {
       return res.status(400).json({ error: 'Missing required payment details' });
     }
@@ -1224,13 +1224,14 @@ app.post('/api/crypto/pay', authMiddleware, async (req, res) => {
       walletAddress,
       amount,
       plan,
+      currency: currency || 'USDT',
       status: 'pending'
     });
     await newPayment.save();
 
-    console.log(`[Demo] Crypto Payment requested from ${walletAddress} (${amount} USDT). Waiting for admin approval.`);
+    console.log(`[Demo] Crypto Payment requested from ${walletAddress} (${amount} ${currency || 'USDT'}). Waiting for admin approval.`);
 
-    return res.json({ success: true, message: 'Crypto payment requested! Admin will review and approve it shortly.' });
+    return res.json({ success: true, message: `Crypto payment requested! Admin will review your ${currency || 'USDT'} payment shortly.` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
