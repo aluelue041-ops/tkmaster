@@ -18,6 +18,8 @@ const User = require('./models/User');
 const Ticket = require('./models/Ticket');
 const Event = require('./models/Event');
 const Notification = require('./models/Notification');
+const Setting = require('./models/Setting');
+const CryptoPayment = require('./models/CryptoPayment');
 
 
 // SendGrid setup
@@ -1115,6 +1117,99 @@ app.put('/api/tickets/:id/transfer', authMiddleware, adminMiddleware, async (req
   }
 });
 
+// --- ADMIN CRYPTO & SETTINGS ---
+
+app.get('/api/admin/crypto-payments', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const payments = await CryptoPayment.find().populate('user', 'email').sort({ createdAt: -1 });
+    res.json(payments);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/admin/crypto-payments/:id/approve', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const payment = await CryptoPayment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ error: 'Payment not found' });
+    if (payment.status !== 'pending') return res.status(400).json({ error: 'Payment is not pending' });
+
+    payment.status = 'approved';
+    await payment.save();
+
+    await User.findByIdAndUpdate(payment.user, { 
+      subscription: payment.plan, 
+      subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) 
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(payment.user.toString()).emit('subscription_success', {
+        message: `Your Crypto payment was approved! Subscription upgraded to ${payment.plan}.`
+      });
+    }
+
+    res.json(payment);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/admin/crypto-payments/:id/reject', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const payment = await CryptoPayment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ error: 'Payment not found' });
+    if (payment.status !== 'pending') return res.status(400).json({ error: 'Payment is not pending' });
+
+    payment.status = 'rejected';
+    await payment.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(payment.user.toString()).emit('subscription_failed', {
+        message: `Your Crypto payment was rejected.`
+      });
+    }
+
+    res.json(payment);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/settings/crypto', async (req, res) => {
+  try {
+    const usdtSetting = await Setting.findOne({ key: 'usdtAddress' });
+    const btcSetting = await Setting.findOne({ key: 'btcAddress' });
+    res.json({
+      usdtAddress: usdtSetting ? usdtSetting.value : 'TRC20_WALLET_ADDRESS_DEFAULT',
+      btcAddress: btcSetting ? btcSetting.value : 'BTC_WALLET_ADDRESS_DEFAULT'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/settings/crypto', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { usdtAddress, btcAddress } = req.body;
+    if (usdtAddress) {
+      await Setting.findOneAndUpdate({ key: 'usdtAddress' }, { value: usdtAddress }, { upsert: true, new: true });
+    }
+    if (btcAddress) {
+      await Setting.findOneAndUpdate({ key: 'btcAddress' }, { value: btcAddress }, { upsert: true, new: true });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // --- PAYHERO M-PESA & CRYPTO INTEGRATION ---
 
 app.post('/api/crypto/pay', authMiddleware, async (req, res) => {
@@ -1124,18 +1219,18 @@ app.post('/api/crypto/pay', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Missing required payment details' });
     }
     
-    // Simulate successful payment (for demo purposes)
-    console.log(`[Demo] Simulating Crypto Payment from ${walletAddress} (${amount} USDT). Upgrading user to ${plan}.`);
-    await User.findByIdAndUpdate(req.user.id, { subscription: plan, subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
-    
-    const io = req.app.get('io');
-    if (io) {
-      io.to(req.user.id).emit('subscription_success', {
-        message: `Your subscription has been upgraded to ${plan} successfully via Crypto! (Simulated)`
-      });
-    }
+    const newPayment = new CryptoPayment({
+      user: req.user.id,
+      walletAddress,
+      amount,
+      plan,
+      status: 'pending'
+    });
+    await newPayment.save();
 
-    return res.json({ success: true, message: 'Crypto Payment Processed (Simulated)' });
+    console.log(`[Demo] Crypto Payment requested from ${walletAddress} (${amount} USDT). Waiting for admin approval.`);
+
+    return res.json({ success: true, message: 'Crypto payment requested! Admin will review and approve it shortly.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

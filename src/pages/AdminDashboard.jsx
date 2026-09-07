@@ -32,8 +32,11 @@ export default function AdminDashboard() {
   // Search & Filter States
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [ticketSearchTerm, setTicketSearchTerm] = useState('');
-  const [ticketFilter, setTicketFilter] = useState('All');
-
+  const [newPassword, setNewPassword] = useState('');
+  
+  const [cryptoPayments, setCryptoPayments] = useState([]);
+  const [cryptoSettings, setCryptoSettings] = useState({ usdtAddress: '', btcAddress: '' });
+  
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
@@ -75,10 +78,23 @@ export default function AdminDashboard() {
 
         let ticketsData = [];
         if (ticketsRes.ok) ticketsData = await ticketsRes.json();
+        
+        let cryptoData = [];
+        if (!isEventManagerOnly) {
+          const cryptoRes = await fetch(`${API}/api/admin/crypto-payments`, { headers: { 'Authorization': `Bearer ${token}` } });
+          if (cryptoRes.ok) cryptoData = await cryptoRes.json();
+          
+          const settingsRes = await fetch(`${API}/api/settings/crypto`);
+          if (settingsRes.ok) {
+            const settingsData = await settingsRes.json();
+            setCryptoSettings(settingsData);
+          }
+        }
 
         setUsers(usersData);
         setTickets(ticketsData);
         setEvents(eventsData);
+        setCryptoPayments(cryptoData);
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -136,6 +152,65 @@ export default function AdminDashboard() {
       toast.error('Upload failed. Please try a URL instead.');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleApproveCrypto = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/api/admin/crypto-payments/${id}/approve`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast.success('Crypto payment approved! User subscription upgraded.');
+        setCryptoPayments(prev => prev.map(p => p._id === id ? { ...p, status: 'approved' } : p));
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to approve payment');
+      }
+    } catch (e) {
+      toast.error('Network error');
+    }
+  };
+
+  const handleRejectCrypto = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/api/admin/crypto-payments/${id}/reject`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast.success('Crypto payment rejected.');
+        setCryptoPayments(prev => prev.map(p => p._id === id ? { ...p, status: 'rejected' } : p));
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to reject payment');
+      }
+    } catch (e) {
+      toast.error('Network error');
+    }
+  };
+
+  const handleSaveCryptoSettings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/api/settings/crypto`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(cryptoSettings)
+      });
+      if (res.ok) {
+        toast.success('Crypto addresses saved successfully.');
+      } else {
+        toast.error('Failed to save settings.');
+      }
+    } catch (e) {
+      toast.error('Network error');
     }
   };
 
@@ -406,6 +481,9 @@ export default function AdminDashboard() {
         )}
         {currentUser?.role !== 'event_manager' && (
           <button onClick={() => setActiveTab('tickets')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'tickets' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Tickets</button>
+        )}
+        {currentUser?.role !== 'event_manager' && (
+          <button onClick={() => setActiveTab('crypto')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'crypto' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Crypto</button>
         )}
       </div>
 
@@ -726,6 +804,91 @@ export default function AdminDashboard() {
                 </div>
                 );
               })
+            )}
+          </div>
+        )}
+
+        {activeTab === 'crypto' && (
+          <div>
+            <div style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '16px', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'white', margin: '0 0 16px' }}>Crypto Addresses</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#aaa', marginBottom: '8px' }}>USDT Address (TRC20 / ERC20)</label>
+                  <input
+                    type="text"
+                    value={cryptoSettings.usdtAddress}
+                    onChange={e => setCryptoSettings({ ...cryptoSettings, usdtAddress: e.target.value })}
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#222', color: 'white', outline: 'none' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#aaa', marginBottom: '8px' }}>Bitcoin (BTC) Address</label>
+                  <input
+                    type="text"
+                    value={cryptoSettings.btcAddress}
+                    onChange={e => setCryptoSettings({ ...cryptoSettings, btcAddress: e.target.value })}
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#222', color: 'white', outline: 'none' }}
+                  />
+                </div>
+                <button
+                  onClick={handleSaveCryptoSettings}
+                  style={{ alignSelf: 'flex-start', padding: '10px 24px', backgroundColor: '#34c759', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Save Addresses
+                </button>
+              </div>
+            </div>
+
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'white', margin: '0 0 16px' }}>Pending Crypto Payments</h2>
+            {cryptoPayments.filter(p => p.status === 'pending').length === 0 ? (
+              <p style={{ color: '#aaa' }}>No pending crypto payments.</p>
+            ) : (
+              cryptoPayments.filter(p => p.status === 'pending').map(payment => (
+                <div key={payment._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>{payment.user?.email || 'Unknown User'}</h3>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#ccc' }}>
+                      Requested: <span style={{ color: '#026cdf', fontWeight: 'bold' }}>{payment.plan}</span>
+                      <br />
+                      Sent From: <code style={{ backgroundColor: '#222', padding: '2px 4px', borderRadius: '4px' }}>{payment.walletAddress}</code>
+                      <br />
+                      Amount: {payment.amount} USDT
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => handleApproveCrypto(payment._id)}
+                      style={{ padding: '8px 16px', backgroundColor: '#34c759', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleRejectCrypto(payment._id)}
+                      style={{ padding: '8px 16px', backgroundColor: '#ff3b30', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'white', margin: '32px 0 16px' }}>Payment History</h2>
+            {cryptoPayments.filter(p => p.status !== 'pending').length === 0 ? (
+              <p style={{ color: '#aaa' }}>No history found.</p>
+            ) : (
+              cryptoPayments.filter(p => p.status !== 'pending').map(payment => (
+                <div key={payment._id} style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '16px', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>{payment.user?.email || 'Unknown User'}</h3>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#ccc' }}>
+                    Plan: {payment.plan} | Amount: {payment.amount} USDT | From: {payment.walletAddress}
+                  </p>
+                  <p style={{ margin: '4px 0 0', fontSize: '13px', fontWeight: 700, color: payment.status === 'approved' ? '#34c759' : '#ff3b30' }}>
+                    Status: {payment.status.toUpperCase()}
+                  </p>
+                </div>
+              ))
             )}
           </div>
         )}

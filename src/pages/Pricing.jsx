@@ -13,6 +13,8 @@ export default function Pricing() {
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
   const [userSubscription, setUserSubscription] = useState('Free');
 
+  const [cryptoSettings, setCryptoSettings] = useState({ usdtAddress: '', btcAddress: '' });
+
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
@@ -25,6 +27,16 @@ export default function Pricing() {
         })
         .catch(() => {});
     }
+
+    // Fetch crypto settings
+    fetch(`${API}/api/settings/crypto`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.usdtAddress || data.btcAddress) {
+          setCryptoSettings(data);
+        }
+      })
+      .catch(() => {});
   }, [API]);
 
   const plans = [
@@ -307,7 +319,25 @@ export default function Pricing() {
 
             {paymentMethod === 'crypto' ? (
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Your Wallet Address</label>
+                <div style={{ padding: '12px', backgroundColor: '#e6f2ff', borderRadius: '8px', marginBottom: '16px' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#004aad' }}>SEND PAYMENT TO:</p>
+                  <div style={{ marginBottom: '8px' }}>
+                    <span style={{ fontSize: '11px', color: '#555', fontWeight: 600 }}>USDT (TRC20):</span>
+                    <br />
+                    <code style={{ fontSize: '12px', fontWeight: 700, wordBreak: 'break-all' }}>
+                      {cryptoSettings.usdtAddress || 'Loading...'}
+                    </code>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '11px', color: '#555', fontWeight: 600 }}>Bitcoin (BTC):</span>
+                    <br />
+                    <code style={{ fontSize: '12px', fontWeight: 700, wordBreak: 'break-all' }}>
+                      {cryptoSettings.btcAddress || 'Loading...'}
+                    </code>
+                  </div>
+                </div>
+
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Confirm Your Wallet Address</label>
                 <input 
                   type="text"
                   placeholder="0x... or T..."
@@ -317,7 +347,7 @@ export default function Pricing() {
                   onFocus={e => e.target.style.borderColor = '#34c759'}
                   onBlur={e => e.target.style.borderColor = '#eaeaea'}
                 />
-                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>Enter the address you will send from.</p>
+                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>Enter the address you sent the crypto from so we can verify.</p>
               </div>
             ) : (
               <div style={{ marginBottom: '24px' }}>
