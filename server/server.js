@@ -463,9 +463,7 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
     const numSeatsRequested = seats ? seats.length : 1;
 
     let limit = 2; // Free tier
-    if (subscription === 'Basic') limit = 40;
-    else if (subscription === 'Premium') limit = 100;
-    else if (subscription === 'VIP') limit = Infinity;
+    if (subscription === 'VIP') limit = Infinity;
 
     if (seatsBoughtThisMonth + numSeatsRequested > limit) {
       return res.status(400).json({ 

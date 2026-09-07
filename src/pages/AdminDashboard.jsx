@@ -608,8 +608,6 @@ export default function AdminDashboard() {
                         style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', outline: 'none' }}
                       >
                         <option value="Free">Free (2 tickets)</option>
-                        <option value="Basic">Basic (40 tickets)</option>
-                        <option value="Premium">Premium (100 tickets)</option>
                         <option value="VIP">VIP (Unlimited)</option>
                       </select>
                     </div>

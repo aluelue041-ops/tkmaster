@@ -879,8 +879,6 @@ export default function MyTickets() {
   }, 0);
 
   let limit = 2; // Free
-  if (userSubscription === 'Basic') limit = 40;
-  if (userSubscription === 'Premium') limit = 100;
   const isVIP = userSubscription === 'VIP';
 
   const usagePercent = isVIP ? 0 : Math.min(100, (usedThisMonth / limit) * 100);

@@ -35,28 +35,12 @@ export default function Pricing() {
       recommended: false
     },
     {
-      name: 'Basic',
-      price: '15,000',
-      description: 'For regular attendees',
-      features: ['40 Tickets per month', 'Auto-Approve Tickets', 'Priority Email Support', 'No screen recording limits'],
-      limit: '',
-      recommended: true
-    },
-    {
-      name: 'Premium',
-      price: '30,000',
-      description: 'For event enthusiasts',
-      features: ['100 Tickets per month', 'Auto-Approve Tickets', '24/7 Priority Support', 'No screen recording limits'],
-      limit: '',
-      recommended: false
-    },
-    {
       name: 'VIP',
-      price: '50,000',
+      price: '2,500',
       description: 'For corporate & VIPs',
       features: ['Unlimited Tickets', 'Instant Auto-Approve', 'Dedicated Account Manager', 'No screen recording limits'],
       limit: '',
-      recommended: false
+      recommended: true
     }
   ];
 
@@ -85,9 +69,7 @@ export default function Pricing() {
     const token = localStorage.getItem('token');
     
     let amount = 0;
-    if (selectedPlan.name === 'Basic') amount = 15000;
-    if (selectedPlan.name === 'Premium') amount = 30000;
-    if (selectedPlan.name === 'VIP') amount = 50000;
+    if (selectedPlan.name === 'VIP') amount = 2500;
 
     try {
       const res = await fetch(`${API}/api/payhero/stk-push`, {
