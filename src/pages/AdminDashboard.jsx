@@ -853,8 +853,6 @@ export default function AdminDashboard() {
                       <br />
                       Amount: <strong style={{ color: '#34c759' }}>{payment.amount} {payment.currency || 'USDT'}</strong>
                       <br />
-                      Sent From: <code style={{ backgroundColor: '#222', padding: '2px 4px', borderRadius: '4px', fontSize: '11px', wordBreak: 'break-all' }}>{payment.walletAddress}</code>
-                      <br />
                       TX Hash:{' '}
                       {payment.txHash ? (
                         <a
@@ -903,8 +901,6 @@ export default function AdminDashboard() {
                   <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>{payment.user?.email || 'Unknown User'}</h3>
                   <p style={{ margin: 0, fontSize: '13px', color: '#ccc', lineHeight: 1.7 }}>
                     Plan: <strong>{payment.plan}</strong> | Amount: <strong style={{ color: '#34c759' }}>{payment.amount} {payment.currency || 'USDT'}</strong>
-                    <br />
-                    From: <code style={{ backgroundColor: '#222', padding: '2px 4px', borderRadius: '4px', fontSize: '11px' }}>{payment.walletAddress}</code>
                     <br />
                     TX Hash:{' '}
                     {payment.txHash ? (

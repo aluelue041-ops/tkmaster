@@ -8,7 +8,6 @@ export default function Pricing() {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [walletAddress, setWalletAddress] = useState('');
   const [txHash, setTxHash] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
@@ -119,10 +118,6 @@ export default function Pricing() {
   };
 
   const handleCryptoSubmit = async () => {
-    if (!walletAddress || walletAddress.length < 10) {
-      toast.error('Please enter a valid Crypto wallet address.');
-      return;
-    }
     if (!txHash || txHash.trim().length < 10) {
       toast.error('Please enter the transaction hash/ID from your wallet.');
       return;
@@ -141,7 +136,6 @@ export default function Pricing() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          walletAddress,
           txHash: txHash.trim(),
           amount,
           currency: selectedCrypto,
@@ -336,7 +330,7 @@ export default function Pricing() {
                   ].map(w => (
                     <button
                       key={w.id}
-                      onClick={() => setSelectedCrypto(w.id)}
+                      onClick={() => { setSelectedCrypto(w.id); }}
                       style={{
                         flex: 1, padding: '12px 8px', borderRadius: '10px', cursor: 'pointer',
                         border: selectedCrypto === w.id ? '2px solid #34c759' : '2px solid #eaeaea',
@@ -351,28 +345,31 @@ export default function Pricing() {
                   ))}
                 </div>
 
-                {/* Address to send payment to */}
-                <div style={{ padding: '12px', backgroundColor: '#e6f2ff', borderRadius: '8px', marginBottom: '16px' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#004aad' }}>SEND {selectedPlan.cryptoPrice} {selectedCrypto} TO:</p>
-                  <code style={{ fontSize: '13px', fontWeight: 700, wordBreak: 'break-all', color: '#111' }}>
+                {/* Copyable admin address */}
+                <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#004aad', textTransform: 'uppercase' }}>
+                  Send {selectedPlan.cryptoPrice} {selectedCrypto} to this address:
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#e6f2ff', padding: '12px', borderRadius: '10px', marginBottom: '20px' }}>
+                  <code style={{ flex: 1, fontSize: '13px', fontWeight: 700, wordBreak: 'break-all', color: '#111', lineHeight: 1.5 }}>
                     {selectedCrypto === 'USDT'
                       ? (cryptoSettings.usdtAddress || 'Admin has not set USDT address yet.')
                       : (cryptoSettings.btcAddress || 'Admin has not set BTC address yet.')}
                   </code>
+                  <button
+                    onClick={() => {
+                      const addr = selectedCrypto === 'USDT' ? cryptoSettings.usdtAddress : cryptoSettings.btcAddress;
+                      if (addr) {
+                        navigator.clipboard.writeText(addr);
+                        toast.success('Address copied!');
+                      }
+                    }}
+                    style={{ flexShrink: 0, padding: '8px 14px', backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    📋 Copy
+                  </button>
                 </div>
 
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Your {selectedCrypto} Wallet Address</label>
-                <input 
-                  type="text"
-                  placeholder={selectedCrypto === 'USDT' ? 'T... or 0x...' : 'bc1... or 1...'}
-                  value={walletAddress}
-                  onChange={e => setWalletAddress(e.target.value)}
-                  style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '2px solid #eaeaea', fontSize: '16px', outline: 'none', boxSizing: 'border-box', fontWeight: 600, transition: 'border 0.2s', marginBottom: '4px' }}
-                  onFocus={e => e.target.style.borderColor = '#34c759'}
-                  onBlur={e => e.target.style.borderColor = '#eaeaea'}
-                />
-                <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#888' }}>Enter the {selectedCrypto} address you sent from so we can verify.</p>
-
+                {/* TX Hash only */}
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Transaction Hash / TX ID</label>
                 <input 
                   type="text"
@@ -383,7 +380,7 @@ export default function Pricing() {
                   onFocus={e => e.target.style.borderColor = '#026cdf'}
                   onBlur={e => e.target.style.borderColor = '#eaeaea'}
                 />
-                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>Copy the TX hash from your wallet after sending. Admin uses this to verify your payment on the blockchain.</p>
+                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>After sending, copy the TX hash from your wallet and paste it here for admin verification.</p>
               </div>
             ) : (
               <div style={{ marginBottom: '24px' }}>
@@ -407,8 +404,8 @@ export default function Pricing() {
             {paymentMethod === 'crypto' ? (
               <button 
                 onClick={handleCryptoSubmit}
-                disabled={loading || !walletAddress || walletAddress.length < 10 || !txHash || txHash.trim().length < 10}
-                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: (loading || !walletAddress || walletAddress.length < 10 || !txHash || txHash.trim().length < 10) ? '#ccc' : '#34c759', color: 'white', fontSize: '16px', fontWeight: 700, cursor: (loading || !walletAddress || walletAddress.length < 10 || !txHash || txHash.trim().length < 10) ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+                disabled={loading || !txHash || txHash.trim().length < 10}
+                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: (loading || !txHash || txHash.trim().length < 10) ? '#ccc' : '#34c759', color: 'white', fontSize: '16px', fontWeight: 700, cursor: (loading || !txHash || txHash.trim().length < 10) ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
               >
                 {loading ? 'Processing...' : `Pay ${selectedPlan.cryptoPrice} ${selectedCrypto}`}
               </button>
