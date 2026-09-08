@@ -134,7 +134,8 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
       attachments: [{
         content: base64Data,
         filename: 'qrcode.png',
-        content_type: 'image/png'
+        content_type: 'image/png',
+        content_id: 'ticket-qr'
       }]
     });
   } catch (err) {
@@ -641,7 +642,8 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
         attachments: [{
           content: base64Data,
           filename: 'qrcode.png',
-          content_type: 'image/png'
+          content_type: 'image/png',
+          content_id: 'ticket-qr'
         }]
       });
     } catch(e) {
@@ -1437,7 +1439,8 @@ cron.schedule('*/10 * * * *', async () => {
             attachments: [{
               content: record.payload.base64Data,
               filename: 'qrcode.png',
-              content_type: 'image/png'
+              content_type: 'image/png',
+              content_id: 'ticket-qr'
             }]
           });
           sent = true;
