@@ -1182,11 +1182,13 @@ app.put('/api/admin/crypto-payments/:id/reject', authMiddleware, adminMiddleware
 
 app.get('/api/settings/crypto', async (req, res) => {
   try {
-    const usdtSetting = await Setting.findOne({ key: 'usdtAddress' });
-    const btcSetting = await Setting.findOne({ key: 'btcAddress' });
+    const trc20Setting = await Setting.findOne({ key: 'usdtTrc20Address' });
+    const erc20Setting = await Setting.findOne({ key: 'usdtErc20Address' });
+    const btcSetting   = await Setting.findOne({ key: 'btcAddress' });
     res.json({
-      usdtAddress: usdtSetting ? usdtSetting.value : 'TRC20_WALLET_ADDRESS_DEFAULT',
-      btcAddress: btcSetting ? btcSetting.value : 'BTC_WALLET_ADDRESS_DEFAULT'
+      usdtTrc20Address: trc20Setting ? trc20Setting.value : '',
+      usdtErc20Address: erc20Setting ? erc20Setting.value : '',
+      btcAddress:       btcSetting   ? btcSetting.value   : ''
     });
   } catch (err) {
     console.error(err);
@@ -1196,11 +1198,14 @@ app.get('/api/settings/crypto', async (req, res) => {
 
 app.put('/api/settings/crypto', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { usdtAddress, btcAddress } = req.body;
-    if (usdtAddress) {
-      await Setting.findOneAndUpdate({ key: 'usdtAddress' }, { value: usdtAddress }, { upsert: true, new: true });
+    const { usdtTrc20Address, usdtErc20Address, btcAddress } = req.body;
+    if (usdtTrc20Address !== undefined) {
+      await Setting.findOneAndUpdate({ key: 'usdtTrc20Address' }, { value: usdtTrc20Address }, { upsert: true, new: true });
     }
-    if (btcAddress) {
+    if (usdtErc20Address !== undefined) {
+      await Setting.findOneAndUpdate({ key: 'usdtErc20Address' }, { value: usdtErc20Address }, { upsert: true, new: true });
+    }
+    if (btcAddress !== undefined) {
       await Setting.findOneAndUpdate({ key: 'btcAddress' }, { value: btcAddress }, { upsert: true, new: true });
     }
     res.json({ success: true });
@@ -1218,19 +1223,22 @@ app.post('/api/crypto/pay', authMiddleware, async (req, res) => {
     if (!amount || !plan) {
       return res.status(400).json({ error: 'Missing required payment details' });
     }
+    if (!txHash || !txHash.trim()) {
+      return res.status(400).json({ error: 'Transaction hash (TX ID) is required.' });
+    }
     const newPayment = new CryptoPayment({
       user: req.user.id,
       amount,
       plan,
-      currency: currency || 'USDT',
-      txHash: txHash ? txHash.trim() : 'N/A',
+      currency: currency || 'USDT-TRC20',
+      txHash: txHash.trim(),
       status: 'pending'
     });
     await newPayment.save();
 
-    console.log(`[Demo] Crypto Payment requested (${amount} ${currency || 'USDT'}). Waiting for admin approval. Hash: ${txHash}`);
+    console.log(`[Crypto] Payment requested (${amount} ${currency}). TX: ${txHash}`);
 
-    return res.json({ success: true, message: `Crypto payment requested! Admin will review your ${currency || 'USDT'} payment shortly.` });
+    return res.json({ success: true, message: `Payment submitted! Admin will verify your ${currency} transaction shortly.` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [newPassword, setNewPassword] = useState('');
   
   const [cryptoPayments, setCryptoPayments] = useState([]);
-  const [cryptoSettings, setCryptoSettings] = useState({ usdtAddress: '', btcAddress: '' });
+  const [cryptoSettings, setCryptoSettings] = useState({ usdtTrc20Address: '', usdtErc20Address: '', btcAddress: '' });
   
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -815,21 +815,33 @@ export default function AdminDashboard() {
               <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'white', margin: '0 0 16px' }}>Crypto Addresses</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#aaa', marginBottom: '8px' }}>USDT Address (TRC20 / ERC20)</label>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#aaa', marginBottom: '8px' }}>USDT Address — TRC20 (Tron)</label>
                   <input
                     type="text"
-                    value={cryptoSettings.usdtAddress}
-                    onChange={e => setCryptoSettings({ ...cryptoSettings, usdtAddress: e.target.value })}
-                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#222', color: 'white', outline: 'none' }}
+                    placeholder="USDT TRC20 wallet address"
+                    value={cryptoSettings.usdtTrc20Address}
+                    onChange={e => setCryptoSettings({ ...cryptoSettings, usdtTrc20Address: e.target.value })}
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#222', color: 'white', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#aaa', marginBottom: '8px' }}>USDT Address — ERC20 (Ethereum)</label>
+                  <input
+                    type="text"
+                    placeholder="USDT ERC20 wallet address"
+                    value={cryptoSettings.usdtErc20Address}
+                    onChange={e => setCryptoSettings({ ...cryptoSettings, usdtErc20Address: e.target.value })}
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#222', color: 'white', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#aaa', marginBottom: '8px' }}>Bitcoin (BTC) Address</label>
                   <input
                     type="text"
+                    placeholder="BTC wallet address"
                     value={cryptoSettings.btcAddress}
                     onChange={e => setCryptoSettings({ ...cryptoSettings, btcAddress: e.target.value })}
-                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#222', color: 'white', outline: 'none' }}
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#222', color: 'white', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
                 <button

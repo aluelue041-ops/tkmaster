@@ -11,10 +11,10 @@ export default function Pricing() {
 
   const [showModal, setShowModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
-  const [selectedCrypto, setSelectedCrypto] = useState('USDT');
+  const [selectedCrypto, setSelectedCrypto] = useState('USDT-TRC20');
   const [userSubscription, setUserSubscription] = useState('Free');
-
-  const [cryptoSettings, setCryptoSettings] = useState({ usdtAddress: '', btcAddress: '' });
+  const [txHash, setTxHash] = useState('');
+  const [cryptoSettings, setCryptoSettings] = useState({ usdtTrc20Address: '', usdtErc20Address: '', btcAddress: '' });
 
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -118,6 +118,10 @@ export default function Pricing() {
   };
 
   const handleCryptoSubmit = async () => {
+    if (!txHash.trim()) {
+      toast.error('Please enter your Transaction Hash (TX ID) before submitting.');
+      return;
+    }
     setLoading(true);
     const token = localStorage.getItem('token');
 
@@ -134,17 +138,19 @@ export default function Pricing() {
         body: JSON.stringify({
           amount,
           currency: selectedCrypto,
-          plan: selectedPlan.name
+          plan: selectedPlan.name,
+          txHash: txHash.trim()
         })
       });
 
       const data = await res.json();
       
       if (res.ok) {
-        toast.success(data.message || 'Crypto payment simulated successfully!');
+        toast.success(data.message || 'Payment submitted! Admin will verify shortly.');
+        setTxHash('');
         setShowModal(false);
       } else {
-        toast.error(data.error || 'Payment initiation failed.');
+        toast.error(data.error || 'Payment submission failed.');
       }
     } catch (err) {
       toast.error('Network error while connecting to Crypto service.');
@@ -296,7 +302,7 @@ export default function Pricing() {
                   {paymentMethod === 'crypto' ? 'Pay via Crypto' : 'Pay via M-Pesa'}
                 </h3>
                 <p style={{ margin: 0, color: '#666', fontSize: '13px' }}>
-                  {paymentMethod === 'crypto' ? 'USDT (TRC20 / ERC20)' : 'PayHero Integration'}
+                  {paymentMethod === 'crypto' ? selectedCrypto + ' Network' : 'PayHero Integration'}
                 </p>
               </div>
             </div>
@@ -317,42 +323,49 @@ export default function Pricing() {
             {paymentMethod === 'crypto' ? (
               <div style={{ marginBottom: '24px' }}>
                 {/* Wallet Type Selector */}
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Select Wallet Type</label>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Select Network</label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
                   {[
-                    { id: 'USDT', label: '💰 USDT', sub: 'TRC20 / ERC20' },
-                    { id: 'BTC', label: '₿ Bitcoin', sub: 'BTC Network' }
+                    { id: 'USDT-TRC20', label: '💰 USDT', sub: 'TRC20 (Tron)' },
+                    { id: 'USDT-ERC20', label: '💰 USDT', sub: 'ERC20 (Ethereum)' },
+                    { id: 'BTC',        label: '₿ Bitcoin', sub: 'BTC Network' }
                   ].map(w => (
                     <button
                       key={w.id}
                       onClick={() => { setSelectedCrypto(w.id); }}
                       style={{
-                        flex: 1, padding: '12px 8px', borderRadius: '10px', cursor: 'pointer',
+                        flex: 1, padding: '10px 6px', borderRadius: '10px', cursor: 'pointer',
                         border: selectedCrypto === w.id ? '2px solid #34c759' : '2px solid #eaeaea',
                         backgroundColor: selectedCrypto === w.id ? '#f0fff4' : '#f9f9f9',
-                        fontWeight: 700, fontSize: '14px', color: selectedCrypto === w.id ? '#1a1a1a' : '#666',
+                        fontWeight: 700, fontSize: '13px', color: selectedCrypto === w.id ? '#1a1a1a' : '#666',
                         transition: 'all 0.2s'
                       }}
                     >
                       {w.label}<br />
-                      <span style={{ fontSize: '11px', fontWeight: 400, color: '#888' }}>{w.sub}</span>
+                      <span style={{ fontSize: '10px', fontWeight: 400, color: '#888' }}>{w.sub}</span>
                     </button>
                   ))}
                 </div>
 
                 {/* Copyable admin address */}
                 <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#004aad', textTransform: 'uppercase' }}>
-                  Send {selectedPlan.cryptoPrice} {selectedCrypto} to this address:
+                  Send {selectedPlan.cryptoPrice} USDT to this address:
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#e6f2ff', padding: '12px', borderRadius: '10px', marginBottom: '20px' }}>
-                  <code style={{ flex: 1, fontSize: '13px', fontWeight: 700, wordBreak: 'break-all', color: '#111', lineHeight: 1.5 }}>
-                    {selectedCrypto === 'USDT'
-                      ? (cryptoSettings.usdtAddress || 'Admin has not set USDT address yet.')
-                      : (cryptoSettings.btcAddress || 'Admin has not set BTC address yet.')}
+                  <code style={{ flex: 1, fontSize: '12px', fontWeight: 700, wordBreak: 'break-all', color: '#111', lineHeight: 1.6 }}>
+                    {selectedCrypto === 'USDT-TRC20'
+                      ? (cryptoSettings.usdtTrc20Address || 'Admin has not set a USDT TRC20 address yet.')
+                      : selectedCrypto === 'USDT-ERC20'
+                        ? (cryptoSettings.usdtErc20Address || 'Admin has not set a USDT ERC20 address yet.')
+                        : (cryptoSettings.btcAddress || 'Admin has not set a BTC address yet.')}
                   </code>
                   <button
                     onClick={() => {
-                      const addr = selectedCrypto === 'USDT' ? cryptoSettings.usdtAddress : cryptoSettings.btcAddress;
+                      const addr = selectedCrypto === 'USDT-TRC20'
+                        ? cryptoSettings.usdtTrc20Address
+                        : selectedCrypto === 'USDT-ERC20'
+                          ? cryptoSettings.usdtErc20Address
+                          : cryptoSettings.btcAddress;
                       if (addr) {
                         navigator.clipboard.writeText(addr);
                         toast.success('Address copied!');
@@ -364,6 +377,27 @@ export default function Pricing() {
                   </button>
                 </div>
 
+                {/* TX Hash input */}
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>
+                  Transaction Hash / TX ID <span style={{ color: '#ff3b30' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Paste your TX hash after sending payment..."
+                  value={txHash}
+                  onChange={e => setTxHash(e.target.value)}
+                  style={{
+                    width: '100%', padding: '12px', borderRadius: '10px',
+                    border: '2px solid #eaeaea', fontSize: '13px',
+                    outline: 'none', boxSizing: 'border-box',
+                    fontFamily: 'monospace', transition: 'border 0.2s'
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#34c759'}
+                  onBlur={e => e.target.style.borderColor = '#eaeaea'}
+                />
+                <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#888' }}>
+                  Copy the TX hash from your wallet or blockchain explorer after sending.
+                </p>
               </div>
             ) : (
               <div style={{ marginBottom: '24px' }}>
@@ -387,10 +421,10 @@ export default function Pricing() {
             {paymentMethod === 'crypto' ? (
               <button 
                 onClick={handleCryptoSubmit}
-                disabled={loading}
-                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: loading ? '#ccc' : '#34c759', color: 'white', fontSize: '16px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+                disabled={loading || !txHash.trim()}
+                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: loading || !txHash.trim() ? '#ccc' : '#34c759', color: 'white', fontSize: '16px', fontWeight: 700, cursor: loading || !txHash.trim() ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
               >
-                {loading ? 'Processing...' : `Pay ${selectedPlan.cryptoPrice} ${selectedCrypto}`}
+                {loading ? 'Submitting...' : `Submit Payment — ${selectedPlan.cryptoPrice} USDT`}
               </button>
             ) : (
               <button 
