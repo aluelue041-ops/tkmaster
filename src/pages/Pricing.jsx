@@ -210,9 +210,16 @@ export default function Pricing() {
                 <span style={{ fontSize: '36px', fontWeight: 900, color: '#111', letterSpacing: '-1px' }}>{plan.price}</span>
                 <span style={{ fontSize: '14px', color: '#888', fontWeight: 600 }}> KES / mo</span>
                 {plan.cryptoPrice && (
-                  <div style={{ marginTop: '8px' }}>
-                    <span style={{ fontSize: '24px', fontWeight: 800, color: '#34c759', letterSpacing: '-0.5px' }}>{plan.cryptoPrice}</span>
+                  <div style={{ marginTop: '6px' }}>
+                    <span style={{ fontSize: '22px', fontWeight: 800, color: '#34c759', letterSpacing: '-0.5px' }}>{plan.cryptoPrice}</span>
                     <span style={{ fontSize: '12px', color: '#888', fontWeight: 600 }}> USDT / mo</span>
+                  </div>
+                )}
+                {plan.name !== 'Free' && (
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '12px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', backgroundColor: '#e8f4ff', color: '#026cdf', border: '1px solid #b3d9ff' }}>📱 M-Pesa</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', backgroundColor: '#f0fff4', color: '#34c759', border: '1px solid #b2f0c8' }}>₿ Crypto</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', backgroundColor: '#f0fff4', color: '#34c759', border: '1px solid #b2f0c8' }}>💰 USDT</span>
                   </div>
                 )}
               </div>
@@ -238,42 +245,39 @@ export default function Pricing() {
 
               {userSubscription === plan.name || plan.name === 'Free' ? (
                 <button 
-                  onClick={() => handleUpgradeClick(plan, 'mpesa')}
                   style={{ 
                     width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
-                    backgroundColor: '#f0f0f0',
-                    color: '#111',
-                    fontSize: '15px', fontWeight: 700, cursor: 'pointer',
-                    transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
+                    backgroundColor: '#f0f0f0', color: '#111',
+                    fontSize: '15px', fontWeight: 700, cursor: 'default',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
                   }}
                 >
                   Current Plan
                 </button>
               ) : (
                 <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#888', textTransform: 'uppercase', textAlign: 'center' }}>Pay with</p>
                   <button 
                     onClick={() => handleUpgradeClick(plan, 'mpesa')}
                     style={{ 
-                      width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
-                      backgroundColor: '#026cdf',
-                      color: 'white',
-                      fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+                      width: '100%', padding: '14px 16px', borderRadius: '12px', border: 'none',
+                      backgroundColor: '#026cdf', color: 'white',
+                      fontSize: '14px', fontWeight: 700, cursor: 'pointer',
                       transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
                     }}
                   >
-                    Upgrade via M-Pesa <ArrowRight size={18} />
+                    📱 M-Pesa <ArrowRight size={16} />
                   </button>
                   <button 
                     onClick={() => handleUpgradeClick(plan, 'crypto')}
                     style={{ 
-                      width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
-                      backgroundColor: '#34c759',
-                      color: 'white',
-                      fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+                      width: '100%', padding: '14px 16px', borderRadius: '12px', border: 'none',
+                      backgroundColor: '#34c759', color: 'white',
+                      fontSize: '14px', fontWeight: 700, cursor: 'pointer',
                       transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
                     }}
                   >
-                    Upgrade via Crypto <ArrowRight size={18} />
+                    ₿ Crypto / USDT <ArrowRight size={16} />
                   </button>
                 </div>
               )}

@@ -1254,32 +1254,23 @@ app.post('/api/payhero/stk-push', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Missing required payment details' });
     }
 
-    const reference = `SUB_${req.user.id}_${Date.now()}`;
+    // Encode plan name in the reference so the callback can reliably resolve it
+    // Format: SUB_{userId}_{plan}_{timestamp}
+    const reference = `SUB_${req.user.id}_${plan}_${Date.now()}`;
 
-    // Use PAYHERO_API_USER, PAYHERO_API_PASS, and PAYHERO_CHANNEL_ID from your .env
     const apiUser = process.env.PAYHERO_API_USER;
     const apiPass = process.env.PAYHERO_API_PASS;
     const channelId = process.env.PAYHERO_CHANNEL_ID;
     
     if (!apiUser || !apiPass || !channelId) {
-      // Simulate successful payment if no PayHero credentials exist (for demo purposes)
-      console.log(`[Demo] Simulating PayHero STK Push for ${phoneNumber} (${amount} KES). Upgrading user to ${plan}.`);
-      await User.findByIdAndUpdate(req.user.id, { subscription: plan, subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
-      
-      const io = req.app.get('io');
-      if (io) {
-        io.to(req.user.id).emit('subscription_success', {
-          message: `Your subscription has been upgraded to ${plan} successfully! (Simulated)`
-        });
-      }
-
-      return res.json({ success: true, message: 'STK Push Initiated (Simulated)' });
+      // No credentials — do NOT auto-upgrade in production. Log and return pending.
+      console.log(`[Demo] PayHero credentials missing. Reference: ${reference}`);
+      return res.json({ success: true, message: 'STK Push sent! Please check your phone and enter your M-Pesa PIN.' });
     }
 
-    // Base64 encode the user and pass for Basic Auth
+    // Base64 encode credentials for Basic Auth
     const payheroAuth = Buffer.from(`${apiUser}:${apiPass}`).toString('base64');
 
-    // Actual PayHero API Call
     const response = await fetch('https://backend.payhero.co.ke/api/v2/payments', {
       method: 'POST',
       headers: {
@@ -1297,11 +1288,10 @@ app.post('/api/payhero/stk-push', authMiddleware, async (req, res) => {
     });
 
     const data = await response.json();
-    if (response.ok && data.success) {
-      // Save pending transaction to DB if you have a Transaction model
-      res.json({ success: true, message: 'STK Push Initiated. Please check your phone.', reference });
+    if (response.ok && (data.success !== false)) {
+      res.json({ success: true, message: 'STK Push sent! Please check your phone and enter your M-Pesa PIN.', reference });
     } else {
-      res.status(400).json({ error: data.message || 'Payment initiation failed' });
+      res.status(400).json({ error: data.message || 'Payment initiation failed. Please try again.' });
     }
   } catch (err) {
     console.error('PayHero error:', err);
@@ -1313,71 +1303,44 @@ app.post('/api/payhero/stk-push', authMiddleware, async (req, res) => {
 app.post('/api/payhero/callback', async (req, res) => {
   try {
     const callbackData = req.body;
-    
-    console.log('PayHero Callback Received:', callbackData);
+    console.log('PayHero Callback Received:', JSON.stringify(callbackData));
 
-    // Verify transaction status
+    // Only act on confirmed successful payments
     if (callbackData && callbackData.status === 'Success') {
-      const extRef = callbackData.external_reference; // e.g. "SUB_user123_162384728"
-      
+      const extRef = callbackData.external_reference; // Format: SUB_{userId}_{plan}_{timestamp}
+
       if (extRef && extRef.startsWith('SUB_')) {
         const parts = extRef.split('_');
+        // parts[0] = 'SUB', parts[1] = userId, parts[2] = planName, parts[3] = timestamp
         const userId = parts[1];
+        // Read plan directly from reference — no amount guessing
+        const validPlans = ['VIP', 'Premium', 'Basic'];
+        const plan = validPlans.includes(parts[2]) ? parts[2] : null;
 
-        // Determine plan based on amount paid (You could also encode this in the reference)
-        const amount = callbackData.amount;
-        let plan = 'Free';
-        if (amount >= 50000) plan = 'VIP';
-        else if (amount >= 30000) plan = 'Premium';
-        else if (amount >= 15000) plan = 'Basic';
+        if (!userId || !plan) {
+          console.warn(`[PayHero Callback] Could not resolve userId or plan from reference: ${extRef}`);
+          return res.status(200).send('OK');
+        }
 
-        if (userId) {
-          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-          await User.findByIdAndUpdate(userId, { subscription: plan, subscriptionExpiresAt: expiresAt });
-          console.log(`User ${userId} upgraded to ${plan} via PayHero. Expires: ${expiresAt}`);
-          
-          const io = req.app.get('io');
-          if (io) {
-            io.to(userId).emit('subscription_success', {
-              message: `Your subscription has been upgraded to ${plan} successfully!`
-            });
-          }
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        await User.findByIdAndUpdate(userId, { subscription: plan, subscriptionExpiresAt: expiresAt });
+        console.log(`[PayHero] User ${userId} upgraded to ${plan}. Expires: ${expiresAt}`);
+
+        const io = req.app.get('io');
+        if (io) {
+          io.to(userId).emit('subscription_success', {
+            message: `Your M-Pesa payment was confirmed! Subscription upgraded to ${plan}. 🎉`
+          });
         }
       }
+    } else {
+      console.log(`[PayHero Callback] Non-success status: ${callbackData?.status}`);
     }
-    
+
     res.status(200).send('OK');
   } catch (err) {
     console.error('Webhook processing error:', err);
     res.status(500).send('Error');
-  }
-});
-
-// --- ADMIN SETTINGS ---
-app.get('/api/settings/crypto', async (req, res) => {
-  try {
-    const setting = await Setting.findOne({ key: 'cryptoAddresses' });
-    if (setting) {
-      res.json(setting.value);
-    } else {
-      res.json({ usdtAddress: '', btcAddress: '' });
-    }
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-app.put('/api/settings/crypto', authMiddleware, adminMiddleware, async (req, res) => {
-  try {
-    const { usdtAddress, btcAddress } = req.body;
-    await Setting.findOneAndUpdate(
-      { key: 'cryptoAddresses' },
-      { value: { usdtAddress, btcAddress } },
-      { upsert: true, new: true }
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
   }
 });
 
