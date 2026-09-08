@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const sgMail = require('@sendgrid/mail');
+const { Resend } = require('resend');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const QRCode = require('qrcode');
@@ -20,10 +20,11 @@ const Event = require('./models/Event');
 const Notification = require('./models/Notification');
 const Setting = require('./models/Setting');
 const CryptoPayment = require('./models/CryptoPayment');
+const FailedEmail = require('./models/FailedEmail');
 
 
-// SendGrid setup
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Resend setup
+const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@ticketmaster.app';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@ticketmaster.app';
 
@@ -49,9 +50,20 @@ const upload = multer({
 });
 
 // Email Helpers
+
+/** Save a failed send so the retry cron can pick it up later */
+async function recordFailedEmail(type, to, payload, errMsg) {
+  try {
+    const MAX_RETRIES = 5;
+    await FailedEmail.create({ type, to, payload, lastError: String(errMsg), status: 'pending', nextRetryAt: new Date() });
+  } catch (e) {
+    console.error('Could not persist failed email record:', e.message);
+  }
+}
+
 async function sendWelcomeEmail(toEmail) {
   try {
-    await sgMail.send({
+    await resend.emails.send({
       to: toEmail,
       from: FROM_EMAIL,
       subject: 'Welcome to Ticketmaster! 🎟️',
@@ -72,7 +84,8 @@ async function sendWelcomeEmail(toEmail) {
       `
     });
   } catch (err) {
-    console.error('SendGrid welcome email error:', err.response?.body || err.message);
+    console.error('Resend welcome email error:', err.message);
+    await recordFailedEmail('welcome', toEmail, {}, err.message);
   }
 }
 
@@ -88,7 +101,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
     const qrBase64 = await QRCode.toDataURL(qrData, { margin: 2, width: 250 });
     const base64Data = qrBase64.split(',')[1];
     const formattedSeats = formatSeatsForEmail(ticket.seats);
-    await sgMail.send({
+    await resend.emails.send({
       to: toEmail,
       from: FROM_EMAIL,
       subject: `Booking Confirmed: ${ticket.eventTitle} 🎟️`,
@@ -121,15 +134,15 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
       attachments: [{
         content: base64Data,
         filename: 'qrcode.png',
-        type: 'image/png',
-        disposition: 'inline',
-        content_id: 'ticket-qr'
+        content_type: 'image/png'
       }]
     });
   } catch (err) {
-    console.error('SendGrid booking email error:', err.response ? err.response.body : err);
+    console.error('Resend booking email error:', err.message);
+    await recordFailedEmail('booking', toEmail, { ticketId: ticket._id, eventTitle: ticket.eventTitle, seats: ticket.seats, totalPrice: ticket.totalPrice, currency: ticket.currency }, err.message);
   }
 }
+
 
 const app = express();
 app.set('trust proxy', 1); // Required for express-rate-limit behind Render/proxies
@@ -366,31 +379,36 @@ app.post('/api/auth/forgot-password', forgotPasswordLimiter, async (req, res) =>
     // Send the UNHASHED token via email
     const resetUrl = `${APP_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
-    await sgMail.send({
-      to: email,
-      from: FROM_EMAIL,
-      subject: 'Reset your Ticketmaster password 🔑',
-      html: `
-        <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
-          <div style="background:#026cdf;padding:32px;text-align:center">
-            <h1 style="color:white;font-style:italic;margin:0;font-size:32px">Ticketmaster</h1>
+    try {
+      await resend.emails.send({
+        to: email,
+        from: FROM_EMAIL,
+        subject: 'Reset your Ticketmaster password 🔑',
+        html: `
+          <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
+            <div style="background:#026cdf;padding:32px;text-align:center">
+              <h1 style="color:white;font-style:italic;margin:0;font-size:32px">Ticketmaster</h1>
+            </div>
+            <div style="padding:32px;background:white">
+              <h2 style="color:#1a1a1a">Reset your password</h2>
+              <p style="color:#555;line-height:1.6">You requested a password reset. Click the button below to set a new password. This link expires in 1 hour.</p>
+              <a href="${resetUrl}" style="display:inline-block;margin-top:16px;padding:14px 32px;background:#026cdf;color:white;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">Reset Password</a>
+              <p style="color:#aaa;font-size:12px;margin-top:24px">If you didn't request this, you can safely ignore this email.</p>
+            </div>
+            <div style="padding:16px 32px;background:#eee;font-size:12px;color:#999;text-align:center">
+              &copy; 2026 Ticketmaster. All rights reserved.
+            </div>
           </div>
-          <div style="padding:32px;background:white">
-            <h2 style="color:#1a1a1a">Reset your password</h2>
-            <p style="color:#555;line-height:1.6">You requested a password reset. Click the button below to set a new password. This link expires in 1 hour.</p>
-            <a href="${resetUrl}" style="display:inline-block;margin-top:16px;padding:14px 32px;background:#026cdf;color:white;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">Reset Password</a>
-            <p style="color:#aaa;font-size:12px;margin-top:24px">If you didn't request this, you can safely ignore this email.</p>
-          </div>
-          <div style="padding:16px 32px;background:#eee;font-size:12px;color:#999;text-align:center">
-            &copy; 2026 Ticketmaster. All rights reserved.
-          </div>
-        </div>
-      `
-    });
+        `
+      });
+    } catch (emailErr) {
+      console.error('Forgot password email error:', emailErr.message);
+      await recordFailedEmail('reset', email, { resetUrl }, emailErr.message);
+    }
 
     res.json({ success: true, message: 'Password reset email sent!' });
   } catch (err) {
-    console.error('Forgot password error:', err.response?.body || err.message);
+    console.error('Forgot password error:', err.message);
     res.status(500).json({ error: 'Failed to send reset email.' });
   }
 });
@@ -615,7 +633,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
         </div>
       </div>`;
 
-      await sgMail.send({
+      await resend.emails.send({
         to: newEmail,
         from: FROM_EMAIL,
         subject: `🎟️ You received ${transferredSeats.length} ticket(s) for ${ticket.eventTitle}!`,
@@ -623,13 +641,12 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
         attachments: [{
           content: base64Data,
           filename: 'qrcode.png',
-          type: 'image/png',
-          disposition: 'inline',
-          content_id: 'ticket-qr'
+          content_type: 'image/png'
         }]
       });
     } catch(e) {
-      console.error('Email error during transfer:', e.response ? e.response.body : e);
+      console.error('Email error during transfer:', e.message);
+      await recordFailedEmail('transfer', newEmail, { emailHtml, base64Data, eventTitle: ticket.eventTitle, length: transferredSeats.length }, e.message);
     }
 
     if (newUser) {
@@ -1028,7 +1045,7 @@ app.put('/api/tickets/:id/approve', authMiddleware, adminMiddleware, async (req,
     // Notify user by email
     if (updatedTicket.user?.email) {
       try {
-        await sgMail.send({
+        await resend.emails.send({
           to: updatedTicket.user.email,
           from: FROM_EMAIL,
           subject: `Your ticket for "${ticket.eventTitle}" has been approved ✅`,
@@ -1041,7 +1058,10 @@ app.put('/api/tickets/:id/approve', authMiddleware, adminMiddleware, async (req,
             </div>
           </div>`
         });
-      } catch(e) { console.error('Email error:', e.message); }
+      } catch(e) {
+        console.error('Email error:', e.message);
+        await recordFailedEmail('approved', updatedTicket.user.email, { eventTitle: ticket.eventTitle }, e.message);
+      }
     }
 
     if (updatedTicket.user) {
@@ -1067,7 +1087,7 @@ app.put('/api/tickets/:id/reject', authMiddleware, adminMiddleware, async (req, 
     // Notify user by email
     if (updatedTicket.user?.email) {
       try {
-        await sgMail.send({
+        await resend.emails.send({
           to: updatedTicket.user.email,
           from: FROM_EMAIL,
           subject: `Your ticket for "${ticket.eventTitle}" was not approved ❌`,
@@ -1080,7 +1100,10 @@ app.put('/api/tickets/:id/reject', authMiddleware, adminMiddleware, async (req, 
             </div>
           </div>`
         });
-      } catch(e) { console.error('Email error:', e.message); }
+      } catch(e) {
+        console.error('Email error:', e.message);
+        await recordFailedEmail('rejected', updatedTicket.user.email, { eventTitle: ticket.eventTitle }, e.message);
+      }
     }
 
     if (updatedTicket.user) {
@@ -1358,6 +1381,143 @@ cron.schedule('0 0 * * *', async () => {
     }
   } catch (err) {
     console.error('[CRON] Subscription reset error:', err.message);
+  }
+});
+
+// --- CRON: Retry Failed Emails Every 10 Minutes ---
+cron.schedule('*/10 * * * *', async () => {
+  try {
+    const now = new Date();
+    const failed = await FailedEmail.find({ status: 'pending', nextRetryAt: { $lte: now } });
+    if (failed.length === 0) return;
+
+    console.log(`[CRON] Retrying ${failed.length} failed email(s)...`);
+
+    for (const record of failed) {
+      try {
+        let sent = false;
+        
+        // Re-construct the email based on type
+        if (record.type === 'welcome') {
+          await sendWelcomeEmail(record.to);
+          sent = true;
+        } else if (record.type === 'booking') {
+          // Re-construct ticket object from payload
+          const ticket = {
+            _id: record.payload.ticketId,
+            eventTitle: record.payload.eventTitle,
+            seats: record.payload.seats || [],
+            totalPrice: record.payload.totalPrice,
+            currency: record.payload.currency
+          };
+          await sendBookingConfirmationEmail(record.to, ticket);
+          sent = true;
+        } else if (record.type === 'reset') {
+          await resend.emails.send({
+            to: record.to,
+            from: FROM_EMAIL,
+            subject: 'Reset your Ticketmaster password 🔑',
+            html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
+                    <div style="background:#026cdf;padding:32px;text-align:center"><h1 style="color:white;font-style:italic;margin:0;font-size:32px">Ticketmaster</h1></div>
+                    <div style="padding:32px;background:white">
+                      <h2 style="color:#1a1a1a">Reset your password</h2>
+                      <p style="color:#555;line-height:1.6">You requested a password reset. Click the button below to set a new password. This link expires in 1 hour.</p>
+                      <a href="${record.payload.resetUrl}" style="display:inline-block;margin-top:16px;padding:14px 32px;background:#026cdf;color:white;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">Reset Password</a>
+                      <p style="color:#aaa;font-size:12px;margin-top:24px">If you didn't request this, you can safely ignore this email.</p>
+                    </div>
+                  </div>`
+          });
+          sent = true;
+        } else if (record.type === 'transfer') {
+          await resend.emails.send({
+            to: record.to,
+            from: FROM_EMAIL,
+            subject: `🎟️ You received ${record.payload.length} ticket(s) for ${record.payload.eventTitle}!`,
+            html: record.payload.emailHtml,
+            attachments: [{
+              content: record.payload.base64Data,
+              filename: 'qrcode.png',
+              content_type: 'image/png'
+            }]
+          });
+          sent = true;
+        } else if (record.type === 'approved') {
+          await resend.emails.send({
+            to: record.to,
+            from: FROM_EMAIL,
+            subject: `Your ticket for "${record.payload.eventTitle}" has been approved ✅`,
+            html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
+              <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">Ticketmaster</h1></div>
+              <div style="padding:24px">
+                <h2>Your booking is approved! 🎉</h2>
+                <p>Your ticket(s) for <strong>${record.payload.eventTitle}</strong> have been approved by the admin.</p>
+                <p>You can view your tickets in the app under <strong>My Tickets</strong>.</p>
+              </div>
+            </div>`
+          });
+          sent = true;
+        } else if (record.type === 'rejected') {
+          await resend.emails.send({
+            to: record.to,
+            from: FROM_EMAIL,
+            subject: `Your ticket for "${record.payload.eventTitle}" was not approved ❌`,
+            html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
+              <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">Ticketmaster</h1></div>
+              <div style="padding:24px">
+                <h2>Booking Update</h2>
+                <p>Unfortunately, your booking for <strong>${record.payload.eventTitle}</strong> could not be approved at this time.</p>
+                <p>Please contact support or try booking again.</p>
+              </div>
+            </div>`
+          });
+          sent = true;
+        }
+
+        if (sent) {
+          record.status = 'sent';
+          await record.save();
+        }
+      } catch (innerErr) {
+        record.retries += 1;
+        record.lastError = innerErr.message;
+        if (record.retries >= 5) {
+          record.status = 'dead';
+        } else {
+          // Exponential backoff: 10 minutes, 20 mins, 30 mins...
+          record.nextRetryAt = new Date(Date.now() + (record.retries * 10 * 60 * 1000));
+        }
+        await record.save();
+      }
+    }
+  } catch (err) {
+    console.error('[CRON] Failed emails retry error:', err.message);
+  }
+});
+
+// --- ADMIN: Failed Emails API ---
+app.get('/api/admin/failed-emails', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const emails = await FailedEmail.find().sort({ createdAt: -1 }).limit(100);
+    res.json(emails);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/failed-emails/:id/resend', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const record = await FailedEmail.findById(req.params.id);
+    if (!record) return res.status(404).json({ error: 'Record not found' });
+    
+    // reset retries and trigger next run instantly
+    record.status = 'pending';
+    record.retries = 0;
+    record.nextRetryAt = new Date();
+    await record.save();
+    
+    res.json({ success: true, message: 'Email queued for retry. It will be sent on the next cron cycle.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
