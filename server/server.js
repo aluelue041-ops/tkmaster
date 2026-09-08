@@ -21,6 +21,7 @@ const Notification = require('./models/Notification');
 const Setting = require('./models/Setting');
 const CryptoPayment = require('./models/CryptoPayment');
 const FailedEmail = require('./models/FailedEmail');
+const { generateTicketPDF } = require('./utils/pdfGenerator');
 
 
 // Resend setup
@@ -101,6 +102,46 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
     const qrBase64 = await QRCode.toDataURL(qrData, { margin: 2, width: 250 });
     const base64Data = qrBase64.split(',')[1];
     const formattedSeats = formatSeatsForEmail(ticket.seats);
+    // Fetch Event Image for PDF
+    let eventImage = null;
+    if (ticket.eventId && ticket.eventId !== 'trending') {
+      const eventDoc = await Event.findById(ticket.eventId);
+      if (eventDoc) eventImage = eventDoc.image;
+    }
+
+    const attachments = [{
+      content: base64Data,
+      filename: 'qrcode.png',
+      content_type: 'image/png',
+      content_id: 'ticket-qr'
+    }];
+
+    // Generate PDF for each seat
+    const approxPrice = (ticket.totalPrice / (ticket.seats.length || 1));
+    for (let i = 0; i < (ticket.seats || []).length; i++) {
+      const seat = ticket.seats[i];
+      try {
+        const pdfBuffer = await generateTicketPDF({
+          ticketId: ticket._id,
+          eventTitle: ticket.eventTitle,
+          eventImage,
+          seatString: seat,
+          orderNumber: ticket.orderNumber,
+          currency: ticket.currency,
+          totalPrice: approxPrice,
+          status: 'Active',
+          ticketType: ticket.ticketType
+        });
+        attachments.push({
+          content: pdfBuffer,
+          filename: `Ticket-${i+1}.pdf`,
+          content_type: 'application/pdf'
+        });
+      } catch (pdfErr) {
+        console.error('Failed to generate PDF for booking email:', pdfErr);
+      }
+    }
+
     await resend.emails.send({
       to: toEmail,
       from: FROM_EMAIL,
@@ -125,18 +166,14 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
               <p style="font-size:12px;color:#888;margin:12px 0 0">Show this QR at the entrance</p>
             </div>
             <p style="color:#888;font-size:13px">Booking ID: <code>${ticket._id}</code></p>
+            <p style="color:#666;font-size:13px;margin-top:16px;"><strong>Note:</strong> We have attached your official PDF tickets to this email!</p>
           </div>
           <div style="padding:16px 32px;background:#eee;font-size:12px;color:#999;text-align:center">
             &copy; 2026 Ticketmaster. All rights reserved.
           </div>
         </div>
       `,
-      attachments: [{
-        content: base64Data,
-        filename: 'qrcode.png',
-        content_type: 'image/png',
-        content_id: 'ticket-qr'
-      }]
+      attachments: attachments
     });
   } catch (err) {
     console.error('Resend booking email error:', err.message);
@@ -605,7 +642,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
       await newTicket.save();
     }
 
-    // Send email notification to recipient with QR code
+    // Send email notification to recipient with QR code and PDFs
     try {
       const cleanSeats = transferredSeats.map(s => s.replace(/Section:\s*Section/i, 'Section').replace(/Seat Number:/i, 'Seat:'));
       const seatString = cleanSeats.length > 0 ? cleanSeats.join('<br/>') : 'General Admission';
@@ -613,6 +650,47 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
       const qrData = `TICKET:${ticket._id}`;
       const qrBase64 = await QRCode.toDataURL(qrData, { margin: 2, width: 250 });
       const base64Data = qrBase64.split(',')[1];
+
+      // Fetch Event Image for PDF
+      let eventImage = null;
+      if (ticket.eventId && ticket.eventId !== 'trending') {
+        const eventDoc = await Event.findById(ticket.eventId);
+        if (eventDoc) eventImage = eventDoc.image;
+      }
+
+      const attachments = [{
+        content: base64Data,
+        filename: 'qrcode.png',
+        content_type: 'image/png',
+        content_id: 'ticket-qr'
+      }];
+
+      // Generate PDF for each transferred seat
+      const approxPrice = (ticket.totalPrice / ticket.seats.length) || ticket.totalPrice;
+      for (let i = 0; i < transferredSeats.length; i++) {
+        const seat = transferredSeats[i];
+        try {
+          const pdfBuffer = await generateTicketPDF({
+            ticketId: ticket._id,
+            eventTitle: ticket.eventTitle,
+            eventImage,
+            seatString: seat,
+            orderNumber: ticket.orderNumber,
+            currency: ticket.currency,
+            totalPrice: approxPrice,
+            status: 'Active', // they are receiving it active
+            ticketType: ticket.ticketType
+          });
+          
+          attachments.push({
+            content: pdfBuffer,
+            filename: `Ticket-${i+1}.pdf`,
+            content_type: 'application/pdf'
+          });
+        } catch (pdfErr) {
+          console.error('Failed to generate PDF attachment:', pdfErr);
+        }
+      }
 
       const noteHtml = note ? `<div style="background:#fff3cd;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ffeeba"><p style="margin:0;color:#856404;font-size:14px"><strong>Note from sender:</strong><br/>${note}</p></div>` : '';
 
@@ -630,6 +708,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
             <p style="font-size:12px;color:#888;margin:8px 0 0;">Booking ID: <code>${ticket._id}</code></p>
           </div>
 
+          <p style="color:#666;font-size:14px;line-height:1.5;">Please find your official PDF tickets attached to this email.</p>
           <p style="color:#666;font-size:14px;line-height:1.5;">Show this QR code at the entrance to verify your ticket.<br/>You don't need to create an account to use this ticket!</p>
         </div>
       </div>`;
@@ -639,12 +718,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
         from: FROM_EMAIL,
         subject: `🎟️ You received ${transferredSeats.length} ticket(s) for ${ticket.eventTitle}!`,
         html: emailHtml,
-        attachments: [{
-          content: base64Data,
-          filename: 'qrcode.png',
-          content_type: 'image/png',
-          content_id: 'ticket-qr'
-        }]
+        attachments: attachments
       });
     } catch(e) {
       console.error('Email error during transfer:', e.message);
