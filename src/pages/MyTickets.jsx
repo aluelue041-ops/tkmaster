@@ -351,100 +351,129 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
   const parsed = parseSeat(seatString);
 
   const downloadPDF = async () => {
-    // A5 landscape: 210mm x 148mm — plenty of room
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a5' });
-    const W = 210;
-    const H = 148;
+    try {
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a5' });
+      const W = 210;
+      const H = 148;
 
-    // Blue header bar
-    doc.setFillColor(2, 108, 223);
-    doc.rect(0, 0, W, 28, 'F');
+      const fetchBase64 = async (url) => {
+        try {
+          const res = await fetch(url);
+          const blob = await res.blob();
+          return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+        } catch { return null; }
+      };
 
-    // Ticketmaster branding
-    doc.setFont('helvetica', 'bolditalic');
-    doc.setFontSize(22);
-    doc.setTextColor(255, 255, 255);
-    doc.text('Ticketmaster', 14, 19);
+      let imgData = null;
+      if (eventImage) {
+        imgData = await fetchBase64(eventImage);
+      }
 
-    // Status badge in header
-    const statusLabel = (status || 'Active').toUpperCase();
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(W - 46, 10, 32, 10, 3, 3, 'F');
-    doc.setTextColor(2, 108, 223);
-    doc.text(statusLabel, W - 30, 16.5, { align: 'center' });
+      // Background
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, W, H, 'F');
 
-    // Event title
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(20, 20, 20);
-    const title = (eventTitle || 'Event').toUpperCase();
-    doc.text(title, 14, 42, { maxWidth: 120 });
+      // Blue Header
+      doc.setFillColor(2, 108, 223);
+      doc.rect(0, 0, W, 25, 'F');
+      
+      // Brand
+      doc.setFont('helvetica', 'bolditalic');
+      doc.setFontSize(22);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Ticketmaster', 14, 17);
+      
+      // Status
+      const statusLabel = (status || 'Active').toUpperCase();
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(W - 46, 7.5, 32, 10, 2, 2, 'F');
+      doc.setTextColor(2, 108, 223);
+      doc.text(statusLabel, W - 30, 14, { align: 'center' });
 
-    // Divider
-    doc.setDrawColor(220, 220, 220);
-    doc.setLineWidth(0.3);
-    doc.line(14, 50, W - 14, 50);
+      // Ticket Image (Left side)
+      if (imgData) {
+        doc.addImage(imgData, 'JPEG', 14, 35, 75, 75);
+      } else {
+        doc.setFillColor(240, 240, 240);
+        doc.rect(14, 35, 75, 75, 'F');
+        doc.setFontSize(10);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Ticket Image', 51.5, 72.5, { align: 'center' });
+      }
 
-    // Three columns: SECTION | ROW | SEAT
-    const cols = [
-      { label: 'SECTION', value: parsed.section, x: 14 },
-      { label: 'ROW',     value: String(parsed.row),  x: 80 },
-      { label: 'SEAT',    value: String(parsed.seat),  x: 130 },
-    ];
+      // Event Title
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(20, 20, 20);
+      const title = (eventTitle || 'Event').toUpperCase();
+      doc.text(title, 100, 42, { maxWidth: 95 });
 
-    cols.forEach(col => {
+      // Ticket Type
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(ticketType || parsed.type || 'Standard Ticket', 100, 52);
+
+      // Seats Box
+      doc.setFillColor(248, 248, 248);
+      doc.setDrawColor(220, 220, 220);
+      doc.roundedRect(100, 62, 95, 30, 3, 3, 'FD');
+      
+      doc.setFontSize(8);
       doc.setTextColor(130, 130, 130);
-      doc.text(col.label, col.x, 60);
+      doc.text('SECTION', 110, 70);
+      doc.text('ROW', 150, 70);
+      doc.text('SEAT', 175, 70);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(22);
+      doc.setFontSize(15);
       doc.setTextColor(20, 20, 20);
-      doc.text(col.value, col.x, 76);
-    });
+      doc.text(parsed.section, 110, 81);
+      doc.text(String(parsed.row), 150, 81);
+      doc.text(String(parsed.seat), 175, 81);
 
-    // Second divider
-    doc.setDrawColor(220, 220, 220);
-    doc.line(14, 84, W - 14, 84);
+      // Order Details
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(130, 130, 130);
+      doc.text('ORDER ID', 100, 105);
+      doc.text('TOTAL PAID', 150, 105);
 
-    // Price & Booking ID row
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(130, 130, 130);
-    doc.text('TOTAL PAID', 14, 93);
-    doc.text('ORDER #', 80, 93);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(20, 20, 20);
+      doc.text(String(orderNumber || ticketId), 100, 113, { maxWidth: 45 });
+      doc.text(`${currency || '$'}${totalPrice || ''}`, 150, 113);
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(2, 108, 223);
-    doc.text(`${currency || '$'}${totalPrice || ''}`, 14, 102);
+      // QR Code
+      const rawQrData = `TICKET:${ticketId}`;
+      const qrDataUrl = await QRCode.toDataURL(rawQrData, { width: 200, margin: 1 });
+      doc.addImage(qrDataUrl, 'PNG', 14, 115, 25, 25);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(2, 108, 223);
+      doc.text('SCAN AT ENTRANCE', 43, 128);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(60, 60, 60);
-    doc.text(String(orderNumber || ticketId), 80, 102, { maxWidth: 80 });
+      // Footer
+      doc.setFillColor(250, 250, 250);
+      doc.rect(0, H - 12, W, 12, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(150, 150, 150);
+      doc.text('© 2026 Ticketmaster — Valid for one entry only. Present this ticket at the venue.', W / 2, H - 4, { align: 'center' });
 
-    // QR code box on the right
-    const rawQrData = `TICKET:${ticketId}`;
-    const qrDataUrl = await QRCode.toDataURL(rawQrData, { width: 200, margin: 1 });
-    doc.addImage(qrDataUrl, 'PNG', W - 52, 32, 38, 38);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.setTextColor(160, 160, 160);
-    doc.text('SCAN TO VERIFY', W - 33, 73, { align: 'center' });
-
-    // Footer
-    doc.setFillColor(248, 248, 248);
-    doc.rect(0, H - 16, W, 16, 'F');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(160, 160, 160);
-    doc.text('© 2026 Ticketmaster — Present this ticket at the entrance', W / 2, H - 6, { align: 'center' });
-
-    doc.save(`ticket-${parsed.section || 'ticket'}.pdf`);
+      doc.save(`ticket-${parsed.section || 'std'}-${parsed.seat || 'seat'}.pdf`);
+    } catch (e) {
+      console.error('PDF gen err', e);
+      toast.error('Failed to create PDF. Please try again.');
+    }
   };
 
   return (
