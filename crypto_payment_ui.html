@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Payment UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+            /* Placeholder for the blurred background image in the original */
+            background-image: url('https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+            background-blend-mode: overlay;
+        }
+        .backdrop-blur-custom {
+            backdrop-filter: blur(20px);
+            background-color: rgba(28, 27, 24, 0.95);
+        }
+        .input-dark {
+            background-color: #0f0f0f;
+        }
+        .btn-network {
+            background-color: transparent;
+            border: 1px solid #3f3f3f;
+            color: #888;
+        }
+        .btn-network.active {
+            border-color: #eab308;
+            color: #eab308;
+            background-color: rgba(234, 179, 8, 0.05);
+        }
+        .btn-network:hover {
+            border-color: #eab308;
+            color: #eab308;
+        }
+        .custom-yellow {
+            color: #eab308;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Card -->
+    <div class="backdrop-blur-custom w-full max-w-md rounded-2xl p-6 shadow-2xl border border-[#2a2820]">
+        
+        <!-- Select Network -->
+        <div class="mb-6">
+            <h2 class="text-gray-400 text-xs font-bold tracking-wider mb-3 uppercase">Select Network</h2>
+            <div class="flex space-x-3">
+                <button class="btn-network active px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">TRC20 (TRON)</button>
+                <button class="btn-network px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">BEP20 (BSC)</button>
+                <button class="btn-network px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-1">ERC20 (ETH)</button>
+            </div>
+        </div>
+
+        <!-- Send To This Address -->
+        <div class="mb-8">
+            <h2 class="text-gray-400 text-xs font-bold tracking-wider mb-3 uppercase">Send To This Address</h2>
+            
+            <!-- Address Box -->
+            <div class="input-dark border border-[#2a2820] rounded-xl p-3 flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="bg-[#2a2618] p-2 rounded-lg text-[#eab308]">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                        </svg>
+                    </div>
+                    <span class="custom-yellow font-mono text-sm truncate">TFr4Mh9SjWH4SKvwBKoSFBRMArunyWba9n</span>
+                </div>
+                <button class="text-[#eab308] hover:text-yellow-400 p-2 transition-colors border border-[#3a351f] rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Warning Text 1 -->
+            <p class="text-gray-400 text-xs mb-4 flex items-center">
+                <span class="custom-yellow mr-2">⚠️</span>
+                Only send USDT on the&nbsp;<span class="custom-yellow font-bold">TRC20 (TRON)</span>&nbsp;network to this address
+            </p>
+
+            <!-- Warning Box -->
+            <div class="bg-[#2d1618] border border-[#4a2428] rounded-xl p-4 flex items-start space-x-3">
+                <div class="text-[#f87171] mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <p class="text-gray-300 text-sm">
+                    Sending on the wrong network will result in <span class="text-[#f87171] font-semibold">permanent loss of funds</span>.
+                </p>
+            </div>
+        </div>
+
+        <hr class="border-[#2a2820] mb-6">
+
+        <!-- Submit Payment Proof -->
+        <div>
+            <h2 class="text-gray-400 text-xs font-bold tracking-wider mb-4 uppercase">Submit Your Payment Proof</h2>
+            
+            <div class="mb-4">
+                <label class="block text-gray-500 text-xs mb-2">Transaction Hash (TX ID)</label>
+                <input type="text" placeholder="e.g. 0xabc123..." class="w-full input-dark border border-[#2a2820] rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500 transition-colors font-mono">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-500 text-xs mb-2">Telegram Username or Email</label>
+                <input type="text" placeholder="Where should we send your code?" class="w-full input-dark border border-[#2a2820] rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-500 transition-colors">
+            </div>
+
+            <button class="w-full bg-[#f5a623] hover:bg-yellow-500 text-black font-bold py-3.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-colors">
+                <span class="text-[15px]">Submit Payment Proof</span>
+                <span class="bg-white rounded-sm w-4 h-4 flex items-center justify-center text-emerald-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                      <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Simple script to toggle active network buttons
+        const networkBtns = document.querySelectorAll('.btn-network');
+        networkBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                networkBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
