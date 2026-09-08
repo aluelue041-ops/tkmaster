@@ -1218,16 +1218,12 @@ app.post('/api/crypto/pay', authMiddleware, async (req, res) => {
     if (!amount || !plan) {
       return res.status(400).json({ error: 'Missing required payment details' });
     }
-    if (!txHash || txHash.trim().length < 10) {
-      return res.status(400).json({ error: 'Please provide a valid transaction hash ID.' });
-    }
-    
     const newPayment = new CryptoPayment({
       user: req.user.id,
       amount,
       plan,
       currency: currency || 'USDT',
-      txHash: txHash.trim(),
+      txHash: txHash ? txHash.trim() : 'N/A',
       status: 'pending'
     });
     await newPayment.save();
@@ -1349,8 +1345,35 @@ app.post('/api/payhero/callback', async (req, res) => {
   }
 });
 
-// --- REJECT TICKET (ADMIN) ---
+// --- ADMIN SETTINGS ---
+app.get('/api/settings/crypto', async (req, res) => {
+  try {
+    const setting = await Setting.findOne({ key: 'cryptoAddresses' });
+    if (setting) {
+      res.json(setting.value);
+    } else {
+      res.json({ usdtAddress: '', btcAddress: '' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
+app.put('/api/settings/crypto', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { usdtAddress, btcAddress } = req.body;
+    await Setting.findOneAndUpdate(
+      { key: 'cryptoAddresses' },
+      { value: { usdtAddress, btcAddress } },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// --- REJECT TICKET (ADMIN) ---
 // --- CRON: Reset expired subscriptions daily at midnight ---
 cron.schedule('0 0 * * *', async () => {
   try {

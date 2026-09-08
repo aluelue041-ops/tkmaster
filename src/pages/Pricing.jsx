@@ -8,7 +8,7 @@ export default function Pricing() {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [txHash, setTxHash] = useState('');
+
   const [showModal, setShowModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
   const [selectedCrypto, setSelectedCrypto] = useState('USDT');
@@ -118,10 +118,6 @@ export default function Pricing() {
   };
 
   const handleCryptoSubmit = async () => {
-    if (!txHash || txHash.trim().length < 10) {
-      toast.error('Please enter the transaction hash/ID from your wallet.');
-      return;
-    }
     setLoading(true);
     const token = localStorage.getItem('token');
 
@@ -136,7 +132,6 @@ export default function Pricing() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          txHash: txHash.trim(),
           amount,
           currency: selectedCrypto,
           plan: selectedPlan.name
@@ -369,18 +364,6 @@ export default function Pricing() {
                   </button>
                 </div>
 
-                {/* TX Hash only */}
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Transaction Hash / TX ID</label>
-                <input 
-                  type="text"
-                  placeholder="Paste your transaction hash here..."
-                  value={txHash}
-                  onChange={e => setTxHash(e.target.value)}
-                  style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '2px solid #eaeaea', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontWeight: 600, transition: 'border 0.2s', fontFamily: 'monospace' }}
-                  onFocus={e => e.target.style.borderColor = '#026cdf'}
-                  onBlur={e => e.target.style.borderColor = '#eaeaea'}
-                />
-                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>After sending, copy the TX hash from your wallet and paste it here for admin verification.</p>
               </div>
             ) : (
               <div style={{ marginBottom: '24px' }}>
@@ -404,8 +387,8 @@ export default function Pricing() {
             {paymentMethod === 'crypto' ? (
               <button 
                 onClick={handleCryptoSubmit}
-                disabled={loading || !txHash || txHash.trim().length < 10}
-                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: (loading || !txHash || txHash.trim().length < 10) ? '#ccc' : '#34c759', color: 'white', fontSize: '16px', fontWeight: 700, cursor: (loading || !txHash || txHash.trim().length < 10) ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+                disabled={loading}
+                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: loading ? '#ccc' : '#34c759', color: 'white', fontSize: '16px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
               >
                 {loading ? 'Processing...' : `Pay ${selectedPlan.cryptoPrice} ${selectedCrypto}`}
               </button>

@@ -32,6 +32,7 @@ export default function AdminDashboard() {
   // Search & Filter States
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [ticketSearchTerm, setTicketSearchTerm] = useState('');
+  const [ticketFilter, setTicketFilter] = useState('All');
   const [newPassword, setNewPassword] = useState('');
   
   const [cryptoPayments, setCryptoPayments] = useState([]);
@@ -854,7 +855,7 @@ export default function AdminDashboard() {
                       Amount: <strong style={{ color: '#34c759' }}>{payment.amount} {payment.currency || 'USDT'}</strong>
                       <br />
                       TX Hash:{' '}
-                      {payment.txHash ? (
+                      {payment.txHash && payment.txHash !== 'N/A' ? (
                         <a
                           href={
                             payment.currency === 'BTC'
@@ -868,7 +869,7 @@ export default function AdminDashboard() {
                           {payment.txHash} 🔍
                         </a>
                       ) : (
-                        <span style={{ color: '#ff3b30' }}>No hash submitted</span>
+                        <span style={{ color: '#aaa', fontSize: '11px' }}>{payment.txHash || 'N/A'}</span>
                       )}
                       <br />
                       <span style={{ color: '#888', fontSize: '11px' }}>{new Date(payment.createdAt).toLocaleString()}</span>
