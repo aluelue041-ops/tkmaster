@@ -209,17 +209,9 @@ export default function Pricing() {
               <div style={{ marginBottom: '32px' }}>
                 <span style={{ fontSize: '36px', fontWeight: 900, color: '#111', letterSpacing: '-1px' }}>{plan.price}</span>
                 <span style={{ fontSize: '14px', color: '#888', fontWeight: 600 }}> KES / mo</span>
-                {plan.cryptoPrice && (
-                  <div style={{ marginTop: '6px' }}>
-                    <span style={{ fontSize: '22px', fontWeight: 800, color: '#34c759', letterSpacing: '-0.5px' }}>{plan.cryptoPrice}</span>
-                    <span style={{ fontSize: '12px', color: '#888', fontWeight: 600 }}> USDT / mo</span>
-                  </div>
-                )}
                 {plan.name !== 'Free' && (
                   <div style={{ display: 'flex', gap: '6px', marginTop: '12px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', backgroundColor: '#e8f4ff', color: '#026cdf', border: '1px solid #b3d9ff' }}>📱 M-Pesa</span>
-                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', backgroundColor: '#f0fff4', color: '#34c759', border: '1px solid #b2f0c8' }}>₿ Crypto</span>
-                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', backgroundColor: '#f0fff4', color: '#34c759', border: '1px solid #b2f0c8' }}>💰 USDT</span>
                   </div>
                 )}
               </div>
@@ -268,17 +260,7 @@ export default function Pricing() {
                   >
                     📱 M-Pesa <ArrowRight size={16} />
                   </button>
-                  <button 
-                    onClick={() => handleUpgradeClick(plan, 'crypto')}
-                    style={{ 
-                      width: '100%', padding: '14px 16px', borderRadius: '12px', border: 'none',
-                      backgroundColor: '#34c759', color: 'white',
-                      fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-                      transition: 'background 0.2s', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
-                    }}
-                  >
-                    ₿ Crypto / USDT <ArrowRight size={16} />
-                  </button>
+                  {/* Crypto button removed */}
                 </div>
               )}
             </div>
