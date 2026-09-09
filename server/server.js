@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const { Resend } = require('resend');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const QRCode = require('qrcode');
+
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
@@ -98,9 +98,9 @@ function formatSeatsForEmail(seats) {
 
 async function sendBookingConfirmationEmail(toEmail, ticket) {
   try {
-    const qrData = `TICKET:${ticket._id}`;
-    const qrBase64 = await QRCode.toDataURL(qrData, { margin: 2, width: 250 });
-    const base64Data = qrBase64.split(',')[1];
+
+
+
     const formattedSeats = formatSeatsForEmail(ticket.seats);
     // Fetch Event Image for PDF
     let eventImage = null;
@@ -643,9 +643,9 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
       const cleanSeats = transferredSeats.map(s => s.replace(/Section:\s*Section/i, 'Section').replace(/Seat Number:/i, 'Seat:'));
       const seatString = cleanSeats.length > 0 ? cleanSeats.join('<br/>') : 'General Admission';
       
-      const qrData = `TICKET:${ticket._id}`;
-      const qrBase64 = await QRCode.toDataURL(qrData, { margin: 2, width: 250 });
-      const base64Data = qrBase64.split(',')[1];
+
+
+
 
       // Fetch Event Image for PDF
       let eventImage = null;
@@ -718,7 +718,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
       });
     } catch(e) {
       console.error('Email error during transfer:', e.message);
-      await recordFailedEmail('transfer', newEmail, { emailHtml, base64Data, eventTitle: ticket.eventTitle, length: transferredSeats.length }, e.message);
+      await recordFailedEmail('transfer', newEmail, { emailHtml, eventTitle: ticket.eventTitle, length: transferredSeats.length }, e.message);
     }
 
     if (newUser) {
