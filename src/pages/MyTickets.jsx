@@ -398,70 +398,74 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
 
       // Ticket Image (Left side)
       if (imgData) {
-        doc.addImage(imgData, 'JPEG', 14, 35, 75, 75);
+        doc.addImage(imgData, 'JPEG', 14, 30, 58, 58);
       } else {
         doc.setFillColor(240, 240, 240);
-        doc.rect(14, 35, 75, 75, 'F');
+        doc.rect(14, 30, 58, 58, 'F');
         doc.setFontSize(10);
         doc.setTextColor(150, 150, 150);
-        doc.text('Ticket Image', 51.5, 72.5, { align: 'center' });
+        doc.text('Ticket Image', 43, 58, { align: 'center' });
       }
 
       // Event Title
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
+      doc.setFontSize(13);
       doc.setTextColor(20, 20, 20);
       const title = (eventTitle || 'Event').toUpperCase();
-      doc.text(title, 100, 42, { maxWidth: 95 });
+      const titleLines = doc.splitTextToSize(title, 92);
+      doc.text(titleLines, 96, 34);
+      const titleEndY = 34 + titleLines.length * 6;
 
       // Ticket Type
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
-      doc.text(ticketType || parsed.type || 'Standard Ticket', 100, 52);
+      doc.text(ticketType || parsed.type || 'Standard Ticket', 96, titleEndY + 5);
+      const typeEndY = titleEndY + 14;
 
       // Seats Box
+      const boxY = Math.max(typeEndY, 56);
       doc.setFillColor(248, 248, 248);
       doc.setDrawColor(220, 220, 220);
-      doc.roundedRect(100, 62, 95, 30, 3, 3, 'FD');
+      doc.roundedRect(96, boxY, 99, 28, 3, 3, 'FD');
       
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       doc.setTextColor(130, 130, 130);
-      doc.text('SECTION', 110, 70);
-      doc.text('ROW', 150, 70);
-      doc.text('SEAT', 175, 70);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(15);
-      doc.setTextColor(20, 20, 20);
-      doc.text(parsed.section, 110, 81);
-      doc.text(String(parsed.row), 150, 81);
-      doc.text(String(parsed.seat), 175, 81);
-
-      // Order Details
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(130, 130, 130);
-      doc.text('ORDER ID', 100, 105);
-      doc.text('TOTAL PAID', 150, 105);
+      doc.text('SECTION', 104, boxY + 9);
+      doc.text('ROW', 148, boxY + 9);
+      doc.text('SEAT', 173, boxY + 9);
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
       doc.setTextColor(20, 20, 20);
-      doc.text(String(orderNumber || ticketId), 100, 113, { maxWidth: 45 });
-      doc.text(`${currency || '$'}${totalPrice || ''}`, 150, 113);
+      doc.text(parsed.section, 104, boxY + 20, { maxWidth: 40 });
+      doc.text(String(parsed.row), 148, boxY + 20);
+      doc.text(String(parsed.seat), 173, boxY + 20);
+
+      // Order Details
+      const orderLabelY = boxY + 36;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(130, 130, 130);
+      doc.text('ORDER ID', 96, orderLabelY);
+      doc.text('TOTAL PAID', 148, orderLabelY);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(20, 20, 20);
+      doc.text(String(orderNumber || ticketId), 96, orderLabelY + 9, { maxWidth: 48 });
+      doc.text(`${currency || '$'}${totalPrice || ''}`, 148, orderLabelY + 9);
 
       // QR Code
       const rawQrData = `TICKET:${ticketId}`;
-      const qrDataUrl = await QRCode.toDataURL(rawQrData, { width: 200, margin: 1 });
-      doc.addImage(qrDataUrl, 'PNG', 14, 115, 25, 25);
-      
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(2, 108, 223);
-      doc.text('SCAN AT ENTRANCE', 43, 128);
+      const qrDataUrl = await QRCode.toDataURL(rawQrData, { width: 250, margin: 1 });
+      const qrY = 95;
+      doc.addImage(qrDataUrl, 'PNG', 14, qrY, 32, 32);
 
-      // Footer
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(2, 108, 223);
+      doc.text('SCAN AT ENTRANCE', 14, qrY + 36, { maxWidth: 32, align: 'center' });
       doc.setFillColor(250, 250, 250);
       doc.rect(0, H - 12, W, 12, 'F');
       doc.setFont('helvetica', 'normal');
