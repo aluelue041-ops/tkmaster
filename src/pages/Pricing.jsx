@@ -260,8 +260,11 @@ export default function Pricing() {
                       📱 M-Pesa <ArrowRight size={16} />
                     </button>
                   ) : (
-                    <div style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#fff8e1', border: '1px solid #ffe082', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: '#f57f17' }}>
-                      🔧 M-Pesa — Under Maintenance
+                    <div style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', backgroundColor: '#fff8e1', border: '1px solid #ffe082', textAlign: 'center', fontSize: '13px', color: '#f57f17' }}>
+                      <div style={{ fontWeight: 700, marginBottom: '4px' }}>🔧 M-Pesa — Under Maintenance</div>
+                      {cryptoSettings.cryptoEnabled && (
+                        <div style={{ fontSize: '12px', fontWeight: 600 }}>Please use <strong>₿ Crypto / USDT</strong> to complete your payment.</div>
+                      )}
                     </div>
                   )}
                   {cryptoSettings.cryptoEnabled ? (
@@ -277,8 +280,16 @@ export default function Pricing() {
                       ₿ Crypto / USDT <ArrowRight size={16} />
                     </button>
                   ) : (
-                    <div style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#fff8e1', border: '1px solid #ffe082', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: '#f57f17' }}>
-                      🔧 Crypto — Under Maintenance
+                    <div style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', backgroundColor: '#fff8e1', border: '1px solid #ffe082', textAlign: 'center', fontSize: '13px', color: '#f57f17' }}>
+                      <div style={{ fontWeight: 700, marginBottom: '4px' }}>🔧 Crypto — Under Maintenance</div>
+                      {cryptoSettings.mpesaEnabled && (
+                        <div style={{ fontSize: '12px', fontWeight: 600 }}>Please use <strong>📱 M-Pesa</strong> to complete your payment.</div>
+                      )}
+                    </div>
+                  )}
+                  {!cryptoSettings.mpesaEnabled && !cryptoSettings.cryptoEnabled && (
+                    <div style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#ffeaea', border: '1px solid #ffb3b3', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: '#cc0000' }}>
+                      ⚠️ All payment methods are currently under maintenance. Please check back soon.
                     </div>
                   )}
                 </div>
