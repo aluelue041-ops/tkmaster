@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -1277,13 +1277,17 @@ app.put('/api/admin/crypto-payments/:id/reject', authMiddleware, adminMiddleware
 
 app.get('/api/settings/crypto', async (req, res) => {
   try {
-    const trc20Setting = await Setting.findOne({ key: 'usdtTrc20Address' });
-    const erc20Setting = await Setting.findOne({ key: 'usdtErc20Address' });
-    const btcSetting   = await Setting.findOne({ key: 'btcAddress' });
+    const trc20Setting    = await Setting.findOne({ key: 'usdtTrc20Address' });
+    const erc20Setting    = await Setting.findOne({ key: 'usdtErc20Address' });
+    const btcSetting      = await Setting.findOne({ key: 'btcAddress' });
+    const mpesaEnabled    = await Setting.findOne({ key: 'mpesaEnabled' });
+    const cryptoEnabled   = await Setting.findOne({ key: 'cryptoEnabled' });
     res.json({
-      usdtTrc20Address: trc20Setting ? trc20Setting.value : '',
-      usdtErc20Address: erc20Setting ? erc20Setting.value : '',
-      btcAddress:       btcSetting   ? btcSetting.value   : ''
+      usdtTrc20Address: trc20Setting  ? trc20Setting.value  : '',
+      usdtErc20Address: erc20Setting  ? erc20Setting.value  : '',
+      btcAddress:       btcSetting    ? btcSetting.value    : '',
+      mpesaEnabled:     mpesaEnabled  ? mpesaEnabled.value !== 'false'  : true,
+      cryptoEnabled:    cryptoEnabled ? cryptoEnabled.value !== 'false' : true
     });
   } catch (err) {
     console.error(err);
@@ -1293,7 +1297,7 @@ app.get('/api/settings/crypto', async (req, res) => {
 
 app.put('/api/settings/crypto', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { usdtTrc20Address, usdtErc20Address, btcAddress } = req.body;
+    const { usdtTrc20Address, usdtErc20Address, btcAddress, mpesaEnabled, cryptoEnabled } = req.body;
     if (usdtTrc20Address !== undefined) {
       await Setting.findOneAndUpdate({ key: 'usdtTrc20Address' }, { value: usdtTrc20Address }, { upsert: true, new: true });
     }
@@ -1302,6 +1306,12 @@ app.put('/api/settings/crypto', authMiddleware, adminMiddleware, async (req, res
     }
     if (btcAddress !== undefined) {
       await Setting.findOneAndUpdate({ key: 'btcAddress' }, { value: btcAddress }, { upsert: true, new: true });
+    }
+    if (mpesaEnabled !== undefined) {
+      await Setting.findOneAndUpdate({ key: 'mpesaEnabled' }, { value: String(mpesaEnabled) }, { upsert: true, new: true });
+    }
+    if (cryptoEnabled !== undefined) {
+      await Setting.findOneAndUpdate({ key: 'cryptoEnabled' }, { value: String(cryptoEnabled) }, { upsert: true, new: true });
     }
     res.json({ success: true });
   } catch (err) {

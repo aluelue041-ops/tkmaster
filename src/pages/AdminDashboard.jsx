@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [newPassword, setNewPassword] = useState('');
   
   const [cryptoPayments, setCryptoPayments] = useState([]);
-  const [cryptoSettings, setCryptoSettings] = useState({ usdtTrc20Address: '', usdtErc20Address: '', btcAddress: '' });
+  const [cryptoSettings, setCryptoSettings] = useState({ usdtTrc20Address: '', usdtErc20Address: '', btcAddress: '', mpesaEnabled: true, cryptoEnabled: true });
   
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -206,7 +206,7 @@ export default function AdminDashboard() {
         body: JSON.stringify(cryptoSettings)
       });
       if (res.ok) {
-        toast.success('Crypto addresses saved successfully.');
+        toast.success('Payment settings saved successfully.');
       } else {
         toast.error('Failed to save settings.');
       }
@@ -811,6 +811,63 @@ export default function AdminDashboard() {
 
         {activeTab === 'crypto' && (
           <div>
+
+            {/* Payment Method Toggles */}
+            <div style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '16px', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'white', margin: '0 0 4px' }}>Payment Method Availability</h2>
+              <p style={{ fontSize: '13px', color: '#aaa', margin: '0 0 20px' }}>Toggle a payment method off when it is unavailable or under maintenance. Users will see a maintenance notice instead.</p>
+              
+              {/* M-Pesa Toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#222', padding: '14px 16px', borderRadius: '12px', marginBottom: '12px' }}>
+                <div>
+                  <div style={{ color: 'white', fontWeight: 700, fontSize: '15px' }}>📱 M-Pesa</div>
+                  <div style={{ color: '#aaa', fontSize: '12px', marginTop: '2px' }}>{cryptoSettings.mpesaEnabled ? '✅ Active — users can pay via M-Pesa' : '🔧 Under Maintenance — hidden from users'}</div>
+                </div>
+                <div
+                  onClick={() => setCryptoSettings({ ...cryptoSettings, mpesaEnabled: !cryptoSettings.mpesaEnabled })}
+                  style={{
+                    width: '52px', height: '28px', borderRadius: '14px', cursor: 'pointer', transition: 'background 0.3s',
+                    backgroundColor: cryptoSettings.mpesaEnabled ? '#34c759' : '#555', position: 'relative', flexShrink: 0
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute', top: '4px', transition: 'left 0.3s',
+                    left: cryptoSettings.mpesaEnabled ? '28px' : '4px',
+                    width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'white'
+                  }} />
+                </div>
+              </div>
+
+              {/* Crypto Toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#222', padding: '14px 16px', borderRadius: '12px', marginBottom: '20px' }}>
+                <div>
+                  <div style={{ color: 'white', fontWeight: 700, fontSize: '15px' }}>₿ Crypto / USDT</div>
+                  <div style={{ color: '#aaa', fontSize: '12px', marginTop: '2px' }}>{cryptoSettings.cryptoEnabled ? '✅ Active — users can pay via Crypto' : '🔧 Under Maintenance — hidden from users'}</div>
+                </div>
+                <div
+                  onClick={() => setCryptoSettings({ ...cryptoSettings, cryptoEnabled: !cryptoSettings.cryptoEnabled })}
+                  style={{
+                    width: '52px', height: '28px', borderRadius: '14px', cursor: 'pointer', transition: 'background 0.3s',
+                    backgroundColor: cryptoSettings.cryptoEnabled ? '#34c759' : '#555', position: 'relative', flexShrink: 0
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute', top: '4px', transition: 'left 0.3s',
+                    left: cryptoSettings.cryptoEnabled ? '28px' : '4px',
+                    width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'white'
+                  }} />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveCryptoSettings}
+                style={{ alignSelf: 'flex-start', padding: '10px 24px', backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Save Availability Settings
+              </button>
+            </div>
+
+            {/* Crypto Addresses Card */}
             <div style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '16px', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'white', margin: '0 0 16px' }}>Crypto Addresses</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
