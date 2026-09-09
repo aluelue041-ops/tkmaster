@@ -726,13 +726,12 @@ export default function MyTickets() {
     const image = eventMeta?.image;
 
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
+      <div className="premium-gradient-bg" style={{ minHeight: "100vh" }}>
         {/* Banner Container */}
         <div style={{ position: 'relative', minHeight: '380px' }}>
           {/* Background Image */}
-          {image
-            ? <img src={image} alt={selectedOrder.eventTitle} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            : <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, #026cdf, #004aad)' }} />
+          <div className="ticket-image-container">{image ? <img src={image} alt={selectedOrder.eventTitle} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            : <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", background: "linear-gradient(135deg, #0f172a, #1e293b)" }} />
           }
           
           {/* Back button */}
@@ -747,7 +746,7 @@ export default function MyTickets() {
           {/* Floating Event Info Card */}
           <div style={{ position: 'absolute', bottom: '0', left: '20px', right: '20px', zIndex: 10 }}>
             {/* Date Tab */}
-            <div style={{ display: 'inline-block', backgroundColor: '#282828', padding: '12px 16px', color: '#fff', fontSize: '12px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
+            <div style={{ display: 'inline-block', background: "rgba(255,255,255,0.9)", backdropFilter: "blur(10px)", color: "#111", padding: "12px 24px", borderRadius: "12px 12px 0 0", boxShadow: "0 -4px 16px rgba(0,0,0,0.1)", color: '#fff', fontSize: '12px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
               {eventMeta?.date || 'Upcoming Event'}
             </div>
             
@@ -876,7 +875,7 @@ export default function MyTickets() {
                    <div style={{ flex: '0 0 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backgroundColor: '#1a1a1a', borderLeft: '1px solid #333' }}>
                      <div style={{ textAlign: 'center', letterSpacing: '0.5px' }}>
                        <div style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.4 }}>YOU GOT</div>
-                       <div style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.4, borderBottom: '3px solid white', display: 'inline-block' }}>TICKETS!</div>
+                       <div style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.4, borderBottom: "3px solid #026cdf", paddingBottom: "4px", display: 'inline-block' }}>TICKETS!</div>
                      </div>
                    </div>
                 </div>
@@ -917,12 +916,12 @@ export default function MyTickets() {
   const usagePercent = isVIP ? 0 : Math.min(100, (usedThisMonth / limit) * 100);
 
   return (
-    <div className="page my-tickets-page" style={{ backgroundColor: '#f8f8f8', minHeight: '100vh' }}>
+    <div className="page my-tickets-page premium-gradient-bg" style={{ minHeight: "100vh" }}>
       <div style={{ backgroundColor: 'white', padding: '20px 16px', borderBottom: '1px solid #eee' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 16px' }}>My Tickets</h1>
         
         {/* Usage Progress */}
-        <div style={{ backgroundColor: '#f8f9fa', borderRadius: '12px', padding: '16px', border: '1px solid #eaeaea' }}>
+        <div className="glass-panel" style={{ padding: "20px" }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
             <div>
               <div style={{ fontSize: '13px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monthly Usage</div>
@@ -964,20 +963,17 @@ export default function MyTickets() {
               <div
                 key={ticket._id}
                 onClick={() => setSelectedOrder(ticket)}
-                style={{ backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'transform 0.15s', ':hover': { transform: 'translateY(-2px)' } }}
+                className="ticket-card-premium"
               >
                 {/* Event Banner */}
-                {image
-                  ? <img src={image} alt={ticket.eventTitle} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
+                <div className="ticket-image-container">{image ? <img src={image} alt={ticket.eventTitle} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
                   : <div style={{ width: '100%', height: '140px', background: 'linear-gradient(135deg, #026cdf, #004aad)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <TicketIcon size={48} color="rgba(255,255,255,0.4)" />
-                    </div>
-                }
+                      <TicketIcon size={48} color="rgba(255,255,255,0.4)" /></div>}</div>
 
                 {/* Order Info */}
                 <div style={{ padding: '14px 16px' }}>
                   {meta?.date && <p style={{ color: '#026cdf', fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>{meta.date}</p>}
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 6px', textTransform: 'uppercase' }}>{ticket.eventTitle}</h3>
+                  <h3 style={{ fontSize: "18px", fontWeight: 900, margin: "0 0 8px", letterSpacing: "0.5px" }}>{ticket.eventTitle}</h3>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#666', fontSize: '13px' }}>{meta?.location || 'View Order'}</span>
                     <span style={{ color: '#333', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
