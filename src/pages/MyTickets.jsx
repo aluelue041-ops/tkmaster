@@ -732,7 +732,7 @@ export default function MyTickets() {
           {/* Background Image */}
           <div className="ticket-image-container">{image ? <img src={image} alt={selectedOrder.eventTitle} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             : <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", background: "linear-gradient(135deg, #0f172a, #1e293b)" }} />
-          }
+          }</div>
           
           {/* Back button */}
           <button
