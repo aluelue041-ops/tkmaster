@@ -67,14 +67,14 @@ async function sendWelcomeEmail(toEmail) {
     await resend.emails.send({
       to: toEmail,
       from: FROM_EMAIL,
-      subject: 'Welcome to Ticketmaster! ðŸŽŸï¸',
+      subject: 'Welcome to Ticketmaster!',
       html: `
         <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
           <div style="background:#026cdf;padding:32px;text-align:center">
             <h1 style="color:white;font-style:italic;margin:0;font-size:32px">Ticketmaster</h1>
           </div>
           <div style="padding:32px">
-            <h2 style="color:#1a1a1a">Welcome aboard! ðŸŽ‰</h2>
+            <h2 style="color:#1a1a1a">Welcome aboard!</h2>
             <p style="color:#555;line-height:1.6">Your account has been created successfully. Start discovering and booking tickets for the best live events near you.</p>
             <a href="https://tkmaster.onrender.com" style="display:inline-block;margin-top:16px;padding:12px 28px;background:#026cdf;color:white;border-radius:8px;text-decoration:none;font-weight:bold">Browse Events</a>
           </div>
@@ -145,7 +145,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
     await resend.emails.send({
       to: toEmail,
       from: FROM_EMAIL,
-      subject: `Booking Confirmed: ${ticket.eventTitle} ðŸŽŸï¸`,
+      subject: `Booking Confirmed: ${ticket.eventTitle}`,
       html: `
         <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
           <div style="background:#026cdf;padding:32px;text-align:center">
@@ -160,11 +160,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
               <p style="margin:0 0 8px"><strong>Seats:</strong></p>
               <p style="margin:0;color:#333;line-height:1.6">${formattedSeats}</p>
             </div>
-            <div style="background:#f8f8f8;padding:24px;border-radius:16px;margin:24px 0;border:1px solid #eee;text-align:center">
-              <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR TICKET QR CODE</p>
-              <img src="data:image/png;base64,${base64Data}" alt="Ticket QR Code" width="200" height="200" style="display:block;margin:0 auto;border-radius:8px;" />
-              <p style="font-size:12px;color:#888;margin:12px 0 0">Show this QR at the entrance</p>
-            </div>
+            
             <p style="color:#888;font-size:13px">Booking ID: <code>${ticket._id}</code></p>
             <p style="color:#666;font-size:13px;margin-top:16px;"><strong>Note:</strong> We have attached your official PDF tickets to this email!</p>
           </div>
@@ -697,26 +693,26 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
       let emailHtml = `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;border:1px solid #eaeaea;border-radius:12px;overflow:hidden;">
         <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">Ticketmaster</h1></div>
         <div style="padding:32px 24px;background:white;text-align:center;">
-          <h2 style="margin-top:0;">Hi ${name || 'there'}, you've received ${transferredSeats.length} ticket(s)! ðŸŽŸï¸</h2>
+          <h2 style="margin-top:0;">Hi ${name || 'there'}, you've received ${transferredSeats.length} ticket(s)!</h2>
           <p style="color:#555;font-size:16px;"><strong>${senderEmail}</strong> has transferred their ticket(s) for <strong>${ticket.eventTitle}</strong> to you.</p>
           ${noteHtml}
           
           <div style="background:#f8f8f8;padding:24px;border-radius:16px;margin:32px 0;border:1px solid #eee;display:inline-block;">
-            <p style="font-size:12px;color:#888;font-weight:bold;margin:0 0 12px;letter-spacing:1px;">YOUR OFFICIAL TICKET</p>
-            <img src="data:image/png;base64,${base64Data}" alt="Ticket QR Code" width="200" height="200" style="display:block;margin:0 auto;border-radius:8px;" />
+            
+            
             <p style="font-size:13px;color:#333;margin:16px 0 0;font-weight:600;">Seats: ${seatString}</p>
             <p style="font-size:12px;color:#888;margin:8px 0 0;">Booking ID: <code>${ticket._id}</code></p>
           </div>
 
           <p style="color:#666;font-size:14px;line-height:1.5;">Please find your official PDF tickets attached to this email.</p>
-          <p style="color:#666;font-size:14px;line-height:1.5;">Show this QR code at the entrance to verify your ticket.<br/>You don't need to create an account to use this ticket!</p>
+          <p style="color:#666;font-size:14px;line-height:1.5;">Please present your attached PDF ticket at the entrance.<br/>You don't need to create an account to use this ticket!</p>
         </div>
       </div>`;
 
       await resend.emails.send({
         to: newEmail,
         from: FROM_EMAIL,
-        subject: `ðŸŽŸï¸ You received ${transferredSeats.length} ticket(s) for ${ticket.eventTitle}!`,
+        subject: `You received ${transferredSeats.length} ticket(s) for ${ticket.eventTitle}!`,
         html: emailHtml,
         attachments: attachments
       });
@@ -1124,11 +1120,11 @@ app.put('/api/tickets/:id/approve', authMiddleware, adminMiddleware, async (req,
         await resend.emails.send({
           to: updatedTicket.user.email,
           from: FROM_EMAIL,
-          subject: `Your ticket for "${ticket.eventTitle}" has been approved âœ…`,
+          subject: `Your ticket for "${record.payload.eventTitle}" has been approved!`,
           html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
             <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">Ticketmaster</h1></div>
             <div style="padding:24px">
-              <h2>Your booking is approved! ðŸŽ‰</h2>
+              <h2>Your booking is approved!</h2>
               <p>Your ticket(s) for <strong>${ticket.eventTitle}</strong> have been approved by the admin.</p>
               <p>You can view your tickets in the app under <strong>My Tickets</strong>.</p>
             </div>
@@ -1508,15 +1504,15 @@ cron.schedule('*/10 * * * *', async () => {
           await resend.emails.send({
             to: record.to,
             from: FROM_EMAIL,
-            subject: `ðŸŽŸï¸ You received ${record.payload.length} ticket(s) for ${record.payload.eventTitle}!`,
+            subject: `You received ${record.payload.length} ticket(s) for ${record.payload.eventTitle}!`,
             html: record.payload.emailHtml,
-            attachments: [{
-              content: record.payload.base64Data,
-              filename: 'qrcode.png',
-              content_type: 'image/png',
-              content_id: 'ticket-qr'
-            }]
-          });
+            attachments: []
+
+
+
+
+
+
           sent = true;
         } else if (record.type === 'approved') {
           await resend.emails.send({
@@ -1526,7 +1522,7 @@ cron.schedule('*/10 * * * *', async () => {
             html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
               <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">Ticketmaster</h1></div>
               <div style="padding:24px">
-                <h2>Your booking is approved! ðŸŽ‰</h2>
+                <h2>Your booking is approved!</h2>
                 <p>Your ticket(s) for <strong>${record.payload.eventTitle}</strong> have been approved by the admin.</p>
                 <p>You can view your tickets in the app under <strong>My Tickets</strong>.</p>
               </div>
