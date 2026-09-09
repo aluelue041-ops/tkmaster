@@ -34,33 +34,12 @@ export default function Pricing() {
       .catch(() => {});
   }, [API]);
 
-  const plans = [
-    {
-      name: 'Free',
-      price: '0',
-      description: 'For casual event goers',
-      features: ['2 Tickets per month', 'Standard Approval', 'Email Support'],
-      limit: 'Strict screen recording limits',
-      recommended: false
-    },
-    {
-      name: 'VIP',
-      price: '2,500',
-      cryptoPrice: '20',
-      description: 'For corporate & VIPs',
-      features: ['Unlimited Tickets', 'Instant Auto-Approve', 'Dedicated Account Manager', 'No screen recording limits'],
-      limit: '',
-      recommended: true
-    }
-  ];
-
   const closeModal = () => { setShowModal(false); setTxHash(''); setPhoneNumber(''); };
 
-  const handleUpgradeClick = (plan, method) => {
-    if (plan.name === 'Free') { toast.info("The Free plan requires no payment!"); return; }
+  const handleUpgradeClick = (method) => {
     const token = localStorage.getItem('token');
     if (!token) { toast.error('Please sign in to upgrade.'); navigate('/signin'); return; }
-    setSelectedPlan(plan);
+    setSelectedPlan({ name: 'VIP', price: '2,500', cryptoPrice: '20' });
     setPaymentMethod(method);
     setShowModal(true);
   };
@@ -73,15 +52,11 @@ export default function Pricing() {
       const res = await fetch(`${API}/api/payhero/stk-push`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ phoneNumber, amount: 2500, plan: selectedPlan.name })
+        body: JSON.stringify({ phoneNumber, amount: 2500, plan: 'VIP' })
       });
       const data = await res.json();
-      if (res.ok) {
-        toast.success('✅ STK Push sent! Check your phone and enter your M-Pesa PIN.');
-        closeModal();
-      } else {
-        toast.error(data.error || 'Payment initiation failed.');
-      }
+      if (res.ok) { toast.success('✅ STK Push sent! Enter your M-Pesa PIN on your phone.'); closeModal(); }
+      else toast.error(data.error || 'Payment initiation failed.');
     } catch { toast.error('Network error. Please try again.'); }
     finally { setLoading(false); }
   };
@@ -94,15 +69,11 @@ export default function Pricing() {
       const res = await fetch(`${API}/api/crypto/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ amount: 20, currency: selectedCrypto, plan: selectedPlan.name, txHash: txHash.trim() })
+        body: JSON.stringify({ amount: 20, currency: selectedCrypto, plan: 'VIP', txHash: txHash.trim() })
       });
       const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message || '✅ Payment submitted! Admin will verify and activate your plan.');
-        closeModal();
-      } else {
-        toast.error(data.error || 'Submission failed.');
-      }
+      if (res.ok) { toast.success(data.message || '✅ Payment submitted! Admin will verify and activate your plan.'); closeModal(); }
+      else toast.error(data.error || 'Submission failed.');
     } catch { toast.error('Network error. Please try again.'); }
     finally { setLoading(false); }
   };
@@ -116,11 +87,20 @@ export default function Pricing() {
     selectedCrypto === 'USDT-ERC20' ? cryptoSettings.usdtErc20Address :
     cryptoSettings.btcAddress;
 
-  const btnBase = {
-    width: '100%', padding: '14px 16px', borderRadius: '12px', border: 'none',
-    fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
-    transition: 'opacity 0.15s, transform 0.1s',
+  const isVIP = userSubscription === 'VIP';
+
+  const sharedFeatures = [
+    'Unlimited Tickets',
+    'Instant Auto-Approve',
+    'Dedicated Account Manager',
+    'No screen recording limits',
+  ];
+
+  const cardHover = (e, enter) => {
+    e.currentTarget.style.transform = enter ? 'translateY(-4px)' : 'translateY(0)';
+    e.currentTarget.style.boxShadow = enter
+      ? '0 20px 56px rgba(0,0,0,0.13)'
+      : '0 4px 20px rgba(0,0,0,0.06)';
   };
 
   return (
@@ -145,17 +125,16 @@ export default function Pricing() {
             Choose Your Access Plan
           </h1>
           <p style={{ fontSize: '15px', maxWidth: '460px', margin: '0 auto', opacity: 0.85, lineHeight: 1.65 }}>
-            Upgrade to instantly auto-approve your tickets and unlock unlimited monthly booking limits.
+            Upgrade to instantly auto-approve your tickets and unlock unlimited booking limits.
           </p>
         </div>
         <div style={{ position: 'absolute', top: '-60px', left: '-60px', width: '220px', height: '220px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '50%' }} />
         <div style={{ position: 'absolute', bottom: '-90px', right: '-30px', width: '320px', height: '320px', backgroundColor: 'rgba(0,0,0,0.07)', borderRadius: '50%' }} />
       </div>
 
-      {/* Cards */}
-      <div style={{ padding: '40px 20px', maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ padding: '40px 20px', maxWidth: '1100px', margin: '0 auto' }}>
 
-        {userSubscription !== 'Free' && (
+        {isVIP && (
           <div style={{
             background: 'linear-gradient(90deg, #e8f2ff, #f0f8ff)',
             border: '1px solid #b3d9ff', padding: '14px 20px', borderRadius: '14px',
@@ -164,142 +143,188 @@ export default function Pricing() {
           }}>
             <span style={{ fontSize: '20px' }}>⭐</span>
             <span style={{ fontSize: '14px', color: '#004aad', fontWeight: 700 }}>
-              You are on the <span style={{ textTransform: 'uppercase' }}>{userSubscription}</span> plan — enjoy your benefits!
+              You are on the VIP plan — enjoy unlimited access!
             </span>
           </div>
         )}
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', justifyContent: 'center' }}>
-          {plans.map(plan => (
-            <div key={plan.name} style={{
-              flex: '1 1 280px', maxWidth: '340px',
-              backgroundColor: 'white', borderRadius: '24px',
-              padding: '32px', position: 'relative',
-              boxShadow: plan.recommended ? '0 20px 60px rgba(2,108,223,0.16)' : '0 4px 20px rgba(0,0,0,0.06)',
-              border: plan.recommended ? '2px solid #026cdf' : '1.5px solid #eaeaea',
-              transform: plan.recommended ? 'scale(1.02)' : 'scale(1)',
-              transition: 'transform 0.25s, box-shadow 0.25s',
-              display: 'flex', flexDirection: 'column'
-            }}
-              onMouseEnter={e => { if (!plan.recommended) { e.currentTarget.style.boxShadow = '0 16px 48px rgba(0,0,0,0.11)'; e.currentTarget.style.transform = 'translateY(-3px)'; } }}
-              onMouseLeave={e => { if (!plan.recommended) { e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; } }}
-            >
-              {plan.recommended && (
-                <div style={{
-                  position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)',
-                  background: 'linear-gradient(90deg, #026cdf, #0052b3)',
-                  color: 'white', fontSize: '11px', fontWeight: 800,
-                  padding: '5px 18px', borderRadius: '20px',
-                  textTransform: 'uppercase', letterSpacing: '1px', whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(2,108,223,0.35)'
-                }}>
-                  ⭐ Most Popular
-                </div>
-              )}
+        {/* ── Section label ── */}
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 800, color: '#bbb', letterSpacing: '1.5px', textTransform: 'uppercase', margin: 0 }}>
+            Select a plan to get started
+          </p>
+        </div>
 
-              <h3 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 6px', color: '#111' }}>{plan.name}</h3>
-              <p style={{ fontSize: '13px', color: '#999', margin: '0 0 24px', fontWeight: 500 }}>{plan.description}</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center' }}>
 
-              <div style={{ marginBottom: '28px' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  <span style={{ fontSize: '40px', fontWeight: 900, color: '#111', letterSpacing: '-1px', lineHeight: 1 }}>{plan.price}</span>
-                  <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>KES / mo</span>
-                </div>
-                {plan.cryptoPrice && cryptoSettings.cryptoEnabled && (
-                  <div style={{ marginTop: '5px', color: '#28a044', fontSize: '13px', fontWeight: 700 }}>
-                    or ${plan.cryptoPrice} USDT / mo
-                  </div>
-                )}
-                {plan.name !== 'Free' && (
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '12px', flexWrap: 'wrap' }}>
-                    {cryptoSettings.mpesaEnabled && (
-                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', backgroundColor: '#e8f4ff', color: '#026cdf', border: '1px solid #b3d9ff' }}>📱 M-Pesa</span>
-                    )}
-                    {cryptoSettings.cryptoEnabled && (
-                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', backgroundColor: '#f0fff4', color: '#1a9c3e', border: '1px solid #b2f0c8' }}>₿ Crypto</span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '13px', flex: 1, marginBottom: '28px' }}>
-                {plan.features.map((feat, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '11px' }}>
-                    <div style={{ backgroundColor: '#e6f2ff', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px', flexShrink: 0 }}>
-                      <Check size={13} color="#026cdf" strokeWidth={3} />
-                    </div>
-                    <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, lineHeight: 1.45 }}>{feat}</span>
-                  </div>
-                ))}
-                {plan.limit && (
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '11px', opacity: 0.5 }}>
-                    <div style={{ backgroundColor: '#ffebee', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px', flexShrink: 0 }}>
-                      <X size={13} color="#ff3b30" strokeWidth={3} />
-                    </div>
-                    <span style={{ fontSize: '13px', color: '#333', fontWeight: 600, lineHeight: 1.45 }}>{plan.limit}</span>
-                  </div>
-                )}
-              </div>
-
-              {userSubscription === plan.name ? (
-                <div style={{ width: '100%', padding: '14px', borderRadius: '12px', backgroundColor: '#f0f7ff', border: '1.5px solid #b3d9ff', textAlign: 'center', fontSize: '14px', fontWeight: 700, color: '#026cdf' }}>
-                  ✓ Your Current Plan
-                </div>
-              ) : plan.name === 'Free' ? (
-                <div style={{ width: '100%', padding: '14px', borderRadius: '12px', backgroundColor: '#f5f5f5', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: '#aaa' }}>
-                  Free — No Payment Needed
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-                  <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 800, color: '#ccc', textTransform: 'uppercase', textAlign: 'center', letterSpacing: '1px' }}>Pay with</p>
-
-                  {cryptoSettings.mpesaEnabled ? (
-                    <button onClick={() => handleUpgradeClick(plan, 'mpesa')}
-                      style={{ ...btnBase, background: 'linear-gradient(135deg, #026cdf, #0052b3)', color: 'white', boxShadow: '0 4px 14px rgba(2,108,223,0.3)' }}
-                      onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                      onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-                      onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                      📱 M-Pesa <ArrowRight size={16} />
-                    </button>
-                  ) : (
-                    <div style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', backgroundColor: '#fff8e1', border: '1px solid #ffe082', textAlign: 'center', fontSize: '12px', color: '#c97300' }}>
-                      <div style={{ fontWeight: 700, marginBottom: '3px' }}>🔧 M-Pesa — Under Maintenance</div>
-                      {cryptoSettings.cryptoEnabled && <div style={{ fontWeight: 600 }}>Please use <strong>₿ Crypto / USDT</strong> instead.</div>}
-                    </div>
-                  )}
-
-                  {cryptoSettings.cryptoEnabled ? (
-                    <button onClick={() => handleUpgradeClick(plan, 'crypto')}
-                      style={{ ...btnBase, background: 'linear-gradient(135deg, #34c759, #28a044)', color: 'white', boxShadow: '0 4px 14px rgba(40,160,68,0.3)' }}
-                      onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                      onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
-                      onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                      ₿ Crypto / USDT <ArrowRight size={16} />
-                    </button>
-                  ) : (
-                    <div style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', backgroundColor: '#fff8e1', border: '1px solid #ffe082', textAlign: 'center', fontSize: '12px', color: '#c97300' }}>
-                      <div style={{ fontWeight: 700, marginBottom: '3px' }}>🔧 Crypto — Under Maintenance</div>
-                      {cryptoSettings.mpesaEnabled && <div style={{ fontWeight: 600 }}>Please use <strong>📱 M-Pesa</strong> instead.</div>}
-                    </div>
-                  )}
-
-                  {!cryptoSettings.mpesaEnabled && !cryptoSettings.cryptoEnabled && (
-                    <div style={{ width: '100%', padding: '14px', borderRadius: '12px', backgroundColor: '#ffeaea', border: '1px solid #ffb3b3', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: '#cc0000' }}>
-                      ⚠️ All payment methods are under maintenance. Please check back soon.
-                    </div>
-                  )}
-                </div>
-              )}
+          {/* ── FREE CARD ── */}
+          <div style={{
+            flex: '1 1 260px', maxWidth: '300px', backgroundColor: 'white',
+            borderRadius: '24px', padding: '28px 24px',
+            border: '1.5px solid #eaeaea', boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+            display: 'flex', flexDirection: 'column', transition: 'transform 0.25s, box-shadow 0.25s'
+          }}
+            onMouseEnter={e => cardHover(e, true)}
+            onMouseLeave={e => cardHover(e, false)}
+          >
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <span style={{ fontSize: '22px' }}>🎟️</span>
             </div>
-          ))}
+            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px', color: '#111' }}>Free</h3>
+            <p style={{ fontSize: '13px', color: '#999', margin: '0 0 20px' }}>For casual event goers</p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '24px' }}>
+              <span style={{ fontSize: '38px', fontWeight: 900, color: '#111', letterSpacing: '-1px', lineHeight: 1 }}>0</span>
+              <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>KES / mo</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, marginBottom: '24px' }}>
+              {['2 Tickets per month', 'Standard Approval', 'Email Support'].map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ backgroundColor: '#f0f0f0', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Check size={12} color="#888" strokeWidth={3} />
+                  </div>
+                  <span style={{ fontSize: '13px', color: '#555', fontWeight: 600 }}>{f}</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', opacity: 0.5 }}>
+                <div style={{ backgroundColor: '#ffebee', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <X size={12} color="#ff3b30" strokeWidth={3} />
+                </div>
+                <span style={{ fontSize: '13px', color: '#555', fontWeight: 600 }}>Strict screen recording limits</span>
+              </div>
+            </div>
+            <div style={{ width: '100%', padding: '13px', borderRadius: '12px', backgroundColor: '#f5f5f5', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: '#aaa' }}>
+              {userSubscription === 'Free' ? '✓ Your Current Plan' : 'Free — No Payment Needed'}
+            </div>
+          </div>
+
+          {/* ── VIP M-PESA CARD ── */}
+          <div style={{
+            flex: '1 1 260px', maxWidth: '300px', backgroundColor: 'white',
+            borderRadius: '24px', padding: '28px 24px', position: 'relative',
+            border: '2px solid #026cdf', boxShadow: '0 20px 60px rgba(2,108,223,0.14)',
+            display: 'flex', flexDirection: 'column', transition: 'transform 0.25s, box-shadow 0.25s'
+          }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 28px 70px rgba(2,108,223,0.22)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 20px 60px rgba(2,108,223,0.14)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+          >
+            <div style={{ position: 'absolute', top: '-13px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(90deg, #026cdf, #0052b3)', color: 'white', fontSize: '11px', fontWeight: 800, padding: '4px 16px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '1px', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(2,108,223,0.35)' }}>
+              📱 M-Pesa
+            </div>
+
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #026cdf, #0052b3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', boxShadow: '0 6px 16px rgba(2,108,223,0.35)' }}>
+              <Smartphone size={22} color="white" />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px', color: '#111' }}>VIP</h3>
+            <p style={{ fontSize: '13px', color: '#999', margin: '0 0 20px' }}>Pay via M-Pesa STK Push</p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '24px' }}>
+              <span style={{ fontSize: '38px', fontWeight: 900, color: '#026cdf', letterSpacing: '-1px', lineHeight: 1 }}>2,500</span>
+              <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>KES / mo</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, marginBottom: '24px' }}>
+              {sharedFeatures.map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ backgroundColor: '#e6f2ff', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Check size={12} color="#026cdf" strokeWidth={3} />
+                  </div>
+                  <span style={{ fontSize: '13px', color: '#333', fontWeight: 600 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+
+            {isVIP ? (
+              <div style={{ width: '100%', padding: '13px', borderRadius: '12px', backgroundColor: '#f0f7ff', border: '1.5px solid #b3d9ff', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: '#026cdf' }}>
+                ✓ Your Current Plan
+              </div>
+            ) : cryptoSettings.mpesaEnabled ? (
+              <button onClick={() => handleUpgradeClick('mpesa')} style={{
+                width: '100%', padding: '14px 16px', borderRadius: '12px', border: 'none',
+                background: 'linear-gradient(135deg, #026cdf, #0052b3)', color: 'white',
+                fontSize: '14px', fontWeight: 800, cursor: 'pointer',
+                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
+                boxShadow: '0 6px 18px rgba(2,108,223,0.35)', transition: 'opacity 0.15s, transform 0.1s'
+              }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+                onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                Pay with M-Pesa <ArrowRight size={16} />
+              </button>
+            ) : (
+              <div style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', backgroundColor: '#fff8e1', border: '1px solid #ffe082', textAlign: 'center', fontSize: '12px', color: '#c97300' }}>
+                <div style={{ fontWeight: 700, marginBottom: '3px' }}>🔧 M-Pesa — Under Maintenance</div>
+                {cryptoSettings.cryptoEnabled && <div style={{ fontWeight: 600 }}>Please use <strong>₿ Crypto</strong> instead.</div>}
+              </div>
+            )}
+          </div>
+
+          {/* ── VIP CRYPTO CARD ── */}
+          <div style={{
+            flex: '1 1 260px', maxWidth: '300px', backgroundColor: 'white',
+            borderRadius: '24px', padding: '28px 24px', position: 'relative',
+            border: '2px solid #34c759', boxShadow: '0 20px 60px rgba(40,160,68,0.12)',
+            display: 'flex', flexDirection: 'column', transition: 'transform 0.25s, box-shadow 0.25s'
+          }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 28px 70px rgba(40,160,68,0.2)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 20px 60px rgba(40,160,68,0.12)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+          >
+            <div style={{ position: 'absolute', top: '-13px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(90deg, #34c759, #28a044)', color: 'white', fontSize: '11px', fontWeight: 800, padding: '4px 16px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '1px', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(40,160,68,0.35)' }}>
+              ₿ Crypto / USDT
+            </div>
+
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #34c759, #28a044)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', boxShadow: '0 6px 16px rgba(40,160,68,0.35)' }}>
+              <Bitcoin size={22} color="white" />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px', color: '#111' }}>VIP</h3>
+            <p style={{ fontSize: '13px', color: '#999', margin: '0 0 20px' }}>Pay via Crypto / USDT</p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '24px' }}>
+              <span style={{ fontSize: '38px', fontWeight: 900, color: '#28a044', letterSpacing: '-1px', lineHeight: 1 }}>$20</span>
+              <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>USDT / mo</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, marginBottom: '24px' }}>
+              {sharedFeatures.map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ backgroundColor: '#f0fff4', borderRadius: '50%', padding: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Check size={12} color="#28a044" strokeWidth={3} />
+                  </div>
+                  <span style={{ fontSize: '13px', color: '#333', fontWeight: 600 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+
+            {isVIP ? (
+              <div style={{ width: '100%', padding: '13px', borderRadius: '12px', backgroundColor: '#f0fff4', border: '1.5px solid #b2f0c8', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: '#28a044' }}>
+                ✓ Your Current Plan
+              </div>
+            ) : cryptoSettings.cryptoEnabled ? (
+              <button onClick={() => handleUpgradeClick('crypto')} style={{
+                width: '100%', padding: '14px 16px', borderRadius: '12px', border: 'none',
+                background: 'linear-gradient(135deg, #34c759, #28a044)', color: 'white',
+                fontSize: '14px', fontWeight: 800, cursor: 'pointer',
+                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
+                boxShadow: '0 6px 18px rgba(40,160,68,0.35)', transition: 'opacity 0.15s, transform 0.1s'
+              }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+                onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                Pay with Crypto <ArrowRight size={16} />
+              </button>
+            ) : (
+              <div style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', backgroundColor: '#fff8e1', border: '1px solid #ffe082', textAlign: 'center', fontSize: '12px', color: '#c97300' }}>
+                <div style={{ fontWeight: 700, marginBottom: '3px' }}>🔧 Crypto — Under Maintenance</div>
+                {cryptoSettings.mpesaEnabled && <div style={{ fontWeight: 600 }}>Please use <strong>📱 M-Pesa</strong> instead.</div>}
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
 
-      {/* Modal */}
+      {/* ── Modal ── */}
       {showModal && selectedPlan && (
         <div style={{
           position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)',
@@ -347,12 +372,12 @@ export default function Pricing() {
             <div style={{ background: '#f8fafc', padding: '14px 16px', borderRadius: '12px', border: '1px solid #eef2f7', marginBottom: '22px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ color: '#999', fontSize: '13px' }}>Plan</span>
-                <span style={{ fontWeight: 800, color: '#111', fontSize: '13px' }}>{selectedPlan.name}</span>
+                <span style={{ fontWeight: 800, color: '#111', fontSize: '13px' }}>VIP</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #eef2f7' }}>
                 <span style={{ color: '#999', fontSize: '13px' }}>Amount</span>
                 <span style={{ fontWeight: 800, color: accent, fontSize: '16px' }}>
-                  {isMpesa ? `KES ${selectedPlan.price}` : `$${selectedPlan.cryptoPrice} USDT`}
+                  {isMpesa ? 'KES 2,500' : '$20 USDT'}
                 </span>
               </div>
             </div>
@@ -382,7 +407,7 @@ export default function Pricing() {
                 </div>
 
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#777', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-                  Send {selectedPlan.cryptoPrice} USDT to this address
+                  Send $20 USDT to this address
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#e8f4ff', padding: '12px', borderRadius: '10px', marginBottom: '18px' }}>
                   <code style={{ flex: 1, fontSize: '11px', fontWeight: 700, wordBreak: 'break-all', color: '#111', lineHeight: 1.7 }}>
@@ -433,7 +458,8 @@ export default function Pricing() {
                     width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
                     background: isDisabled ? '#e0e0e0' : `linear-gradient(135deg, ${accent}, ${accentDark})`,
                     color: isDisabled ? '#aaa' : 'white',
-                    fontSize: '15px', fontWeight: 800, cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    fontSize: '15px', fontWeight: 800,
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
                     display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
                     transition: 'opacity 0.2s',
                     boxShadow: isDisabled ? 'none' : `0 6px 20px ${accent}40`
@@ -441,7 +467,7 @@ export default function Pricing() {
                   onMouseEnter={e => { if (!isDisabled) e.currentTarget.style.opacity = '0.88'; }}
                   onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                 >
-                  {loading ? '⏳ Please wait...' : isMpesa ? `📱 Pay KES ${selectedPlan.price}` : `₿ Submit — $${selectedPlan.cryptoPrice} USDT`}
+                  {loading ? '⏳ Please wait...' : isMpesa ? '📱 Pay KES 2,500' : '₿ Submit — $20 USDT'}
                 </button>
               );
             })()}
