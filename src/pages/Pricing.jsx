@@ -132,6 +132,23 @@ export default function Pricing() {
         <div style={{ position: 'absolute', bottom: '-90px', right: '-30px', width: '320px', height: '320px', backgroundColor: 'rgba(0,0,0,0.07)', borderRadius: '50%' }} />
       </div>
 
+      {/* Benefits strip */}
+      <div style={{ background: 'white', borderBottom: '1px solid #eee', padding: '16px 20px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '24px' }}>
+          {[
+            { icon: '⚡', text: 'Instant Auto-Approve' },
+            { icon: '🎟️', text: 'Unlimited Tickets' },
+            { icon: '🛡️', text: 'Priority Support' },
+            { icon: '📵', text: 'No Recording Limits' },
+          ].map((b, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <span style={{ fontSize: '16px' }}>{b.icon}</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#444' }}>{b.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div style={{ padding: '40px 20px', maxWidth: '1100px', margin: '0 auto' }}>
 
         {isVIP && (
@@ -148,7 +165,6 @@ export default function Pricing() {
           </div>
         )}
 
-        {/* ── Section label ── */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <p style={{ fontSize: '12px', fontWeight: 800, color: '#bbb', letterSpacing: '1.5px', textTransform: 'uppercase', margin: 0 }}>
             Select a plan to get started
@@ -214,7 +230,10 @@ export default function Pricing() {
             <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #026cdf, #0052b3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', boxShadow: '0 6px 16px rgba(2,108,223,0.35)' }}>
               <Smartphone size={22} color="white" />
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px', color: '#111' }}>VIP</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#111' }}>VIP</h3>
+              <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px', backgroundColor: '#e8f4ff', color: '#026cdf', border: '1px solid #b3d9ff', letterSpacing: '0.5px' }}>🇰🇪 LOCAL PAYMENT</span>
+            </div>
             <p style={{ fontSize: '13px', color: '#999', margin: '0 0 20px' }}>Pay via M-Pesa STK Push</p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '24px' }}>
               <span style={{ fontSize: '38px', fontWeight: 900, color: '#026cdf', letterSpacing: '-1px', lineHeight: 1 }}>2,500</span>
@@ -259,6 +278,13 @@ export default function Pricing() {
             )}
           </div>
 
+          {/* OR divider */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', alignSelf: 'center', flexShrink: 0 }}>
+            <div style={{ width: '1px', height: '40px', backgroundColor: '#e0e0e0' }} />
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f5f5f5', border: '1.5px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: '#aaa' }}>OR</div>
+            <div style={{ width: '1px', height: '40px', backgroundColor: '#e0e0e0' }} />
+          </div>
+
           {/* ── VIP CRYPTO CARD ── */}
           <div style={{
             flex: '1 1 260px', maxWidth: '300px', backgroundColor: 'white',
@@ -276,11 +302,17 @@ export default function Pricing() {
             <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #34c759, #28a044)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', boxShadow: '0 6px 16px rgba(40,160,68,0.35)' }}>
               <Bitcoin size={22} color="white" />
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px', color: '#111' }}>VIP</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#111' }}>VIP</h3>
+              <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '20px', backgroundColor: '#f0fff4', color: '#28a044', border: '1px solid #b2f0c8', letterSpacing: '0.5px' }}>🌍 PAY GLOBALLY</span>
+            </div>
             <p style={{ fontSize: '13px', color: '#999', margin: '0 0 20px' }}>Pay via Crypto / USDT</p>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '24px' }}>
-              <span style={{ fontSize: '38px', fontWeight: 900, color: '#28a044', letterSpacing: '-1px', lineHeight: 1 }}>$20</span>
-              <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>USDT / mo</span>
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                <span style={{ fontSize: '38px', fontWeight: 900, color: '#28a044', letterSpacing: '-1px', lineHeight: 1 }}>$20</span>
+                <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>USDT / mo</span>
+              </div>
+              <div style={{ fontSize: '11px', color: '#bbb', fontWeight: 600, marginTop: '3px' }}>≈ KES 2,600 at current rates</div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, marginBottom: '24px' }}>
@@ -322,6 +354,25 @@ export default function Pricing() {
           </div>
 
         </div>
+
+        {/* Trust badges */}
+        <div style={{ marginTop: '48px', textAlign: 'center' }}>
+          <p style={{ fontSize: '11px', fontWeight: 700, color: '#ccc', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>Trusted & Secure Payments</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12px' }}>
+            {[
+              { icon: '🔒', label: 'SSL Encrypted' },
+              { icon: '⚡', label: 'Instant Activation' },
+              { icon: '🛡️', label: 'Admin Verified' },
+              { icon: '↩️', label: 'Cancel Anytime' },
+            ].map((t, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'white', padding: '8px 14px', borderRadius: '20px', border: '1px solid #eaeaea', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                <span style={{ fontSize: '13px' }}>{t.icon}</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#666' }}>{t.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
 
       {/* ── Modal ── */}
