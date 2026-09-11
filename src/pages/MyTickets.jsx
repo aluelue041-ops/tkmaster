@@ -730,7 +730,7 @@ export default function MyTickets() {
         {/* Banner Container */}
         <div style={{ position: 'relative', minHeight: '380px' }}>
           {/* Background Image */}
-          <div className="ticket-image-container">{image ? <img src={image} alt={selectedOrder.eventTitle} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <div className="ticket-image-container" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>{image ? <img src={image} alt={selectedOrder.eventTitle} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"; }} />
             : <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", background: "linear-gradient(135deg, #0f172a, #1e293b)" }} />
           }</div>
           
@@ -861,7 +861,7 @@ export default function MyTickets() {
                    {/* Left side: Image and details */}
                    <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                      {image ? (
-                       <img src={image} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }} />
+                       <img src={image} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }} onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"; }} />
                      ) : (
                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #026cdf, #004aad)', opacity: 0.4 }}></div>
                      )}
@@ -966,7 +966,7 @@ export default function MyTickets() {
                 className="ticket-card-premium"
               >
                 {/* Event Banner */}
-                <div className="ticket-image-container">{image ? <img src={image} alt={ticket.eventTitle} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
+                <div className="ticket-image-container" style={{ position: 'relative', width: '100%', height: '140px', overflow: 'hidden' }}>{image ? <img src={image} alt={ticket.eventTitle} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"; }} />
                   : <div style={{ width: '100%', height: '140px', background: 'linear-gradient(135deg, #026cdf, #004aad)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <TicketIcon size={48} color="rgba(255,255,255,0.4)" /></div>}</div>
 

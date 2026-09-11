@@ -1519,12 +1519,7 @@ cron.schedule('*/10 * * * *', async () => {
             subject: `You received ${record.payload.length} ticket(s) for ${record.payload.eventTitle}!`,
             html: record.payload.emailHtml,
             attachments: []
-
-
-
-
-
-
+          });
           sent = true;
         } else if (record.type === 'approved') {
           await resend.emails.send({

@@ -200,7 +200,7 @@ export default function MyAccount() {
           <div className="settings-item" onClick={() => navigate('/pricing')} style={{ cursor: 'pointer' }}>
             <div className="settings-item-left">
               <Zap size={20} color="#026cdf" />
-              <span style={{ fontWeight: 600, color: '#026cdf' }}>Subscription Plans (M-Pesa & Crypto)</span>
+              <span style={{ fontWeight: 600, color: '#026cdf' }}>Subscription Plans (M-Pesa)</span>
             </div>
             <ChevronRight size={20} color="#ccc" />
           </div>
