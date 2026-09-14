@@ -909,8 +909,8 @@ app.post('/api/events', authMiddleware, eventManagerMiddleware, async (req, res)
     const notification = new Notification({
       userId: null, // null = global (all users)
       type: 'new_event',
-      title: 'ðŸŽŸï¸ New Event Posted!',
-      message: `${newEvent.title} â€” ${newEvent.date} at ${newEvent.location}`,
+      title: '\uD83C\uDFAB New Event Posted!',
+      message: `${newEvent.title} - ${newEvent.date} at ${newEvent.location}`,
       eventId: newEvent._id.toString(),
       eventImage: newEvent.image || null
     });
