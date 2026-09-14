@@ -356,7 +356,7 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
       const W = 210;
       const H = 148;
 
-      const fetchBase64 = async (url) => {
+              const fetchBase64 = async (url) => {
           return new Promise((resolve) => {
             const img = new Image();
             img.crossOrigin = 'Anonymous';
@@ -368,8 +368,12 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
               ctx.drawImage(img, 0, 0);
               resolve(canvas.toDataURL('image/jpeg', 0.8));
             };
-            img.onerror = () => resolve(null);
-            img.src = url;
+            img.onerror = (e) => {
+              console.error('PDF image load error', e);
+              resolve(null);
+            };
+            // Append cache buster to prevent CORS cache issues
+            img.src = url.includes('?') ? url + '&_cb=' + Date.now() : url + '?_cb=' + Date.now();
           });
         };
 
