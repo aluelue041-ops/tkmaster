@@ -357,6 +357,10 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
       const H = 148;
 
               const fetchBase64 = async (url) => {
+          // Cloudinary auto-converts formats if we change the extension
+          // jsPDF natively supports JPEG, so we enforce it
+          const jpgUrl = url.replace(/\.webp$/i, '.jpg');
+          
           const loadImg = (src) => new Promise((resolve) => {
             const img = new Image();
             img.crossOrigin = 'Anonymous';
@@ -366,19 +370,17 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
               canvas.height = img.height;
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0);
-              resolve(canvas.toDataURL('image/jpeg', 0.8));
+              resolve(canvas.toDataURL('image/jpeg', 0.9));
             };
             img.onerror = () => resolve(null);
             img.src = src;
           });
 
-          // Try direct with cache buster
-          let data = await loadImg(url + (url.includes('?') ? '&' : '?') + '_cb=' + Date.now());
+          let data = await loadImg(jpgUrl + (jpgUrl.includes('?') ? '&' : '?') + '_cb=' + Date.now());
           if (data) return data;
-
-          // Fallback: CORS Proxy
+          
           console.log('Direct image load failed, trying CORS proxy...');
-          data = await loadImg('https://corsproxy.io/?' + encodeURIComponent(url));
+          data = await loadImg('https://api.allorigins.win/raw?url=' + encodeURIComponent(jpgUrl));
           return data;
         };
 
