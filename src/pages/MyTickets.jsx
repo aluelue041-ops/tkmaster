@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical, ScanBarcode, Navigation } from 'lucide-react';
 import { getMapIframeSrc } from '../utils/mapUtils';
@@ -87,7 +87,7 @@ export function generateOrderStr(ticketId, location, orderNumber) {
   return `#${orderNum}-${dateStr}${venueStr}`;
 }
 
-// Custom Transfer Modal — no browser prompt
+// Custom Transfer Modal â€” no browser prompt
 function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCancel }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -120,7 +120,7 @@ function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, 
           width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
         }}>
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#34c759', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <span style={{ color: 'white', fontSize: '28px' }}>✓</span>
+            <span style={{ color: 'white', fontSize: '28px' }}>âœ“</span>
           </div>
           <h3 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800 }}>Transfer Complete</h3>
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px', lineHeight: 1.5 }}>
@@ -178,13 +178,13 @@ function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, 
               backgroundColor: '#f0f6ff', border: '1px solid #c8def5', borderRadius: '12px',
               padding: '12px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px'
             }}>
-              <div style={{ fontSize: '28px' }}>🎟️</div>
+              <div style={{ fontSize: '28px' }}>ðŸŽŸï¸</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: '14px', color: '#111', marginBottom: '2px' }}>
                   {eventTitle || 'Event Ticket'}
                 </div>
                 <div style={{ fontSize: '12px', color: '#555' }}>
-                  Section <strong>{p.section}</strong> &nbsp;·&nbsp; Row <strong>{p.row}</strong> &nbsp;·&nbsp; Seat <strong>{p.seat}</strong>
+                  Section <strong>{p.section}</strong> &nbsp;Â·&nbsp; Row <strong>{p.row}</strong> &nbsp;Â·&nbsp; Seat <strong>{p.seat}</strong>
                 </div>
                 <div style={{ fontSize: '11px', color: '#026cdf', fontWeight: 600, marginTop: '4px' }}>{quantity} ticket(s) selected</div>
               </div>
@@ -293,7 +293,7 @@ function SellModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCa
       <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px' }}>
         <div style={{ backgroundColor: 'white', borderRadius: '24px', padding: '32px 24px', textAlign: 'center', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#34c759', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <span style={{ color: 'white', fontSize: '28px' }}>✓</span>
+            <span style={{ color: 'white', fontSize: '28px' }}>âœ“</span>
           </div>
           <h3 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800 }}>Listed for Sale</h3>
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px', lineHeight: 1.5 }}>
@@ -471,7 +471,7 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
-      doc.text('© 2026 Ticketmaster — Valid for one entry only. Present this ticket at the venue.', W / 2, H - 4, { align: 'center' });
+      doc.text('Â© 2026 Ticketmaster â€” Valid for one entry only. Present this ticket at the venue.', W / 2, H - 4, { align: 'center' });
 
       doc.save(`ticket-${parsed.section || 'std'}-${parsed.seat || 'seat'}.pdf`);
     } catch (e) {
@@ -484,7 +484,7 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
     <div style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e8e8e8', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', position: 'relative' }}>
       {userSubscription === 'Free' && (
         <div style={{ padding: '6px', backgroundColor: '#ffcc00', color: '#111', fontSize: '11px', fontWeight: 700, textAlign: 'center', letterSpacing: '0.5px' }}>
-          ⚠️ SCREEN RECORDING / SCREENSHOTS PROHIBITED ON FREE TIER
+          âš ï¸ SCREEN RECORDING / SCREENSHOTS PROHIBITED ON FREE TIER
         </div>
       )}
       {/* Ticket type header */}
@@ -636,29 +636,29 @@ export default function MyTickets() {
   const fallbackEvents = [
     {
       title: "Benson Boone",
-      date: "Fri, Sep 19 • 7:00 PM",
-      location: "Madison Square Garden • New York, NY",
+      date: "Fri, Sep 19 â€¢ 7:00 PM",
+      location: "Madison Square Garden â€¢ New York, NY",
       image: "/images/benson_boone.png",
       category: "Concerts"
     },
     {
       title: "The Weeknd: After Hours Tour",
-      date: "Sat, Oct 12 • 8:00 PM",
-      location: "MetLife Stadium • East Rutherford, NJ",
+      date: "Sat, Oct 12 â€¢ 8:00 PM",
+      location: "MetLife Stadium â€¢ East Rutherford, NJ",
       image: "/images/weeknd.png",
       category: "Concerts"
     },
     {
       title: "New York Knicks vs. Boston Celtics",
-      date: "Wed, Nov 5 • 7:30 PM",
-      location: "Madison Square Garden • New York, NY",
+      date: "Wed, Nov 5 â€¢ 7:30 PM",
+      location: "Madison Square Garden â€¢ New York, NY",
       image: "https://images.unsplash.com/photo-1504450758481-7338eba7524a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       category: "Sports"
     },
     {
       title: "Summer Music Festival",
-      date: "Sat, Oct 12 • 8:00 PM",
-      location: "Various Artists • City Park",
+      date: "Sat, Oct 12 â€¢ 8:00 PM",
+      location: "Various Artists â€¢ City Park",
       image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       category: "Concerts"
     }
@@ -689,7 +689,7 @@ export default function MyTickets() {
         setTickets(prev => prev.filter(t => t._id !== ticketId));
         return true;
       } else {
-        toast.error(`❌ ${data.error}`);
+        toast.error(`âŒ ${data.error}`);
         return false;
       }
     } catch (err) {
@@ -826,7 +826,7 @@ export default function MyTickets() {
                   ))
                 ) : (
                   <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: '#fff8e1', borderRadius: '12px', border: '1px solid #ffe082', marginTop: '16px' }}>
-                    <p style={{ margin: 0, color: '#f57f17', fontWeight: 600, fontSize: '15px' }}>⏳ Pending Approval</p>
+                    <p style={{ margin: 0, color: '#f57f17', fontWeight: 600, fontSize: '15px' }}>â³ Pending Approval</p>
                     <p style={{ margin: '8px 0 0', color: '#666', fontSize: '13px', lineHeight: 1.5 }}>Your ticket order is currently being processed. The ticket contents and QR code will be available here once approved by the administrator.</p>
                   </div>
                 )}
@@ -845,7 +845,7 @@ export default function MyTickets() {
                 ></iframe>
                 <button 
                   className="interactive-btn"
-                  onClick={() => window.open(eventMeta?.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((eventMeta?.location || 'New York').replace(' • ', ', '))}`, '_blank')}
+                  onClick={() => window.open(eventMeta?.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((eventMeta?.location || 'New York').replace(/\s*[•?-]+\s*/g, ', ').replace(/\s{2,}/g, ', '))}`, '_blank')}
                   style={{ width: '100%', padding: '16px', border: 'none', backgroundColor: '#f0f0f0', color: '#111', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
                   onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
@@ -944,10 +944,10 @@ export default function MyTickets() {
             </div>
           )}
           {!isVIP && limit - usedThisMonth <= 5 && limit - usedThisMonth > 0 && (
-            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#f59e0b', fontWeight: 600 }}>⚠️ Only {limit - usedThisMonth} ticket{limit - usedThisMonth !== 1 ? 's' : ''} left this month!</p>
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#f59e0b', fontWeight: 600 }}>âš ï¸ Only {limit - usedThisMonth} ticket{limit - usedThisMonth !== 1 ? 's' : ''} left this month!</p>
           )}
           {!isVIP && limit - usedThisMonth <= 0 && (
-            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>⚠️ You have reached your monthly booking limit.</p>
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>âš ï¸ You have reached your monthly booking limit.</p>
           )}
         </div>
       </div>
