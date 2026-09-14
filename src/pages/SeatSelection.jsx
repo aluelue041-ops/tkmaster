@@ -362,7 +362,7 @@ export default function SeatSelection() {
                 <text x="11" y="159" textAnchor="middle" fill="#666" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="2" transform="rotate(-90,11,159)">WEST</text>
                 <text x="469" y="159" textAnchor="middle" fill="#666" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="2" transform="rotate(90,469,159)">EAST</text>
 
-                {/* ── STAGE (left / west side) ── */}
+                {/* 🏟️ STAGE (left / west side) ── */}
                 <rect x="62" y="122" width="100" height="62" rx="4" fill="#f0f0f0"/>
                 <rect x="162" y="137" width="130" height="32" rx="3" fill="#f0f0f0"/>
                 <rect x="200" y="108" width="52" height="29" rx="3" fill="#f0f0f0"/>
@@ -828,8 +828,7 @@ export default function SeatSelection() {
                 onClick={() => navigate('/pricing')}
                 style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', backgroundColor: '#026cdf', color: 'white', fontSize: '16px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px rgba(2,108,223,0.3)' }}
               >
-                View Packages & Upgrade ✨
-              </button>
+                View Packages & Upgrade ✨ </button>
               <button
                 onClick={() => setShowLimitModal(false)}
                 style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #e0e0e0', backgroundColor: 'white', color: '#666', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}

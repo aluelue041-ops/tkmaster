@@ -343,8 +343,8 @@ export default function Pricing() {
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '8px', textTransform: 'uppercase' }}>Select Network</label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
                   {[
-                    { id: 'USDT-TRC20', label: '💰 USDT', sub: 'TRC20 (Tron)' },
-                    { id: 'USDT-ERC20', label: '💰 USDT', sub: 'ERC20 (Ethereum)' },
+                    { id: 'USDT-TRC20', label: '💵 USDT', sub: 'TRC20 (Tron)' },
+                    { id: 'USDT-ERC20', label: '💵 USDT', sub: 'ERC20 (Ethereum)' },
                     { id: 'BTC',        label: '₿ Bitcoin', sub: 'BTC Network' }
                   ].map(w => (
                     <button

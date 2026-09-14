@@ -202,8 +202,7 @@ export default function SignIn() {
               {loading ? (isLogin ? 'Signing In...' : 'Creating Account...') : (isLogin ? 'Sign In' : 'Sign Up')}
             </button>
             {!serverReady && (
-              <p style={{ textAlign: 'center', fontSize: '12px', color: '#aaa', marginTop: '8px' }}>
-                ⚡ Waking up server, first load may take ~30s...
+              <p style={{ textAlign: 'center', fontSize: '12px', color: '#aaa', marginTop: '8px'⏳ Waking up server, first load may take ~30s...
               </p>
             )}
           </form>
