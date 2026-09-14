@@ -755,7 +755,7 @@ export default function MyTickets() {
           {/* Floating Event Info Card */}
           <div style={{ position: 'absolute', bottom: '0', left: '20px', right: '20px', zIndex: 10 }}>
             {/* Date Tab */}
-            <div style={{ display: 'inline-block', background: "rgba(255,255,255,0.9)", backdropFilter: "blur(10px)", color: "#111", padding: "12px 24px", borderRadius: "12px 12px 0 0", boxShadow: "0 -4px 16px rgba(0,0,0,0.1)", color: '#fff', fontSize: '12px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
+            <div style={{ display: 'inline-block', background: "#111", color: "#ffffff", padding: "10px 20px", borderRadius: "10px 10px 0 0", fontSize: '12px', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase' }}>
               {eventMeta?.date || 'Upcoming Event'}
             </div>
             
