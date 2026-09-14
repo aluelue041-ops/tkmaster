@@ -664,15 +664,24 @@ export default function MyTickets() {
     }
   ];
 
-  const getEventImage = (eventTitle) => {
-    const safeTitle = eventTitle ? eventTitle.toLowerCase() : '';
-    const match = events.find(e => e.title?.toLowerCase() === safeTitle) || fallbackEvents.find(e => e.title?.toLowerCase() === safeTitle);
+  const getEventImage = (ticket) => {
+    const eventId = ticket?.eventId;
+    const safeTitle = ticket?.eventTitle ? ticket.eventTitle.toLowerCase().trim() : '';
+    let match = null;
+    if (eventId) match = events.find(e => e._id === eventId);
+    if (!match) match = events.find(e => e.title?.toLowerCase().trim() === safeTitle);
+    if (!match) match = fallbackEvents.find(e => e.title?.toLowerCase().trim() === safeTitle);
     return match?.image || null;
   };
 
-  const getEventMeta = (eventTitle) => {
-    const safeTitle = eventTitle ? eventTitle.toLowerCase() : '';
-    return events.find(e => e.title?.toLowerCase() === safeTitle) || fallbackEvents.find(e => e.title?.toLowerCase() === safeTitle) || null;
+  const getEventMeta = (ticket) => {
+    const eventId = ticket?.eventId;
+    const safeTitle = ticket?.eventTitle ? ticket.eventTitle.toLowerCase().trim() : '';
+    let match = null;
+    if (eventId) match = events.find(e => e._id === eventId);
+    if (!match) match = events.find(e => e.title?.toLowerCase().trim() === safeTitle);
+    if (!match) match = fallbackEvents.find(e => e.title?.toLowerCase().trim() === safeTitle);
+    return match || null;
   };
 
   const handleTransfer = async (ticketId, newEmail, name, phone, quantity, note, selectedSeat) => {
@@ -722,7 +731,7 @@ export default function MyTickets() {
 
   // Detailed ticket order view
   if (selectedOrder) {
-    const eventMeta = getEventMeta(selectedOrder.eventTitle);
+    const eventMeta = getEventMeta(selectedOrder);
     const image = eventMeta?.image;
 
     return (
@@ -957,8 +966,8 @@ export default function MyTickets() {
       ) : tickets.length > 0 ? (
         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {tickets.map(ticket => {
-            const image = getEventImage(ticket.eventTitle);
-            const meta = getEventMeta(ticket.eventTitle);
+            const image = getEventImage(ticket);
+            const meta = getEventMeta(ticket);
             return (
               <div
                 key={ticket._id}
