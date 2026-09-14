@@ -178,7 +178,7 @@ function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, 
               backgroundColor: '#f0f6ff', border: '1px solid #c8def5', borderRadius: '12px',
               padding: '12px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px'
             }}>
-              <div style={{ fontSize: '28px' }}>ðŸŽŸï¸</div>
+              <div style={{ fontSize: '28px' }}>🎫</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: '14px', color: '#111', marginBottom: '2px' }}>
                   {eventTitle || 'Event Ticket'}
@@ -481,14 +481,14 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
   };
 
   return (
-    <div style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e8e8e8', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', position: 'relative' }}>
+    <div style={{ marginBottom: '12px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e0e0e0', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', position: 'relative', borderLeft: '4px solid #026cdf' }}>
       {userSubscription === 'Free' && (
         <div style={{ padding: '6px', backgroundColor: '#ffcc00', color: '#111', fontSize: '11px', fontWeight: 700, textAlign: 'center', letterSpacing: '0.5px' }}>
-          âš ï¸ SCREEN RECORDING / SCREENSHOTS PROHIBITED ON FREE TIER
+          🚫 SCREEN RECORDING / SCREENSHOTS PROHIBITED ON FREE TIER
         </div>
       )}
       {/* Ticket type header */}
-      <div style={{ backgroundColor: '#f0f0f0', padding: '10px 16px', fontWeight: 700, fontSize: '13px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+      <div style={{ background: 'linear-gradient(135deg, #1a1a2e, #16213e)', padding: '10px 16px', fontWeight: 700, fontSize: '12px', color: '#cdd6f4', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         {ticketType || parsed.type}
       </div>
 
