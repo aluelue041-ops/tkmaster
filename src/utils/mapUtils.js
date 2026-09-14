@@ -1,4 +1,4 @@
-﻿export const getMapIframeSrc = (location, mapLink) => {
+export const getMapIframeSrc = (location, mapLink) => {
   if (mapLink) {
     if (mapLink.includes('output=embed') || mapLink.includes('/embed')) {
       const srcMatch = mapLink.match(/src="([^"]+)"/);
@@ -13,12 +13,12 @@
         const match = url.pathname.match(/\/place\/([^\/]+)/);
         if (match) query = decodeURIComponent(match[1].replace(/\+/g, ' '));
       }
-      if (query) return \https://maps.google.com/maps?q=\&t=&z=13&ie=UTF8&iwloc=&output=embed\;
+      if (query) return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
     } catch (e) {
-      return \https://maps.google.com/maps?q=\&t=&z=13&ie=UTF8&iwloc=&output=embed\;
+      return `https://maps.google.com/maps?q=${encodeURIComponent(mapLink)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
     }
   }
   const locString = location || 'New York';
-  const formattedLoc = locString.replace(/\s*[•?-]+\s*/g, ', ').replace(/\s{2,}/g, ', ');
-  return \https://maps.google.com/maps?q=\&t=&z=13&ie=UTF8&iwloc=&output=embed\;
+  const formattedLoc = locString.replace(/\s*[ \?-]+\s*/g, ', ').replace(/\s{2,}/g, ', ');
+  return `https://maps.google.com/maps?q=${encodeURIComponent(formattedLoc)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
 };
