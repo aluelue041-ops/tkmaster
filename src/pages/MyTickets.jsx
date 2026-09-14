@@ -357,16 +357,21 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
       const H = 148;
 
       const fetchBase64 = async (url) => {
-        try {
-          const res = await fetch(url);
-          const blob = await res.blob();
-          return new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              resolve(canvas.toDataURL('image/jpeg', 0.8));
+            };
+            img.onerror = () => resolve(null);
+            img.src = url;
           });
-        } catch { return null; }
-      };
+        };
 
       let imgData = null;
       if (eventImage) {
