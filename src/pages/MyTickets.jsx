@@ -845,7 +845,7 @@ export default function MyTickets() {
               <div style={{ border: '1px solid #eee', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'white' }}>
                 <iframe
                   width="100%"
-                  height="180"
+                  height="220"
                   frameBorder="0"
                   style={{ border: 0, display: 'block' }}
                   src={getMapIframeSrc(eventMeta?.location, eventMeta?.mapLink)}
@@ -859,7 +859,7 @@ export default function MyTickets() {
                   onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
                   onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
                 >
-                  <Navigation size={18} color="#111" />
+                  <Navigation size={18} color="white" />
                   Get Directions
                 </button>
               </div>
