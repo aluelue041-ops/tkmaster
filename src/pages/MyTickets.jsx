@@ -120,7 +120,7 @@ function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, 
           width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
         }}>
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#34c759', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <span style={{ color: 'white', fontSize: '28px' }}>\u2714</span>
+            <span style={{ color: 'white', fontSize: '28px' }}>{"\u2714"}</span>
           </div>
           <h3 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800 }}>Transfer Complete</h3>
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px', lineHeight: 1.5 }}>
@@ -293,7 +293,7 @@ function SellModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCa
       <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px' }}>
         <div style={{ backgroundColor: 'white', borderRadius: '24px', padding: '32px 24px', textAlign: 'center', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#34c759', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <span style={{ color: 'white', fontSize: '28px' }}>âœ“</span>
+            <span style={{ color: 'white', fontSize: '28px' }}>{"\u2714"}</span>
           </div>
           <h3 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800 }}>Listed for Sale</h3>
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px', lineHeight: 1.5 }}>
