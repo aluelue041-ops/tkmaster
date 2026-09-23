@@ -498,6 +498,13 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
 
   return (
     <div style={{ marginBottom: '12px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e0e0e0', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', position: 'relative', borderLeft: '4px solid #026cdf' }}>
+      {/* Hidden always-mounted download trigger — used by "Download All" */}
+      <button
+        id={`stub-dl-btn-${ticketId}-${seatIndex ?? 0}`}
+        onClick={downloadPDF}
+        style={{ display: 'none' }}
+        aria-hidden="true"
+      />
       {userSubscription === 'Free' && (
         <div style={{ padding: '6px', backgroundColor: '#ffcc00', color: '#111', fontSize: '11px', fontWeight: 700, textAlign: 'center', letterSpacing: '0.5px' }}>
           🚫 SCREEN RECORDING / SCREENSHOTS PROHIBITED ON FREE TIER
@@ -555,7 +562,6 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
           )}
 
           <button
-            id={`stub-dl-btn-${ticketId}-${seatIndex ?? 0}`}
             onClick={downloadPDF}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
