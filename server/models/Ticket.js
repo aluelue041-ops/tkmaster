@@ -10,6 +10,7 @@ const TicketSchema = new mongoose.Schema({
   guestName: { type: String },
   eventId: { type: String, required: true },
   eventTitle: { type: String, required: true },
+  eventImage: { type: String, default: null },
   seats: [String],
   totalPrice: { type: Number, required: true },
   currency: { type: String, default: '$' },

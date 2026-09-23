@@ -688,6 +688,8 @@ export default function MyTickets() {
   ];
 
   const getEventImage = (ticket) => {
+    // Use the image stored directly on the ticket first (survives transfers)
+    if (ticket?.eventImage) return ticket.eventImage;
     const eventId = ticket?.eventId;
     const safeTitle = ticket?.eventTitle ? ticket.eventTitle.toLowerCase().trim() : '';
     let match = null;
@@ -989,7 +991,7 @@ export default function MyTickets() {
                   width: '100%', padding: '14px', border: '2px solid #026cdf',
                   borderRadius: '12px', backgroundColor: '#f0f6ff',
                   color: '#026cdf', fontSize: '15px', fontWeight: 700,
-                  cursor: 'pointer', display: 'flex', alignItems: 'center',
+                  cursor: 'pointer', display: 'none', alignItems: 'center',
                   justifyContent: 'center', gap: '8px', marginBottom: '16px',
                   transition: 'all 0.2s ease'
                 }}

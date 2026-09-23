@@ -246,6 +246,7 @@ export default function SeatSelection() {
         body: JSON.stringify({
           eventId: id || 'trending',
           eventTitle: eventTitle,
+          eventImage: event?.image || null,
           seats: seats,
           totalPrice,
           currency

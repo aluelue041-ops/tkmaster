@@ -484,7 +484,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // 4. Book Tickets
 app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, res) => {
   try {
-    const { eventId, eventTitle, seats, totalPrice, currency } = req.body;
+    const { eventId, eventTitle, seats, totalPrice, currency, eventImage } = req.body;
 
     // Auto-increment order number
     const orderCount = await Ticket.countDocuments();
@@ -493,7 +493,7 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
     // Check user subscription for auto-approval and limits
     const user = await User.findById(req.user.id);
 
-    // Check if subscription has expired â†’ revert to Free
+    // Check if subscription has expired → revert to Free
     let subscription = user ? (user.subscription || 'Free') : 'Free';
     if (subscription !== 'Free' && user.subscriptionExpiresAt && new Date() > user.subscriptionExpiresAt) {
       subscription = 'Free';
@@ -532,12 +532,14 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       user: req.user.id,
       eventId,
       eventTitle,
+      eventImage: eventImage || null,
       seats,
       totalPrice,
       currency: currency || '$',
       status: autoApprove ? 'Approved' : 'Pending',
       orderNumber
     });
+
 
     await newTicket.save();
 
@@ -632,6 +634,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
         guestName: newUser ? undefined : name,
         eventId: ticket.eventId,
         eventTitle: ticket.eventTitle,
+        eventImage: ticket.eventImage || null,
         seats: transferredSeats,
         totalPrice: transferredPrice,
         currency: ticket.currency,
