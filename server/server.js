@@ -133,7 +133,7 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
           ticketType: ticket.ticketType
         });
         attachments.push({
-          content: pdfBuffer,
+          content: pdfBuffer.toString('base64'),
           filename: `Ticket-${i+1}.pdf`,
           content_type: 'application/pdf'
         });
@@ -681,7 +681,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
           });
           
           attachments.push({
-            content: pdfBuffer,
+            content: pdfBuffer.toString('base64'),
             filename: `Ticket-${i+1}.pdf`,
             content_type: 'application/pdf'
           });
