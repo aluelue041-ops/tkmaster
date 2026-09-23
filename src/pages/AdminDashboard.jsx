@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const DEFAULT_EVENT = {
     title: '', date: '', eventDate: '', location: '', image: '',
     category: 'Concerts', currency: '$', basePrice: 80, mapLink: '', rowLabelType: 'numbers',
+    saleType: 'General Public Onsale',
     venueLayout: 'concert-oval',
     seatConfig: {
       vipStanding:  { rows: 0,  seats: 0,  enabled: true  },
@@ -263,6 +264,7 @@ export default function AdminDashboard() {
       basePrice: event.basePrice || 80,
       mapLink: event.mapLink || '',
       rowLabelType: event.rowLabelType || 'numbers',
+      saleType: event.saleType || 'General Public Onsale',
       venueLayout: event.venueLayout || 'concert-oval',
       seatConfig: event.seatConfig || DEFAULT_EVENT.seatConfig,
     });
@@ -539,6 +541,15 @@ export default function AdminDashboard() {
                   <select value={newEvent.rowLabelType} onChange={e => setNewEvent({...newEvent, rowLabelType: e.target.value})} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }}>
                     <option value="numbers">Rows: Numbers (1, 2, 3...)</option>
                     <option value="letters">Rows: Letters (A, B, C...)</option>
+                  </select>
+                  <select value={newEvent.saleType || 'General Public Onsale'} onChange={e => setNewEvent({...newEvent, saleType: e.target.value})} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }}>
+                    <option value="ARMY Membership Presale">ARMY Membership Presale</option>
+                    <option value="ARMY Presale">ARMY Presale</option>
+                    <option value="General Public Onsale">General Public Onsale</option>
+                    <option value="VIP Presale">VIP Presale</option>
+                    <option value="Official Platinum">Official Platinum</option>
+                    <option value="Verified Fun Presale">Verified Fun Presale</option>
+                    <option value="General">General</option>
                   </select>
                 </div>
                 <div style={{ marginTop: '16px', marginBottom: '16px' }}>
