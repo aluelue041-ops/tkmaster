@@ -487,7 +487,7 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
-      doc.text('Â© 2026 Ticketmaster â€” Valid for one entry only. Present this ticket at the venue.', W / 2, H - 4, { align: 'center' });
+      doc.text('(c) 2026 Ticketmaster - Valid for one entry only. Present this ticket at the venue.', W / 2, H - 4, { align: 'center' });
 
       doc.save(`ticket-${parsed.section || 'std'}-${parsed.seat || 'seat'}.pdf`);
     } catch (e) {

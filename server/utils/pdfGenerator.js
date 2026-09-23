@@ -189,7 +189,7 @@ async function generateTicketPDF({ ticketId, eventTitle, eventImage, seatString,
       doc.fillColor('#969696')
          .font('Helvetica')
          .fontSize(9)
-         .text('\u00a9 2026 Ticketmaster \u2014 Valid for one entry only. Present this ticket at the venue.', 0, H - 20, { align: 'center', width: W });
+         .text('(c) 2026 Ticketmaster - Valid for one entry only. Present this ticket at the venue.', 0, H - 20, { align: 'center', width: W });
 
       doc.end();
     } catch (err) {
