@@ -449,6 +449,18 @@ export default function AdminDashboard() {
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>Loading Dashboard...</div>;
 
+  const tabFadeStyle = {
+    animation: 'adminTabFadeIn 0.25s ease forwards',
+  };
+
+  // Inject keyframes once
+  if (typeof document !== 'undefined' && !document.getElementById('admin-tab-anim')) {
+    const s = document.createElement('style');
+    s.id = 'admin-tab-anim';
+    s.textContent = `@keyframes adminTabFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`;
+    document.head.appendChild(s);
+  }
+
   return (
     <div className="page admin-dashboard dark-mode" style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)' }}>
       <div className="header" style={{ backgroundColor: 'var(--dark-bg)' }}>
@@ -478,26 +490,27 @@ export default function AdminDashboard() {
       </div>
 
       <div style={{ padding: '0 16px 16px', display: 'flex', gap: '8px' }}>
-        <button onClick={() => setActiveTab('events')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'events' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Events</button>
-        {currentUser?.role === 'superadmin' && (
-          <button onClick={() => setActiveTab('users')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'users' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Users</button>
-        )}
-        {currentUser?.role !== 'event_manager' && (
-          <button onClick={() => setActiveTab('tickets')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'tickets' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Tickets</button>
-        )}
-        {currentUser?.role !== 'event_manager' && (
-          <button onClick={() => setActiveTab('crypto')} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'crypto' ? 'var(--primary-color)' : '#323232', color: 'white', fontWeight: 600 }}>Crypto</button>
-        )}
+        {[['events','Events'], ...(currentUser?.role === 'superadmin' ? [['users','Users']] : []), ...(currentUser?.role !== 'event_manager' ? [['tickets','Tickets'],['crypto','Crypto']] : [])].map(([tab, label]) => (
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{
+            flex: 1, padding: '10px', borderRadius: '8px', border: 'none',
+            background: activeTab === tab ? 'var(--primary-color)' : '#323232',
+            color: 'white', fontWeight: 600, cursor: 'pointer',
+            transition: 'background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease',
+            transform: activeTab === tab ? 'translateY(-1px)' : 'translateY(0)',
+            boxShadow: activeTab === tab ? '0 4px 12px rgba(2,108,223,0.35)' : 'none',
+          }}>{label}</button>
+        ))}
       </div>
 
       <div style={{ padding: '16px' }}>
         {activeTab === 'events' && (
-          <div>
+          <div key="events" style={tabFadeStyle}>
             <div style={{ backgroundColor: '#323232', padding: '16px', borderRadius: '16px', marginBottom: '24px' }}>
               <h3 style={{ color: 'white', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Plus size={20} /> {editingEventId ? 'Edit Event' : 'Add New Event'}
               </h3>
-              <form onSubmit={handleAddEvent} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <form onSubmit={handleAddEvent} style={{ flex: '1 1 500px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <input type="text" placeholder="Event Title" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} required style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input type="text" placeholder="Display Date (e.g. Fri, Sep 19 • 7:00 PM)" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} required style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none' }} />
@@ -621,11 +634,47 @@ export default function AdminDashboard() {
                   )}
                 </div>
               </form>
+              
+              <div style={{ flex: '1 1 300px', position: 'sticky', top: '20px', background: 'var(--dark-bg, #222)', borderRadius: '16px', overflow: 'hidden', border: '1px solid #444', transition: 'all 0.3s ease' }}>
+                <div style={{ height: '180px', background: newEvent.image ? `url(${newEvent.image}) center/cover` : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {!newEvent.image && <span style={{ color: '#666', fontSize: '14px' }}>Image Preview</span>}
+                </div>
+                <div style={{ padding: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <h4 style={{ color: 'white', margin: 0, fontSize: '18px', lineHeight: 1.2 }}>{newEvent.title || 'Event Title Preview'}</h4>
+                    <span style={{ background: '#333', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', color: '#fff', whiteSpace: 'nowrap', marginLeft: '12px' }}>
+                      {newEvent.saleType || 'General Public Onsale'}
+                    </span>
+                  </div>
+                  <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Calendar size={12} /> {newEvent.date || 'Event Display Date'}
+                  </p>
+                  <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    📍 {newEvent.location || 'Event Location'}
+                  </p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #333', paddingTop: '12px' }}>
+                    <div>
+                      <span style={{ color: '#888', fontSize: '10px', display: 'block' }}>Starting from</span>
+                      <span style={{ color: 'var(--primary-color, #026cdf)', fontWeight: 'bold', fontSize: '18px' }}>
+                        {newEvent.currency || '$'}{newEvent.basePrice || '0'}
+                      </span>
+                    </div>
+                    <button type="button" disabled style={{ background: 'var(--primary-color, #026cdf)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', opacity: 0.5 }}>
+                      Get Tickets
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
             </div>
 
             <h3 style={{ color: 'white' }}>Live Events</h3>
             {events.length === 0 ? (
-              <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No events currently live. Add one above!</p>
+              <div style={{ textAlign: 'center', padding: '40px 20px', background: '#323232', borderRadius: '16px', border: '1px dashed #555' }}>
+                <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>🎟️</span>
+                <h4 style={{ color: 'white', margin: '0 0 8px 0', fontSize: '18px' }}>No Events Yet</h4>
+                <p style={{ color: '#aaa', margin: 0, fontSize: '14px' }}>Get started by creating your first event above.</p>
+              </div>
             ) : (
               events.map(event => (
                 <div key={event._id} style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: '#323232', padding: '12px', borderRadius: '12px', marginBottom: '12px' }}>
@@ -649,7 +698,7 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === 'users' && (
-          <div>
+          <div key="users" style={tabFadeStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
               <h3 style={{ color: 'white', margin: 0 }}>Registered Users</h3>
               <input 
@@ -661,7 +710,11 @@ export default function AdminDashboard() {
               />
             </div>
             {filteredUsers.length === 0 ? (
-              <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No users found.</p>
+              <div style={{ textAlign: 'center', padding: '40px 20px', background: '#323232', borderRadius: '16px', border: '1px dashed #555' }}>
+                <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>👥</span>
+                <h4 style={{ color: 'white', margin: '0 0 8px 0', fontSize: '18px' }}>No Users Found</h4>
+                <p style={{ color: '#aaa', margin: 0, fontSize: '14px' }}>It looks like there are no users matching your search.</p>
+              </div>
             ) : (
               filteredUsers.map(user => (
                 <div key={user._id} style={{ backgroundColor: user.banned ? '#3a1a1a' : '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', border: user.banned ? '1px solid #ff3b3044' : 'none' }}>
@@ -721,7 +774,7 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === 'tickets' && (
-          <div>
+          <div key="tickets" style={tabFadeStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
               <h3 style={{ color: 'white', margin: 0 }}>All Tickets Sold</h3>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -748,7 +801,11 @@ export default function AdminDashboard() {
               </div>
             </div>
             {filteredTickets.length === 0 ? (
-              <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No tickets found matching your criteria.</p>
+              <div style={{ textAlign: 'center', padding: '40px 20px', background: '#323232', borderRadius: '16px', border: '1px dashed #555' }}>
+                <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>🎫</span>
+                <h4 style={{ color: 'white', margin: '0 0 8px 0', fontSize: '18px' }}>No Tickets Found</h4>
+                <p style={{ color: '#aaa', margin: 0, fontSize: '14px' }}>Try adjusting your search or filters to find what you're looking for.</p>
+              </div>
             ) : (
               filteredTickets.map(ticket => {
                 const meta = getEventMeta(ticket.eventTitle);

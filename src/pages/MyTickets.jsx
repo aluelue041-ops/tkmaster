@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical, ScanBarcode, Navigation } from 'lucide-react';
 import { getMapIframeSrc } from '../utils/mapUtils';
@@ -344,7 +344,7 @@ function SellModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCa
   );
 }
 
-function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats, ticketType, userSubscription }) {
+function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats, ticketType, userSubscription, seatIndex }) {
   const [showActions, setShowActions] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
@@ -555,6 +555,7 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
           )}
 
           <button
+            id={`stub-dl-btn-${ticketId}-${seatIndex ?? 0}`}
             onClick={downloadPDF}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
@@ -827,6 +828,34 @@ export default function MyTickets() {
             </div>
             <p style={{ color: '#888', fontSize: '13px', margin: '0 0 16px' }}>x{selectedOrder.seats.length} Tickets</p>
 
+            {/* Download All button for multi-seat approved orders */}
+            {selectedOrder.seats.length > 1 && ['Approved', 'Active'].includes(selectedOrder.status) && (
+              <button
+                onClick={async () => {
+                  toast.info(`Downloading ${selectedOrder.seats.length} tickets...`);
+                  for (let i = 0; i < selectedOrder.seats.length; i++) {
+                    // Small delay between downloads so the browser doesn't block them
+                    await new Promise(r => setTimeout(r, i * 400));
+                    const btn = document.getElementById(`stub-dl-btn-${selectedOrder._id}-${i}`);
+                    if (btn) btn.click();
+                  }
+                }}
+                style={{
+                  width: '100%', padding: '14px', border: '2px solid #026cdf',
+                  borderRadius: '12px', backgroundColor: '#f0f6ff',
+                  color: '#026cdf', fontSize: '15px', fontWeight: 700,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', gap: '8px', marginBottom: '16px',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={e => { e.currentTarget.style.backgroundColor = '#026cdf'; e.currentTarget.style.color = 'white'; }}
+                onMouseOut={e => { e.currentTarget.style.backgroundColor = '#f0f6ff'; e.currentTarget.style.color = '#026cdf'; }}
+              >
+                <Download size={18} />
+                Download All {selectedOrder.seats.length} Tickets
+              </button>
+            )}
+
           {activeTab === 'Tickets' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
@@ -834,6 +863,7 @@ export default function MyTickets() {
                   selectedOrder.seats.map((seatStr, idx) => (
                     <TicketStub
                       key={idx}
+                      seatIndex={idx}
                       seatString={seatStr}
                       ticketId={selectedOrder._id}
                       orderNumber={generateOrderStr(selectedOrder._id, eventMeta?.location, selectedOrder.orderNumber)}

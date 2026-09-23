@@ -1,4 +1,4 @@
-﻿const PDFDocument = require('pdfkit');
+const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
 
 async function fetchImageBuffer(url) {
@@ -65,8 +65,26 @@ async function generateTicketPDF({ ticketId, eventTitle, eventImage, seatString,
       // ── Background ────────────────────────────────────
       doc.rect(0, 0, W, H).fillColor('#ffffff').fill();
 
+      // ── Subtle diagonal watermark pattern ─────────────
+      doc.save();
+      doc.opacity(0.04);
+      doc.fillColor('#026cdf').font('Helvetica-Bold').fontSize(11);
+      for (let wy = -20; wy < H + 40; wy += 55) {
+        for (let wx = -60; wx < W + 80; wx += 160) {
+          doc.save();
+          doc.translate(wx, wy);
+          doc.rotate(-30, { origin: [0, 0] });
+          doc.text('TICKETMASTER', 0, 0);
+          doc.restore();
+        }
+      }
+      doc.restore();
+
       // ── Blue Header ───────────────────────────────────
       doc.rect(0, 0, W, 65).fillColor('#026cdf').fill();
+      // Premium accent stripe below header
+      doc.rect(0, 65, W, 3).fillColor('#0055bb').fill();
+      doc.rect(0, 68, W, 1).fillColor('#004499').fill();
 
       // Brand
       doc.fillColor('#ffffff')
