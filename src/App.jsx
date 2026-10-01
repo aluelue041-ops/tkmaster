@@ -235,6 +235,55 @@ function Header() {
   );
 }
 
+function InstallPrompt() {
+  const [show, setShow] = React.useState(false);
+
+  React.useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+      setShow(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    
+    if (window.deferredPrompt) {
+      setShow(true);
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: '80px', left: '16px', right: '16px',
+      background: 'white', padding: '16px', borderRadius: '12px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.15)', zIndex: 1000,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <img src="/pwa-192x192.png" alt="logo" style={{ width: '40px', height: '40px', borderRadius: '8px' }} />
+        <div>
+          <h4 style={{ margin: 0, fontSize: '14px', color: '#111' }}>Install Ticketmaster</h4>
+          <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>Get the app for a better experience</p>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button onClick={() => setShow(false)} style={{ background: 'none', border: 'none', color: '#666', padding: '8px', cursor: 'pointer', fontSize: '14px' }}>Later</button>
+        <button onClick={async () => {
+          if (window.deferredPrompt) {
+            window.deferredPrompt.prompt();
+            const { outcome } = await window.deferredPrompt.userChoice;
+            if (outcome === 'accepted') setShow(false);
+            window.deferredPrompt = null;
+          }
+        }} style={{ background: '#026cdf', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>Install</button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   React.useEffect(() => {
     const handleAuth = () => {
@@ -276,6 +325,7 @@ function App() {
       <div className="app-container">
         <ToastContainer position="top-center" autoClose={4000} />
         <Header />
+        <InstallPrompt />
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Discover />} />

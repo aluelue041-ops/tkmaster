@@ -9,6 +9,9 @@ export default function MyAccount() {
   const [liveUser, setLiveUser] = useState(null);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [showIosModal, setShowIosModal] = useState(false);
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   const navigate = useNavigate();
   const [toastMessage, setToastMessage] = useState('');
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -33,17 +36,27 @@ export default function MyAccount() {
   }, [API]);
 
   const handleInstallApp = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+    if (isInStandaloneMode) {
+      setToastMessage('✅ App is already installed!');
+      setTimeout(() => setToastMessage(''), 3000);
+      return;
+    }
+    if (isIos) {
+      setShowIosModal(true);
+      return;
+    }
+    const promptEvent = window.deferredPrompt || deferredPrompt;
+    if (promptEvent) {
+      promptEvent.prompt();
+      const { outcome } = await promptEvent.userChoice;
       if (outcome === 'accepted') {
         setIsInstalled(true);
         setToastMessage('App installed successfully! 🎉');
       }
+      window.deferredPrompt = null;
       setDeferredPrompt(null);
     } else {
-      // iOS fallback
-      setToastMessage('On iPhone: tap Share → Add to Home Screen');
+      setToastMessage('Open in your mobile browser to install the app.');
       setTimeout(() => setToastMessage(''), 4000);
     }
   };
@@ -129,14 +142,51 @@ export default function MyAccount() {
           <div className="settings-group-title" style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'none', margin: 0 }}>
             App
           </div>
-          <div className="settings-item" onClick={handleInstallApp} style={{ cursor: 'pointer' }}>
+          <div className="settings-item" onClick={handleInstallApp} style={{ cursor: isInStandaloneMode ? 'default' : 'pointer', opacity: isInStandaloneMode ? 0.5 : 1 }}>
             <div className="settings-item-left">
               <Download size={20} color="#026cdf" />
-              <span style={{ color: '#026cdf', fontWeight: 600 }}>Install App on Device</span>
+              <span style={{ color: '#026cdf', fontWeight: 600 }}>
+                {isInStandaloneMode ? '✅ App Already Installed' : 'Install App on This Device'}
+              </span>
             </div>
-            <ChevronRight size={20} color="#ccc" />
+            {!isInStandaloneMode && <ChevronRight size={20} color="#ccc" />}
           </div>
         </div>
+
+        {/* iOS Install Modal */}
+        {showIosModal && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            zIndex: 9999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
+          }} onClick={() => setShowIosModal(false)}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: 'white', borderRadius: '20px 20px 0 0',
+              padding: '24px 20px 40px', width: '100%', maxWidth: '480px'
+            }}>
+              <div style={{ width: '40px', height: '4px', background: '#ddd', borderRadius: '2px', margin: '0 auto 20px' }} />
+              <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, textAlign: 'center' }}>Add to Home Screen</h3>
+              <p style={{ margin: '0 0 24px', color: '#666', fontSize: '14px', textAlign: 'center' }}>Follow these steps to install Ticketmaster on your iPhone</p>
+              {[
+                { step: '1', icon: '⬆️', text: 'Tap the Share button at the bottom of Safari' },
+                { step: '2', icon: '➕', text: 'Scroll down and tap "Add to Home Screen"' },
+                { step: '3', icon: '✅', text: 'Tap "Add" in the top-right corner to confirm' },
+              ].map(({ step, icon, text }) => (
+                <div key={step} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px', marginBottom: '8px', background: '#f8f9fa', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '28px' }}>{icon}</span>
+                  <div>
+                    <span style={{ fontWeight: 700, fontSize: '12px', color: '#026cdf' }}>STEP {step}</span>
+                    <p style={{ margin: '2px 0 0', fontSize: '14px', color: '#222' }}>{text}</p>
+                  </div>
+                </div>
+              ))}
+              <button onClick={() => setShowIosModal(false)} style={{
+                width: '100%', marginTop: '16px', padding: '14px', background: '#026cdf',
+                color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700,
+                fontSize: '16px', cursor: 'pointer'
+              }}>Got it!</button>
+            </div>
+          </div>
+        )}
 
         {/* Location Settings */}
         <div className="settings-group">
