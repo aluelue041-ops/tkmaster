@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, MapPin, Globe, Heart, CreditCard, HelpCircle, MessageSquare, BookOpen, ChevronRight, Bell, Download, Zap } from 'lucide-react';
+import { Mail, MapPin, Globe, Heart, CreditCard, HelpCircle, MessageSquare, BookOpen, ChevronRight, Bell, Download, Zap, User, Lock, Ticket } from 'lucide-react';
 
 export default function MyAccount() {
   const [receiveNotifs, setReceiveNotifs] = useState(false);
@@ -20,7 +20,6 @@ export default function MyAccount() {
     const storedUser = localStorage.getItem('user');
     if (storedUser) setUser(JSON.parse(storedUser));
 
-    // Fetch live user data for subscription info
     const token = localStorage.getItem('token');
     if (token) {
       fetch(`${API}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } })
@@ -34,6 +33,73 @@ export default function MyAccount() {
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, [API]);
+
+  // ─── AUTH GATE ────────────────────────────────────────────────────────────
+  if (!localStorage.getItem('token')) {
+    return (
+      <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(160deg,#0f1b35 0%,#022b6e 50%,#0a0a1a 100%)', position: 'relative', overflow: 'hidden' }}>
+        {/* Decorative blobs */}
+        <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '240px', height: '240px', borderRadius: '50%', background: 'rgba(2,108,223,0.25)', filter: 'blur(60px)' }} />
+        <div style={{ position: 'absolute', bottom: '80px', left: '-40px', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(100,60,220,0.2)', filter: 'blur(50px)' }} />
+
+        {/* Logo + Hero */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 28px 20px', textAlign: 'center', gap: '20px' }}>
+          <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'linear-gradient(135deg,#026cdf,#004aad)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px rgba(2,108,223,0.5)' }}>
+            <Ticket size={40} color="white" />
+          </div>
+          <div>
+            <h1 style={{ margin: '0 0 8px', fontSize: '28px', fontWeight: 900, color: 'white', letterSpacing: '-0.5px' }}>My Account</h1>
+            <p style={{ margin: 0, fontSize: '15px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>Sign in to view your tickets,<br/>manage your orders and more.</p>
+          </div>
+
+          {/* Feature highlights */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '320px', marginTop: '8px' }}>
+            {[
+              { icon: '🎫', label: 'View & manage your tickets' },
+              { icon: '🔔', label: 'Real-time event notifications' },
+              { icon: '🔄', label: 'Transfer or sell tickets easily' },
+              { icon: '⭐', label: 'Access VIP subscription plans' },
+            ].map(({ icon, label }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.07)', borderRadius: '12px', padding: '12px 16px', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <span style={{ fontSize: '20px' }}>{icon}</span>
+                <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', fontWeight: 500 }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA Buttons */}
+        <div style={{ padding: '20px 28px 48px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <button
+            id="auth-gate-signin-btn"
+            onClick={() => navigate('/signin')}
+            style={{ width: '100%', padding: '16px', background: 'linear-gradient(135deg,#026cdf,#004aad)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 6px 24px rgba(2,108,223,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', transition: 'all 0.2s' }}
+            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <Lock size={18} color="white" />
+            Sign In
+          </button>
+          <button
+            id="auth-gate-create-btn"
+            onClick={() => navigate('/signin?mode=register')}
+            style={{ width: '100%', padding: '16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: '14px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', backdropFilter: 'blur(8px)', transition: 'all 0.2s' }}
+            onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.18)'}
+            onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >
+            <User size={18} color="white" />
+            Create Account
+          </button>
+          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '12px', margin: '4px 0 0' }}>
+            By continuing, you agree to our Terms & Privacy Policy
+          </p>
+        </div>
+      </div>
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+
 
   const handleInstallApp = async () => {
     if (isInStandaloneMode) {
