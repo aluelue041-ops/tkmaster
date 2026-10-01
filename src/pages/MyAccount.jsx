@@ -94,6 +94,27 @@ export default function MyAccount() {
             By continuing, you agree to our Terms & Privacy Policy
           </p>
         </div>
+
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div style={{
+            position: 'fixed',
+            top: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: '#323232',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '24px',
+            fontSize: '14px',
+            fontWeight: 500,
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            animation: 'fadeIn 0.3s'
+          }}>
+            {toastMessage}
+          </div>
+        )}
       </div>
     );
   }
@@ -131,10 +152,10 @@ export default function MyAccount() {
   const handleSignOut = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    setUser(null);
+    setLiveUser(null);
     setToastMessage('Signed out successfully!');
-    setTimeout(() => {
-      navigate('/signin');
-    }, 1500);
+    setTimeout(() => setToastMessage(''), 3000);
   };
 
   return (
