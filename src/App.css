@@ -75,24 +75,40 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  color: #999999;
+  gap: 3px;
+  color: #aaaaaa;
   cursor: pointer;
   transition: all 0.2s ease;
   width: 20%;
+  padding: 8px 0 4px;
+  position: relative;
+}
+
+.nav-btn:active {
+  transform: scale(0.92);
 }
 
 .nav-btn.active {
   color: var(--primary-color);
 }
 
+.nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  width: 20px;
+  height: 3px;
+  background: var(--primary-color);
+  border-radius: 2px;
+}
+
 .nav-icon {
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .nav-label {
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* Global Header (TopNav replacement) */

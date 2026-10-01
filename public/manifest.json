@@ -1,12 +1,15 @@
 {
+  "id": "/",
   "name": "Ticketmaster",
   "short_name": "Ticketmaster",
   "description": "Discover and buy tickets for the best live events.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#026cdf",
   "orientation": "portrait",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/pwa-192x192.png",

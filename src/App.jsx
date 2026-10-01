@@ -237,50 +237,133 @@ function Header() {
 
 function InstallPrompt() {
   const [show, setShow] = React.useState(false);
+  const [visible, setVisible] = React.useState(false);
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
   React.useEffect(() => {
+    if (isStandalone) return;
+    const dismissed = sessionStorage.getItem('installDismissed');
+    if (dismissed) return;
+
+    // Android / Chrome
     const handler = (e) => {
       e.preventDefault();
       window.deferredPrompt = e;
       setShow(true);
+      setTimeout(() => setVisible(true), 50);
     };
     window.addEventListener('beforeinstallprompt', handler);
-    
+
     if (window.deferredPrompt) {
       setShow(true);
+      setTimeout(() => setVisible(true), 50);
+    }
+
+    // iOS Safari — show after 3s
+    if (isIos) {
+      const t = setTimeout(() => { setShow(true); setTimeout(() => setVisible(true), 50); }, 3000);
+      return () => { clearTimeout(t); window.removeEventListener('beforeinstallprompt', handler); };
     }
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+  }, [isStandalone, isIos]);
+
+  // Auto-dismiss after 12 seconds
+  React.useEffect(() => {
+    if (!show) return;
+    const t = setTimeout(() => dismiss(), 12000);
+    return () => clearTimeout(t);
+  }, [show]);
+
+  const dismiss = () => {
+    setVisible(false);
+    sessionStorage.setItem('installDismissed', '1');
+    setTimeout(() => setShow(false), 350);
+  };
+
+  const handleInstall = async () => {
+    if (isIos) { dismiss(); return; }
+    if (window.deferredPrompt) {
+      window.deferredPrompt.prompt();
+      const { outcome } = await window.deferredPrompt.userChoice;
+      window.deferredPrompt = null;
+      if (outcome === 'accepted') dismiss();
+    }
+  };
 
   if (!show) return null;
 
+  const isBanner = !isIos;
+
   return (
-    <div style={{
-      position: 'fixed', bottom: '80px', left: '16px', right: '16px',
-      background: 'white', padding: '16px', borderRadius: '12px',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.15)', zIndex: 1000,
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <img src="/pwa-192x192.png" alt="logo" style={{ width: '40px', height: '40px', borderRadius: '8px' }} />
-        <div>
-          <h4 style={{ margin: 0, fontSize: '14px', color: '#111' }}>Install Ticketmaster</h4>
-          <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>Get the app for a better experience</p>
-        </div>
+    <>
+      <style>{`
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+        .install-banner { animation: slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+        .install-banner.hiding { animation: slideDown 0.3s ease forwards; }
+      `}</style>
+      <div
+        className={`install-banner${!visible ? ' hiding' : ''}`}
+        style={{
+          position: 'fixed',
+          bottom: isBanner ? '76px' : 0,
+          left: isBanner ? '12px' : 0,
+          right: isBanner ? '12px' : 0,
+          background: isBanner ? 'white' : 'linear-gradient(135deg,#026cdf,#004aad)',
+          padding: isBanner ? '14px 16px' : '20px 20px 36px',
+          borderRadius: isBanner ? '16px' : '20px 20px 0 0',
+          boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: isBanner ? 'row' : 'column',
+          alignItems: isBanner ? 'center' : 'flex-start',
+          justifyContent: isBanner ? 'space-between' : 'flex-start',
+          gap: isBanner ? 0 : '12px',
+        }}
+      >
+        {isBanner ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <img src="/pwa-192x192.png" alt="logo" style={{ width: '44px', height: '44px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} />
+              <div>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#111' }}>Install Ticketmaster</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>Faster, offline-ready experience</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+              <button onClick={dismiss} style={{ background: 'none', border: '1px solid #ddd', color: '#555', padding: '7px 14px', borderRadius: '20px', fontWeight: 600, cursor: 'pointer', fontSize: '13px' }}>Later</button>
+              <button onClick={handleInstall} style={{ background: 'linear-gradient(135deg,#026cdf,#004aad)', color: 'white', border: 'none', padding: '7px 18px', borderRadius: '20px', fontWeight: 700, cursor: 'pointer', fontSize: '13px', boxShadow: '0 4px 12px rgba(2,108,223,0.4)' }}>Install</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <button onClick={dismiss} style={{ alignSelf: 'flex-end', background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', color: 'white', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <img src="/pwa-192x192.png" alt="logo" style={{ width: '48px', height: '48px', borderRadius: '12px' }} />
+              <div>
+                <p style={{ margin: 0, fontWeight: 700, color: 'white', fontSize: '16px' }}>Add to Home Screen</p>
+                <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>Install for the full app experience</p>
+              </div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '12px', padding: '12px 14px', width: '100%' }}>
+              {[
+                { icon: '⬆️', text: 'Tap the Share button in Safari' },
+                { icon: '➕', text: 'Tap "Add to Home Screen"' },
+                { icon: '✅', text: 'Tap "Add" to confirm' },
+              ].map((s, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                  <span style={{ fontSize: '20px' }}>{s.icon}</span>
+                  <span style={{ color: 'white', fontSize: '13px' }}>{s.text}</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={dismiss} style={{ width: '100%', padding: '12px', background: 'white', color: '#026cdf', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>Got it!</button>
+          </>
+        )}
       </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={() => setShow(false)} style={{ background: 'none', border: 'none', color: '#666', padding: '8px', cursor: 'pointer', fontSize: '14px' }}>Later</button>
-        <button onClick={async () => {
-          if (window.deferredPrompt) {
-            window.deferredPrompt.prompt();
-            const { outcome } = await window.deferredPrompt.userChoice;
-            if (outcome === 'accepted') setShow(false);
-            window.deferredPrompt = null;
-          }
-        }} style={{ background: '#026cdf', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>Install</button>
-      </div>
-    </div>
+    </>
   );
 }
 

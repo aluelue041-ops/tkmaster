@@ -1,37 +1,50 @@
-const CACHE_NAME = 'ticketmaster-v4';
-const urlsToCache = ['/'];
+const CACHE_NAME = 'ticketmaster-v5';
+const STATIC_ASSETS = ['/'];
 
-// Install: cache assets
+// Install: cache shell
 self.addEventListener('install', (event) => {
-  self.skipWaiting(); // activate immediately, don't wait
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
 });
 
-// Activate: delete ALL old caches
+// Activate: prune old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
-      Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      )
-    ).then(() => self.clients.claim()) // take control of all open tabs
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch: network first, fallback to cache
+// Fetch: network-first for API calls, cache-first for static assets, SPA fallback
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET and cross-origin requests
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  // API calls: network only (no caching)
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io/')) return;
+
   event.respondWith(
-    fetch(event.request)
+    fetch(request)
       .then((response) => {
-        // Update cache with latest response
-        const cloned = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cloned));
+        if (response && response.status === 200) {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
+        }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() =>
+        caches.match(request).then((cached) =>
+          // SPA fallback: return cached index for navigation requests
+          cached || (request.headers.get('accept')?.includes('text/html')
+            ? caches.match('/')
+            : Response.error())
+        )
+      )
   );
 });
