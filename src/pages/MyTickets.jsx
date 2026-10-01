@@ -778,7 +778,7 @@ export default function MyTickets() {
           <button style={{ position: 'absolute', top: '24px', right: '16px', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: '24px', padding: '8px 20px', border: 'none', color: 'white', fontSize: '15px', fontWeight: 600, cursor: 'pointer', zIndex: 10 }}>Help</button>
 
           {/* Floating Event Info Card */}
-          <div style={{ position: 'absolute', bottom: '0', left: '20px', right: '20px', zIndex: 10 }}>
+          <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', zIndex: 10 }}>
             {/* Date Tab */}
             <div style={{ display: 'inline-block', background: "#111", color: "#ffffff", padding: "10px 20px", borderRadius: "10px 10px 0 0", fontSize: '12px', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase' }}>
               {eventMeta?.date || 'Upcoming Event'}
@@ -829,7 +829,7 @@ export default function MyTickets() {
           </div>
 
           {/* Order ID & Tickets List */}
-          <div style={{ padding: '24px 16px 16px' }}>
+          <div style={{ padding: '12px 16px 16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Order {generateOrderStr(selectedOrder._id, eventMeta?.location, selectedOrder.orderNumber)}</h3>
               <MoreVertical size={20} color="#333" />
