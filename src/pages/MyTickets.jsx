@@ -497,7 +497,7 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
   };
 
   return (
-    <div style={{ marginBottom: '12px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e0e0e0', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', position: 'relative', borderLeft: '4px solid #026cdf' }}>
+    <div style={{ marginBottom: '0', borderRadius: '0', overflow: 'hidden', borderBottom: '1px solid #e8e8e8', borderLeft: 'none', position: 'relative', borderTop: '0' }}>
       {/* Hidden always-mounted download trigger — used by "Download All" */}
       <button
         id={`stub-dl-btn-${ticketId}-${seatIndex ?? 0}`}
@@ -829,12 +829,12 @@ export default function MyTickets() {
           </div>
 
           {/* Order ID & Tickets List */}
-          <div style={{ padding: '12px 16px 16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+          <div style={{ padding: '12px 0 16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', padding: '0 16px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Order {generateOrderStr(selectedOrder._id, eventMeta?.location, selectedOrder.orderNumber)}</h3>
               <MoreVertical size={20} color="#333" />
             </div>
-            <p style={{ color: '#888', fontSize: '13px', margin: '0 0 16px' }}>x{selectedOrder.seats.length} Tickets</p>
+            <p style={{ color: '#888', fontSize: '13px', margin: '0 0 8px', padding: '0 16px' }}>x{selectedOrder.seats.length} Tickets</p>
 
             {/* Download All button for multi-seat approved orders */}
             {selectedOrder.seats.length > 1 && ['Approved', 'Active'].includes(selectedOrder.status) && (
@@ -1004,7 +1004,7 @@ export default function MyTickets() {
             )}
 
           {activeTab === 'Tickets' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
               <div>
                 {['Approved', 'Active', 'Transferred'].includes(selectedOrder.status) ? (
                   selectedOrder.seats.map((seatStr, idx) => (
