@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ticketmaster-v3';
+const CACHE_NAME = 'ticketmaster-v4';
 const urlsToCache = ['/'];
 
 // Install: cache assets
