@@ -38,7 +38,15 @@ const UserSchema = new mongoose.Schema({
   bannedReason: {
     type: String,
     default: ''
-  }
+  },
+  devices: [
+    {
+      deviceId: { type: String },        // hash of user-agent + ip
+      label: { type: String },           // human-readable "Chrome on Windows"
+      ip: { type: String },
+      lastSeen: { type: Date, default: Date.now }
+    }
+  ]
 });
 
 UserSchema.pre('save', async function() {

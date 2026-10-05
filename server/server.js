@@ -372,6 +372,43 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
       return res.status(403).json({ error: `Your account has been banned.${reason}` });
     }
 
+    // ── Device tracking ──────────────────────────────────────────────────────
+    const ua = req.headers['user-agent'] || 'Unknown';
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+    const deviceId = crypto.createHash('sha256').update(ua + ip).digest('hex').slice(0, 16);
+
+    // Build a human-readable label from the user-agent string
+    const getBrowserLabel = (uaStr) => {
+      let browser = 'Unknown Browser';
+      let os = 'Unknown OS';
+      if (/Edg\//.test(uaStr)) browser = 'Edge';
+      else if (/OPR\/|Opera/.test(uaStr)) browser = 'Opera';
+      else if (/Chrome\//.test(uaStr)) browser = 'Chrome';
+      else if (/Firefox\//.test(uaStr)) browser = 'Firefox';
+      else if (/Safari\//.test(uaStr)) browser = 'Safari';
+      if (/Windows NT/.test(uaStr)) os = 'Windows';
+      else if (/Mac OS X/.test(uaStr)) os = 'macOS';
+      else if (/Android/.test(uaStr)) os = 'Android';
+      else if (/iPhone|iPad/.test(uaStr)) os = 'iOS';
+      else if (/Linux/.test(uaStr)) os = 'Linux';
+      return `${browser} on ${os}`;
+    };
+
+    const label = getBrowserLabel(ua);
+    const existingIdx = user.devices.findIndex(d => d.deviceId === deviceId);
+    if (existingIdx >= 0) {
+      user.devices[existingIdx].lastSeen = new Date();
+    } else {
+      user.devices.push({ deviceId, label, ip, lastSeen: new Date() });
+      // Keep at most 10 most-recent devices
+      if (user.devices.length > 10) {
+        user.devices.sort((a, b) => b.lastSeen - a.lastSeen);
+        user.devices = user.devices.slice(0, 10);
+      }
+    }
+    await user.save();
+    // ─────────────────────────────────────────────────────────────────────────
+
     const payload = { user: { id: user.id } };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
@@ -381,6 +418,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 
 // 3. Get User Profile
@@ -1002,12 +1040,28 @@ app.put('/api/notifications/read-all', authMiddleware, async (req, res) => {
 app.get('/api/users', authMiddleware, superAdminMiddleware, async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
-    res.json(users);
+    res.json(users); // devices array is included by default (not excluded)
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+// 9e. Remove a device from a user (Admin)
+app.delete('/api/users/:id/devices/:deviceId', authMiddleware, superAdminMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.devices = user.devices.filter(d => d.deviceId !== req.params.deviceId);
+    await user.save();
+    res.json({ success: true, devices: user.devices });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 
 // 9b. Update User Subscription (Admin)
 app.put('/api/users/:id/subscription', authMiddleware, adminMiddleware, async (req, res) => {

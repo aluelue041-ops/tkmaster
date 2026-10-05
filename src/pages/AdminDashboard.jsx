@@ -35,6 +35,7 @@ export default function AdminDashboard() {
   const [ticketSearchTerm, setTicketSearchTerm] = useState('');
   const [ticketFilter, setTicketFilter] = useState('All');
   const [newPassword, setNewPassword] = useState('');
+  const [expandedDeviceUserId, setExpandedDeviceUserId] = useState(null);
   
   const [cryptoPayments, setCryptoPayments] = useState([]);
   const [cryptoSettings, setCryptoSettings] = useState({ usdtTrc20Address: '', usdtErc20Address: '', btcAddress: '', mpesaEnabled: true, cryptoEnabled: true });
@@ -447,6 +448,27 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleRemoveDevice = async (userId, deviceId) => {
+    if (!window.confirm('Remove this device from the user\'s account?')) return;
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/api/users/${userId}/devices/${deviceId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(users.map(u => u._id === userId ? { ...u, devices: data.devices } : u));
+        toast.success('Device removed.');
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to remove device');
+      }
+    } catch (err) {
+      toast.error('Network error');
+    }
+  };
+
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'white' }}>Loading Dashboard...</div>;
 
   const tabFadeStyle = {
@@ -716,59 +738,126 @@ export default function AdminDashboard() {
                 <p style={{ color: '#aaa', margin: 0, fontSize: '14px' }}>It looks like there are no users matching your search.</p>
               </div>
             ) : (
-              filteredUsers.map(user => (
-                <div key={user._id} style={{ backgroundColor: user.banned ? '#3a1a1a' : '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', border: user.banned ? '1px solid #ff3b3044' : 'none' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <p style={{ margin: 0, color: user.banned ? '#ff6b6b' : 'white', fontWeight: 600 }}>{user.email}</p>
-                      {user.banned && <span style={{ background: '#ff3b30', color: 'white', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>BANNED</span>}
+              filteredUsers.map(user => {
+                const deviceCount = user.devices?.length || 0;
+                const isExpanded = expandedDeviceUserId === user._id;
+                return (
+                <div key={user._id} style={{ backgroundColor: user.banned ? '#3a1a1a' : '#323232', padding: '16px', borderRadius: '12px', marginBottom: '12px', border: user.banned ? '1px solid #ff3b3044' : 'none' }}>
+                  {/* Top row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <p style={{ margin: 0, color: user.banned ? '#ff6b6b' : 'white', fontWeight: 600 }}>{user.email}</p>
+                        {user.banned && <span style={{ background: '#ff3b30', color: 'white', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>BANNED</span>}
+                        {/* Device badge */}
+                        <button
+                          onClick={() => setExpandedDeviceUserId(isExpanded ? null : user._id)}
+                          title={deviceCount === 0 ? 'No devices recorded yet' : `${deviceCount} device(s) — click to ${isExpanded ? 'hide' : 'view'}`}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                            padding: '2px 9px', borderRadius: '20px', border: 'none', cursor: deviceCount > 0 ? 'pointer' : 'default',
+                            fontSize: '11px', fontWeight: 700,
+                            backgroundColor: deviceCount === 0 ? 'rgba(255,255,255,0.06)' : isExpanded ? 'rgba(2,108,223,0.35)' : 'rgba(2,108,223,0.18)',
+                            color: deviceCount === 0 ? '#666' : '#60aaff',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          📱 {deviceCount} {deviceCount === 1 ? 'device' : 'devices'}
+                          {deviceCount > 0 && <span style={{ fontSize: '9px', opacity: 0.7 }}>{isExpanded ? '▲' : '▼'}</span>}
+                        </button>
+                      </div>
+                      <p style={{ margin: '4px 0 0', color: '#aaa', fontSize: '12px' }}>Role: {user.role} • Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
+                      {user.banned && user.bannedReason && (
+                        <p style={{ margin: '4px 0 0', color: '#ff6b6b', fontSize: '11px' }}>Reason: {user.bannedReason}</p>
+                      )}
                     </div>
-                    <p style={{ margin: '4px 0 0', color: '#aaa', fontSize: '12px' }}>Role: {user.role} • Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
-                    {user.banned && user.bannedReason && (
-                      <p style={{ margin: '4px 0 0', color: '#ff6b6b', fontSize: '11px' }}>Reason: {user.bannedReason}</p>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }}>
+                        <span style={{ color: '#aaa', fontSize: '13px' }}>Role:</span>
+                        <select
+                          value={user.role || 'user'}
+                          onChange={(e) => handleUpdateRole(user._id, e.target.value)}
+                          style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', outline: 'none' }}
+                          disabled={currentUser?.role !== 'superadmin' || user._id === (currentUser?._id || currentUser?.id)}
+                        >
+                          <option value="user">User</option>
+                          <option value="event_manager">Event Manager</option>
+                          <option value="admin">Admin</option>
+                          <option value="superadmin">Super Admin</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#aaa', fontSize: '13px' }}>Package:</span>
+                        <select
+                          value={user.subscription || 'Free'}
+                          onChange={(e) => handleUpdateSubscription(user._id, e.target.value)}
+                          style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', outline: 'none' }}
+                        >
+                          <option value="Free">Free (2 tickets)</option>
+                          <option value="VIP">VIP (Unlimited)</option>
+                        </select>
+                      </div>
+                      {user._id !== (currentUser?._id || currentUser?.id) && (
+                        <button
+                          onClick={() => handleBanUser(user._id, user.banned)}
+                          style={{
+                            padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '13px',
+                            backgroundColor: user.banned ? '#34c75922' : '#ff3b3022',
+                            color: user.banned ? '#34c759' : '#ff3b30'
+                          }}
+                        >
+                          {user.banned ? '✅ Unban' : '🚫 Ban'}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}>
-                      <span style={{ color: '#aaa', fontSize: '13px' }}>Role:</span>
-                      <select
-                        value={user.role || 'user'}
-                        onChange={(e) => handleUpdateRole(user._id, e.target.value)}
-                        style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', outline: 'none' }}
-                        disabled={currentUser?.role !== 'superadmin' || user._id === (currentUser?._id || currentUser?.id)}
-                      >
-                        <option value="user">User</option>
-                        <option value="event_manager">Event Manager</option>
-                        <option value="admin">Admin</option>
-                        <option value="superadmin">Super Admin</option>
-                      </select>
+
+                  {/* Expanded device list */}
+                  {isExpanded && deviceCount > 0 && (
+                    <div style={{
+                      marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)',
+                      paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px',
+                      animation: 'adminTabFadeIn 0.2s ease forwards'
+                    }}>
+                      <p style={{ margin: '0 0 6px', fontSize: '12px', color: '#aaa', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Connected Devices</p>
+                      {user.devices.map((device) => (
+                        <div key={device.deviceId} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '8px 12px',
+                          gap: '8px', flexWrap: 'wrap'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                            <span style={{ fontSize: '20px', flexShrink: 0 }}>
+                              {/Android|iPhone|iPad/i.test(device.label) ? '📱' : /Mac|iOS/i.test(device.label) ? '🍎' : '💻'}
+                            </span>
+                            <div style={{ minWidth: 0 }}>
+                              <p style={{ margin: 0, color: 'white', fontWeight: 600, fontSize: '13px' }}>{device.label || 'Unknown Device'}</p>
+                              <p style={{ margin: '2px 0 0', color: '#888', fontSize: '11px' }}>
+                                IP: {device.ip || 'N/A'} &nbsp;•&nbsp; Last seen: {device.lastSeen ? new Date(device.lastSeen).toLocaleString() : 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveDevice(user._id, device.deviceId)}
+                            title="Remove this device"
+                            style={{
+                              padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                              backgroundColor: 'rgba(255,59,48,0.15)', color: '#ff3b30',
+                              fontSize: '11px', fontWeight: 700, flexShrink: 0
+                            }}
+                          >
+                            ✕ Remove
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: '#aaa', fontSize: '13px' }}>Package:</span>
-                      <select
-                        value={user.subscription || 'Free'}
-                        onChange={(e) => handleUpdateSubscription(user._id, e.target.value)}
-                        style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222', color: 'white', outline: 'none' }}
-                      >
-                        <option value="Free">Free (2 tickets)</option>
-                        <option value="VIP">VIP (Unlimited)</option>
-                      </select>
-                    </div>
-                    {user._id !== (currentUser?._id || currentUser?.id) && (
-                      <button
-                        onClick={() => handleBanUser(user._id, user.banned)}
-                        style={{
-                          padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '13px',
-                          backgroundColor: user.banned ? '#34c75922' : '#ff3b3022',
-                          color: user.banned ? '#34c759' : '#ff3b30'
-                        }}
-                      >
-                        {user.banned ? '✅ Unban' : '🚫 Ban'}
-                      </button>
-                    )}
-                  </div>
+                  )}
+                  {isExpanded && deviceCount === 0 && (
+                    <p style={{ margin: '10px 0 0', color: '#555', fontSize: '12px', textAlign: 'center' }}>No devices recorded for this account yet.</p>
+                  )}
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
