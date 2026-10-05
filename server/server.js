@@ -372,7 +372,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
       return res.status(403).json({ error: `Your account has been banned.${reason}` });
     }
 
-    // ── Device tracking ──────────────────────────────────────────────────────
+    // ── Device tracking + auto-ban on multi-device login ─────────────────────
     const ua = req.headers['user-agent'] || 'Unknown';
     const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
     const deviceId = crypto.createHash('sha256').update(ua + ip).digest('hex').slice(0, 16);
@@ -395,12 +395,28 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     };
 
     const label = getBrowserLabel(ua);
+    const isKnownDevice = user.devices.some(d => d.deviceId === deviceId);
+    const hasExistingDevices = user.devices.length > 0;
+    const isPrivilegedRole = ['admin', 'superadmin', 'event_manager'].includes(user.role);
+
+    // ── Auto-ban: new device detected on account that already has a known device ──
+    if (!isKnownDevice && hasExistingDevices && !isPrivilegedRole) {
+      // Record the new (suspicious) device before banning so admins can see both
+      user.devices.push({ deviceId, label, ip, lastSeen: new Date() });
+      user.banned = true;
+      user.bannedReason = `Multi-device login detected. Original device: "${user.devices[0].label}". New login from: "${label}" (IP: ${ip}).`;
+      await user.save();
+      return res.status(403).json({
+        error: `Your account has been suspended due to a login from a new device. Please contact support to restore access.`
+      });
+    }
+
+    // Update lastSeen for known device, or add new device entry (for privileged accounts)
     const existingIdx = user.devices.findIndex(d => d.deviceId === deviceId);
     if (existingIdx >= 0) {
       user.devices[existingIdx].lastSeen = new Date();
     } else {
       user.devices.push({ deviceId, label, ip, lastSeen: new Date() });
-      // Keep at most 10 most-recent devices
       if (user.devices.length > 10) {
         user.devices.sort((a, b) => b.lastSeen - a.lastSeen);
         user.devices = user.devices.slice(0, 10);
