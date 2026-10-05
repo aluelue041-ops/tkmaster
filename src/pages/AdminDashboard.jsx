@@ -83,7 +83,7 @@ export default function AdminDashboard() {
         if (ticketsRes.ok) ticketsData = await ticketsRes.json();
         
         let cryptoData = [];
-        if (!isEventManagerOnly) {
+        if (meData.role === 'superadmin') {
           const cryptoRes = await fetch(`${API}/api/admin/crypto-payments`, { headers: { 'Authorization': `Bearer ${token}` } });
           if (cryptoRes.ok) cryptoData = await cryptoRes.json();
           
@@ -512,7 +512,7 @@ export default function AdminDashboard() {
       </div>
 
       <div style={{ padding: '0 16px 16px', display: 'flex', gap: '8px' }}>
-        {[['events','Events'], ...(currentUser?.role === 'superadmin' ? [['users','Users']] : []), ...(currentUser?.role !== 'event_manager' ? [['tickets','Tickets'],['crypto','Crypto']] : [])].map(([tab, label]) => (
+        {[['events','Events'], ...(currentUser?.role === 'superadmin' ? [['users','Users']] : []), ...(currentUser?.role !== 'event_manager' ? [['tickets','Tickets']] : []), ...(currentUser?.role === 'superadmin' ? [['crypto','Payments']] : [])].map(([tab, label]) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{
             flex: 1, padding: '10px', borderRadius: '8px', border: 'none',
             background: activeTab === tab ? 'var(--primary-color)' : '#323232',
@@ -966,7 +966,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {activeTab === 'crypto' && (
+        {activeTab === 'crypto' && currentUser?.role === 'superadmin' && (
           <div>
 
             {/* Payment Method Toggles */}

@@ -1273,7 +1273,7 @@ app.put('/api/tickets/:id/transfer', authMiddleware, adminMiddleware, async (req
 
 // --- ADMIN CRYPTO & SETTINGS ---
 
-app.get('/api/admin/crypto-payments', authMiddleware, adminMiddleware, async (req, res) => {
+app.get('/api/admin/crypto-payments', authMiddleware, superAdminMiddleware, async (req, res) => {
   try {
     const payments = await CryptoPayment.find().populate('user', 'email').sort({ createdAt: -1 });
     res.json(payments);
@@ -1283,7 +1283,7 @@ app.get('/api/admin/crypto-payments', authMiddleware, adminMiddleware, async (re
   }
 });
 
-app.put('/api/admin/crypto-payments/:id/approve', authMiddleware, adminMiddleware, async (req, res) => {
+app.put('/api/admin/crypto-payments/:id/approve', authMiddleware, superAdminMiddleware, async (req, res) => {
   try {
     const payment = await CryptoPayment.findById(req.params.id);
     if (!payment) return res.status(404).json({ error: 'Payment not found' });
@@ -1311,7 +1311,7 @@ app.put('/api/admin/crypto-payments/:id/approve', authMiddleware, adminMiddlewar
   }
 });
 
-app.put('/api/admin/crypto-payments/:id/reject', authMiddleware, adminMiddleware, async (req, res) => {
+app.put('/api/admin/crypto-payments/:id/reject', authMiddleware, superAdminMiddleware, async (req, res) => {
   try {
     const payment = await CryptoPayment.findById(req.params.id);
     if (!payment) return res.status(404).json({ error: 'Payment not found' });
@@ -1354,7 +1354,7 @@ app.get('/api/settings/crypto', async (req, res) => {
   }
 });
 
-app.put('/api/settings/crypto', authMiddleware, adminMiddleware, async (req, res) => {
+app.put('/api/settings/crypto', authMiddleware, superAdminMiddleware, async (req, res) => {
   try {
     const { usdtTrc20Address, usdtErc20Address, btcAddress, mpesaEnabled, cryptoEnabled } = req.body;
     if (usdtTrc20Address !== undefined) {
