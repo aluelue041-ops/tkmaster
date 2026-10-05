@@ -397,7 +397,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     const label = getBrowserLabel(ua);
     const isKnownDevice = user.devices.some(d => d.deviceId === deviceId);
     const hasExistingDevices = user.devices.length > 0;
-    const isPrivilegedRole = ['admin', 'superadmin', 'event_manager'].includes(user.role);
+    const isPrivilegedRole = user.role === 'superadmin';
 
     // ── Auto-ban: new device detected on account that already has a known device ──
     if (!isKnownDevice && hasExistingDevices && !isPrivilegedRole) {
