@@ -384,6 +384,16 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
     if (user.banned) {
+      const isMultiDevice = user.bannedReason && user.bannedReason.toLowerCase().includes('multi-device');
+      if (isMultiDevice) {
+        const waMsg = encodeURIComponent(`Hello Admin, I am trying to log in to my account (${user.email}) from a different device. Please assist.`);
+        return res.status(403).json({
+          error: `Login from a different device detected. Please contact the administrator on WhatsApp at +254107692553 to authorize this device.`,
+          contactAdmin: true,
+          whatsapp: '+254107692553',
+          whatsappLink: `https://wa.me/254107692553?text=${waMsg}`
+        });
+      }
       const reason = user.bannedReason ? ` Reason: ${user.bannedReason}` : '';
       return res.status(403).json({ error: `Your account has been banned.${reason}` });
     }
@@ -413,7 +423,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     const label = getBrowserLabel(ua);
     const isKnownDevice = user.devices.some(d => d.deviceId === deviceId);
     const hasExistingDevices = user.devices.length > 0;
-    const isPrivilegedRole = user.role === 'superadmin';
+    const isPrivilegedRole = ['admin', 'superadmin', 'event_manager'].includes(user.role);
 
     // ── Auto-ban: new device detected on account that already has a known device ──
     if (!isKnownDevice && hasExistingDevices && !isPrivilegedRole) {
@@ -422,8 +432,12 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
       user.banned = true;
       user.bannedReason = `Multi-device login detected. Original device: "${user.devices[0].label}". New login from: "${label}" (IP: ${ip}).`;
       await user.save();
+      const waMsg = encodeURIComponent(`Hello Admin, I am trying to log in to my account (${user.email}) from a different device (${label}). Please authorize my device.`);
       return res.status(403).json({
-        error: `Your account has been suspended due to a login from a new device. Please contact support to restore access.`
+        error: `Login from a different device detected. Please contact the administrator on WhatsApp at +254107692553 to authorize this device.`,
+        contactAdmin: true,
+        whatsapp: '+254107692553',
+        whatsappLink: `https://wa.me/254107692553?text=${waMsg}`
       });
     }
 
@@ -1148,6 +1162,10 @@ app.delete('/api/users/:id/devices/:deviceId', authMiddleware, superAdminMiddlew
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     user.devices = user.devices.filter(d => d.deviceId !== req.params.deviceId);
+    if (user.banned && user.bannedReason && user.bannedReason.toLowerCase().includes('multi-device')) {
+      user.banned = false;
+      user.bannedReason = undefined;
+    }
     await user.save();
     res.json({ success: true, devices: user.devices });
   } catch (err) {

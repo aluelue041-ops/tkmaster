@@ -16,6 +16,7 @@ export default function SignIn() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotMsg, setForgotMsg] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [deviceLockInfo, setDeviceLockInfo] = useState(null);
 
   const [toastMessage, setToastMessage] = useState('');
   const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -30,6 +31,7 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setDeviceLockInfo(null);
 
     if (!isLogin) {
       // Strong password validation
@@ -53,7 +55,15 @@ export default function SignIn() {
       
       const data = await res.json();
       
-      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      if (!res.ok) {
+        if (data.contactAdmin || (data.error && (data.error.includes('+254107692553') || data.error.toLowerCase().includes('different device') || data.error.toLowerCase().includes('multi-device')))) {
+          setDeviceLockInfo({
+            message: data.error,
+            whatsappLink: data.whatsappLink || `https://wa.me/254107692553?text=${encodeURIComponent(`Hello Admin, I am trying to log in to my account (${email}) from a different device. Please authorize my device.`)}`
+          });
+        }
+        throw new Error(data.error || 'Something went wrong');
+      }
       
       // Save JWT token
       localStorage.setItem('token', data.token);
@@ -147,7 +157,54 @@ export default function SignIn() {
             {isLogin ? 'Enter your credentials to continue.' : 'Sign up to get personalized event recommendations.'}
           </p>
 
-          {error && <div style={{ backgroundColor: '#ffebee', color: '#c62828', padding: '12px', borderRadius: '8px', marginBottom: '24px', fontSize: '14px', textAlign: 'center' }}>{error}</div>}
+          {error && (
+            deviceLockInfo ? (
+              <div style={{
+                backgroundColor: '#fffbeb',
+                border: '1.5px solid #f59e0b',
+                borderRadius: '16px',
+                padding: '20px',
+                marginBottom: '24px',
+                textAlign: 'center',
+                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.12)'
+              }}>
+                <div style={{ fontSize: '30px', marginBottom: '8px' }}>📱🔒</div>
+                <h3 style={{ margin: '0 0 8px', fontSize: '17px', color: '#92400e', fontWeight: 800 }}>Different Device Detected</h3>
+                <p style={{ margin: '0 0 16px', fontSize: '14px', color: '#78350f', lineHeight: 1.5 }}>
+                  {deviceLockInfo.message}
+                </p>
+                <a
+                  href={deviceLockInfo.whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    backgroundColor: '#25D366',
+                    color: 'white',
+                    padding: '14px 20px',
+                    borderRadius: '10px',
+                    fontWeight: 700,
+                    fontSize: '15px',
+                    textDecoration: 'none',
+                    boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#20ba5a'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#25D366'}
+                >
+                  <span style={{ fontSize: '20px' }}>💬</span> Contact Admin on WhatsApp (+254107692553)
+                </a>
+              </div>
+            ) : (
+              <div style={{ backgroundColor: '#ffebee', color: '#c62828', padding: '12px', borderRadius: '8px', marginBottom: '24px', fontSize: '14px', textAlign: 'center' }}>
+                {error}
+              </div>
+            )
+          )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
