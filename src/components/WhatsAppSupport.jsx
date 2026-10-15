@@ -5,8 +5,8 @@ export default function WhatsAppSupport({ customMessage }) {
   const location = useLocation();
   const [hovered, setHovered] = useState(false);
 
-  // Do not render floating button on admin dashboard
-  if (location.pathname.startsWith('/admin')) {
+  // Do not render floating button on admin dashboard or My Tickets page
+  if (location.pathname.startsWith('/admin') || location.pathname === '/mytickets') {
     return null;
   }
 
