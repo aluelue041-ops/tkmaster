@@ -7,7 +7,8 @@ export default function SeatSelection() {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const event = location.state?.event;
+  const [currentEvent, setCurrentEvent] = useState(location.state?.event || null);
+  const event = currentEvent;
   const eventTitle = event?.title || 'Selected Event';
   const currency = event?.currency || '$';
   
@@ -160,6 +161,18 @@ export default function SeatSelection() {
   useEffect(() => {
     if (!id || id === 'trending') return;
     const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+    if (!currentEvent && id && id !== 'trending') {
+      fetch(`${API}/api/events`)
+        .then(r => r.json())
+        .then(events => {
+          if (Array.isArray(events)) {
+            const found = events.find(e => e._id === id);
+            if (found) setCurrentEvent(found);
+          }
+        })
+        .catch(() => {});
+    }
     
     fetch(`${API}/api/events/${id}/booked-seats`)
       .then(r => r.json())

@@ -1,10 +1,61 @@
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
 
 async function fetchImageBuffer(url) {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+
+  // 1. Base64 Data URL (e.g. data:image/png;base64,...)
+  if (trimmed.startsWith('data:image/')) {
+    try {
+      const base64Data = trimmed.split(',')[1];
+      if (base64Data) return Buffer.from(base64Data, 'base64');
+    } catch (e) {
+      console.error('Error parsing base64 image for PDF:', e.message);
+    }
+  }
+
+  // 2. Local File System Path (e.g. /images/benson_boone.png or public/images/...)
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    try {
+      const clean = trimmed.replace(/^\/?(public\/)?/, '');
+      const candidates = [
+        path.resolve(process.cwd(), 'public', clean),
+        path.resolve(__dirname, '../../public', clean),
+        path.resolve(__dirname, '../public', clean),
+        path.resolve(__dirname, clean)
+      ];
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          return fs.readFileSync(p);
+        }
+      }
+    } catch (e) {
+      console.error('Error loading local image for PDF:', e.message);
+    }
+  }
+
+  // 3. Remote URL (Cloudinary, Unsplash, external CDN)
   try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
+    let fetchUrl = trimmed;
+    // PDFKit only parses JPEG/PNG; request JPEG from Cloudinary instead of WebP
+    if (fetchUrl.includes('cloudinary.com')) {
+      fetchUrl = fetchUrl
+        .replace(/\/f_auto\//, '/f_jpg/')
+        .replace(/\.webp($|\?)/, '.jpg$1');
+    }
+
+    const res = await fetch(fetchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    if (!res.ok) {
+      console.error(`Error fetching remote image for PDF: HTTP ${res.status}`);
+      return null;
+    }
     const arrayBuffer = await res.arrayBuffer();
     return Buffer.from(arrayBuffer);
   } catch (err) {
@@ -110,7 +161,7 @@ async function generateTicketPDF({ ticketId, eventTitle, eventImage, seatString,
       const imgX = 30, imgY = 80, imgW = 185, imgH = 185;
       if (imgBuffer) {
         try {
-          doc.image(imgBuffer, imgX, imgY, { width: imgW, height: imgH });
+          doc.image(imgBuffer, imgX, imgY, { fit: [imgW, imgH], align: 'center', valign: 'center' });
         } catch (e) {
           console.error('Failed to draw image in PDF:', e);
           doc.rect(imgX, imgY, imgW, imgH).fillColor('#f0f0f0').fill();

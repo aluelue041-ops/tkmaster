@@ -102,19 +102,33 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
 
 
     const formattedSeats = formatSeatsForEmail(ticket.seats);
-    // Fetch Event Image for PDF
-    let eventImage = null;
-    if (ticket.eventId && ticket.eventId !== 'trending') {
-      const eventDoc = await Event.findById(ticket.eventId);
-      if (eventDoc) eventImage = eventDoc.image;
+    // Fetch Event Image (check ticket.eventImage first, or query Event document)
+    let eventImage = ticket.eventImage || null;
+    if (!eventImage && ticket.eventId && ticket.eventId !== 'trending' && mongoose.Types.ObjectId.isValid(ticket.eventId)) {
+      try {
+        const eventDoc = await Event.findById(ticket.eventId);
+        if (eventDoc && eventDoc.image) eventImage = eventDoc.image;
+      } catch (_) {}
     }
 
+    // Prepare banner image for HTML email
+    const appBaseUrl = process.env.APP_URL || '';
+    let emailBannerUrl = null;
+    if (eventImage) {
+      if (eventImage.startsWith('http://') || eventImage.startsWith('https://')) {
+        emailBannerUrl = eventImage;
+      } else if (appBaseUrl && (eventImage.startsWith('/') || eventImage.startsWith('images/'))) {
+        emailBannerUrl = `${appBaseUrl.replace(/\/$/, '')}/${eventImage.replace(/^\//, '')}`;
+      }
+    }
+
+    const bannerHtml = emailBannerUrl ? `
+      <div style="width:100%;max-height:240px;overflow:hidden;background:#111;">
+        <img src="${emailBannerUrl}" alt="${ticket.eventTitle}" style="width:100%;height:auto;max-height:240px;object-fit:cover;display:block;" />
+      </div>
+    ` : '';
+
     const attachments = [];
-
-
-
-
-
 
     // Generate PDF for each seat
     const approxPrice = (ticket.totalPrice / (ticket.seats.length || 1));
@@ -147,12 +161,13 @@ async function sendBookingConfirmationEmail(toEmail, ticket) {
       from: FROM_EMAIL,
       subject: `Booking Confirmed: ${ticket.eventTitle}`,
       html: `
-        <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden">
-          <div style="background:#026cdf;padding:32px;text-align:center">
+        <div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;background:#f9f9f9;border-radius:12px;overflow:hidden;border:1px solid #e5e5e5">
+          <div style="background:#026cdf;padding:24px 32px;text-align:center">
             <h1 style="color:white;font-style:italic;margin:0;font-size:32px">Ticketmaster</h1>
           </div>
+          ${bannerHtml}
           <div style="padding:32px;background:white">
-            <h2 style="color:#1a1a1a;margin-top:0">Booking Confirmed! âœ…</h2>
+            <h2 style="color:#1a1a1a;margin-top:0">Booking Confirmed! ✅</h2>
             <p style="color:#555">Here are your booking details:</p>
             <div style="background:#f9f9f9;border-radius:8px;padding:20px;margin:16px 0;border:1px solid #e5e5e5">
               <p style="margin:0 0 8px"><strong>Event:</strong> ${ticket.eventTitle}</p>
@@ -583,11 +598,19 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       });
     }
 
+    let finalEventImage = eventImage || null;
+    if (!finalEventImage && eventId && eventId !== 'trending' && mongoose.Types.ObjectId.isValid(eventId)) {
+      try {
+        const ev = await Event.findById(eventId);
+        if (ev && ev.image) finalEventImage = ev.image;
+      } catch (_) {}
+    }
+
     const newTicket = new Ticket({
       user: req.user.id,
       eventId,
       eventTitle,
-      eventImage: eventImage || null,
+      eventImage: finalEventImage,
       seats,
       totalPrice,
       currency: currency || '$',
@@ -708,18 +731,31 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
 
 
       // Fetch Event Image for PDF
-      let eventImage = null;
-      if (ticket.eventId && ticket.eventId !== 'trending') {
-        const eventDoc = await Event.findById(ticket.eventId);
-        if (eventDoc) eventImage = eventDoc.image;
+      let eventImage = ticket.eventImage || null;
+      if (!eventImage && ticket.eventId && ticket.eventId !== 'trending' && mongoose.Types.ObjectId.isValid(ticket.eventId)) {
+        try {
+          const eventDoc = await Event.findById(ticket.eventId);
+          if (eventDoc && eventDoc.image) eventImage = eventDoc.image;
+        } catch (_) {}
       }
 
+      const appBaseUrl = process.env.APP_URL || '';
+      let emailBannerUrl = null;
+      if (eventImage) {
+        if (eventImage.startsWith('http://') || eventImage.startsWith('https://')) {
+          emailBannerUrl = eventImage;
+        } else if (appBaseUrl && (eventImage.startsWith('/') || eventImage.startsWith('images/'))) {
+          emailBannerUrl = `${appBaseUrl.replace(/\/$/, '')}/${eventImage.replace(/^\//, '')}`;
+        }
+      }
+
+      const bannerHtml = emailBannerUrl ? `
+        <div style="width:100%;max-height:220px;overflow:hidden;background:#1a1a1a;">
+          <img src="${emailBannerUrl}" alt="${ticket.eventTitle}" style="width:100%;height:auto;max-height:220px;object-fit:cover;display:block;" />
+        </div>
+      ` : '';
+
       const attachments = [];
-
-
-
-
-
 
       // Generate PDF for each transferred seat
       const approxPrice = (ticket.totalPrice / ticket.seats.length) || ticket.totalPrice;
@@ -752,6 +788,7 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
 
       let emailHtml = `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;border:1px solid #eaeaea;border-radius:12px;overflow:hidden;">
         <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">Ticketmaster</h1></div>
+        ${bannerHtml}
         <div style="padding:32px 24px;background:white;text-align:center;">
           <h2 style="margin-top:0;">Hi ${name || 'there'}, you've received ${transferredSeats.length} ticket(s)!</h2>
           <p style="color:#555;font-size:16px;"><strong>${senderEmail}</strong> has transferred their ticket(s) for <strong>${ticket.eventTitle}</strong> to you.</p>
@@ -1237,7 +1274,7 @@ app.put('/api/tickets/:id/approve', authMiddleware, adminMiddleware, async (req,
         await resend.emails.send({
           to: updatedTicket.user.email,
           from: FROM_EMAIL,
-          subject: `Your ticket for "${record.payload.eventTitle}" has been approved!`,
+          subject: `Your ticket for "${ticket.eventTitle}" has been approved!`,
           html: `<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto">
             <div style="background:#026cdf;padding:24px;text-align:center"><h1 style="color:white;font-style:italic;margin:0">Ticketmaster</h1></div>
             <div style="padding:24px">
