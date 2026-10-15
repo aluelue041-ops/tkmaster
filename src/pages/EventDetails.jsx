@@ -147,6 +147,36 @@ export default function EventDetails() {
             </a>
           </div>
         </div>
+
+        {/* Contact Admin for Event Inquiries */}
+        <div style={{ marginTop: '24px', padding: '16px', borderRadius: '16px', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Questions about this event?</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>Chat directly with the admin on WhatsApp</div>
+          </div>
+          <a
+            href={`https://wa.me/254107692553?text=${encodeURIComponent(`Hello Admin, I have a question regarding "${event.title}".`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: '#25D366',
+              color: 'white',
+              padding: '9px 16px',
+              borderRadius: '20px',
+              fontWeight: 700,
+              fontSize: '13px',
+              textDecoration: 'none',
+              boxShadow: '0 2px 8px rgba(37,211,102,0.3)',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
+            }}
+          >
+            <span>💬</span> WhatsApp
+          </a>
+        </div>
       </div>
 
       {/* Sticky Bottom Bar */}

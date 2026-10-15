@@ -276,6 +276,25 @@ export default function SignIn() {
                 {isLogin ? 'Create one' : 'Sign in'}
               </button>
             </div>
+
+            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f0f0f0', textAlign: 'center' }}>
+              <a
+                href="https://wa.me/254107692553?text=Hello%20Admin,%20I%20need%20assistance%20with%20my%20Ticketmaster%20account."
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: '#128c7e',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  textDecoration: 'none'
+                }}
+              >
+                <span>💬</span> Need help? Chat with Admin on WhatsApp
+              </a>
+            </div>
           </>
           )}
         </div>

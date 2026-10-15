@@ -297,6 +297,36 @@ export default function Pricing() {
             </div>
           ))}
         </div>
+
+        {/* Contact Admin Support Card */}
+        <div style={{ maxWidth: '600px', margin: '40px auto 0', padding: '24px 20px', borderRadius: '16px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+          <h4 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700, color: '#1e293b' }}>Need Assistance with Plans or Payments?</h4>
+          <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>
+            Our admin is available on WhatsApp to assist with instant activations, payment confirmations, or custom queries.
+          </p>
+          <a
+            href={`https://wa.me/254107692553?text=${encodeURIComponent('Hello Admin, I have a question about the Ticketmaster subscription plans.')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              backgroundColor: '#25D366',
+              color: 'white',
+              padding: '11px 22px',
+              borderRadius: '24px',
+              fontWeight: 700,
+              fontSize: '14px',
+              textDecoration: 'none',
+              boxShadow: '0 2px 10px rgba(37,211,102,0.3)',
+              cursor: 'pointer'
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>💬</span> Chat with Admin (+254107692553)
+          </a>
+        </div>
       </div>
 
       {/* PayHero M-Pesa Modal */}
@@ -456,6 +486,17 @@ export default function Pricing() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '16px', color: '#aaa' }}>
               <Shield size={14} />
               <span style={{ fontSize: '11px', fontWeight: 600 }}>Secured by {paymentMethod === 'crypto' ? 'Crypto Network' : 'PayHero'}</span>
+            </div>
+
+            <div style={{ marginTop: '14px', textAlign: 'center' }}>
+              <a 
+                href={`https://wa.me/254107692553?text=${encodeURIComponent(`Hello Admin, I need help with my payment for the ${selectedPlan.name} plan.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: '12px', color: '#026cdf', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              >
+                <span>💬</span> Having issues? Chat with Admin on WhatsApp
+              </a>
             </div>
           </div>
         </div>

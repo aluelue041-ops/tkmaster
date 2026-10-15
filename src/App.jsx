@@ -24,6 +24,7 @@ import SignIn from './pages/SignIn';
 import AdminDashboard from './pages/AdminDashboard';
 import ResetPassword from './pages/ResetPassword';
 import Pricing from './pages/Pricing';
+import WhatsAppSupport from './components/WhatsAppSupport';
 
 function BottomNav() {
   const navigate = useNavigate();
@@ -424,6 +425,7 @@ function App() {
             <Route path="/pricing" element={<Pricing />} />
           </Routes>
         </main>
+        <WhatsAppSupport />
         <BottomNav />
       </div>
     </Router>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, MapPin, Globe, Heart, CreditCard, HelpCircle, MessageSquare, BookOpen, ChevronRight, Bell, Download, Zap, User, Lock, Ticket } from 'lucide-react';
+import { Mail, MapPin, Globe, Heart, CreditCard, HelpCircle, MessageSquare, BookOpen, ChevronRight, Bell, Download, Zap, User, Lock, Ticket, MessageCircle } from 'lucide-react';
 
 export default function MyAccount() {
   const [receiveNotifs, setReceiveNotifs] = useState(false);
@@ -349,13 +349,41 @@ export default function MyAccount() {
             Help & Guidance
           </div>
           
-          <div className="settings-item">
+          <a 
+            href={`https://wa.me/254107692553?text=${encodeURIComponent(`Hello Admin, I am reaching out from my Ticketmaster account (${user?.email || 'client'}). I need some assistance.`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="settings-item"
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            <div className="settings-item-left">
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                <MessageCircle size={16} />
+              </div>
+              <div>
+                <span style={{ fontWeight: 600, color: '#111' }}>Chat with Admin (WhatsApp)</span>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#666' }}>+254107692553 • Online Support</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ backgroundColor: '#e8f5e9', color: '#2e7d32', fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '12px' }}>Online</span>
+              <ChevronRight size={20} color="#ccc" />
+            </div>
+          </a>
+
+          <a
+            href="https://wa.me/254107692553?text=Hello%20Admin,%20I%20need%20help%20with%20Ticketmaster."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="settings-item"
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
             <div className="settings-item-left">
               <HelpCircle size={20} color="#666" />
               <span>Need Help?</span>
             </div>
             <ChevronRight size={20} color="#ccc" />
-          </div>
+          </a>
           
           <div className="settings-item">
             <div className="settings-item-left">
