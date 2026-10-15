@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical, ScanBarcode, Navigation } from 'lucide-react';
-import { getMapIframeSrc } from '../utils/mapUtils';
+import { getMapIframeSrc, getDirectionsUrl } from '../utils/mapUtils';
 import { toast } from 'react-toastify';
 import { QRCodeSVG } from 'qrcode.react';
 import QRCode from 'qrcode';
@@ -87,7 +87,7 @@ export function generateOrderStr(ticketId, location, orderNumber) {
   return `#${orderNum}-${dateStr}${venueStr}`;
 }
 
-// Custom Transfer Modal â€” no browser prompt
+// Custom Transfer Modal — no browser prompt
 function TransferModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCancel }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -659,29 +659,29 @@ export default function MyTickets() {
   const fallbackEvents = [
     {
       title: "Benson Boone",
-      date: "Fri, Sep 19 â€¢ 7:00 PM",
-      location: "Madison Square Garden â€¢ New York, NY",
+      date: "Fri, Sep 19 • 7:00 PM",
+      location: "Madison Square Garden • New York, NY",
       image: "/images/benson_boone.png",
       category: "Concerts"
     },
     {
       title: "The Weeknd: After Hours Tour",
-      date: "Sat, Oct 12 â€¢ 8:00 PM",
-      location: "MetLife Stadium â€¢ East Rutherford, NJ",
+      date: "Sat, Oct 12 • 8:00 PM",
+      location: "MetLife Stadium • East Rutherford, NJ",
       image: "/images/weeknd.png",
       category: "Concerts"
     },
     {
       title: "New York Knicks vs. Boston Celtics",
-      date: "Wed, Nov 5 â€¢ 7:30 PM",
-      location: "Madison Square Garden â€¢ New York, NY",
+      date: "Wed, Nov 5 • 7:30 PM",
+      location: "Madison Square Garden • New York, NY",
       image: "https://images.unsplash.com/photo-1504450758481-7338eba7524a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       category: "Sports"
     },
     {
       title: "Summer Music Festival",
-      date: "Sat, Oct 12 â€¢ 8:00 PM",
-      location: "Various Artists â€¢ City Park",
+      date: "Sat, Oct 12 • 8:00 PM",
+      location: "Various Artists • City Park",
       image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       category: "Concerts"
     }
@@ -1047,7 +1047,7 @@ export default function MyTickets() {
                 ></iframe>
                 <button 
                   className="interactive-btn"
-                  onClick={() => window.open(eventMeta?.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((eventMeta?.location || 'New York').replace(/\s*[•?-]+\s*/g, ', ').replace(/\s{2,}/g, ', '))}`, '_blank')}
+                  onClick={() => window.open(getDirectionsUrl(eventMeta?.location, eventMeta?.mapLink), '_blank')}
                   style={{ width: '100%', padding: '16px', border: 'none', backgroundColor: '#f0f0f0', color: '#111', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
                   onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}

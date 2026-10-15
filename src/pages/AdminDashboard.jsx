@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Ticket, Calendar, Trash2, Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { getMapIframeSrc } from '../utils/mapUtils';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -543,7 +544,39 @@ export default function AdminDashboard() {
                   <input type="number" placeholder="Base Price (e.g. 80)" value={newEvent.basePrice} onChange={e => setNewEvent({...newEvent, basePrice: Number(e.target.value)})} required style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
                   <input type="text" placeholder="Location" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} required style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none' }} />
                 </div>
-                <input type="text" placeholder="Live Location URL (Google Maps link)" value={newEvent.mapLink} onChange={e => setNewEvent({...newEvent, mapLink: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: 'none' }} />
+                <input 
+                  type="text" 
+                  placeholder="Live Location URL (Google Maps link, venue name, or embed code)" 
+                  value={newEvent.mapLink} 
+                  onChange={e => setNewEvent({...newEvent, mapLink: e.target.value})} 
+                  onBlur={async () => {
+                    const link = (newEvent.mapLink || '').trim();
+                    if (link.includes('maps.app.goo.gl') || link.includes('goo.gl') || link.includes('g.co')) {
+                      try {
+                        const res = await fetch(`${API}/api/resolve-map?url=${encodeURIComponent(link)}`);
+                        const data = await res.json();
+                        if (data.resolvedUrl && data.resolvedUrl !== link) {
+                          setNewEvent(prev => ({ ...prev, mapLink: data.resolvedUrl }));
+                          toast.info('Google Maps link expanded successfully!');
+                        }
+                      } catch (_) {}
+                    }
+                  }}
+                  style={{ padding: '10px', borderRadius: '8px', border: 'none' }} 
+                />
+                {(newEvent.location || newEvent.mapLink) && (
+                  <div style={{ marginTop: '2px', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '4px' }}>Live Map Preview:</div>
+                    <iframe
+                      width="100%"
+                      height="120"
+                      frameBorder="0"
+                      style={{ border: '1px solid #444', borderRadius: '8px', display: 'block' }}
+                      src={getMapIframeSrc(newEvent.location, newEvent.mapLink)}
+                      title="Map Preview"
+                    />
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <input
                     type="text"

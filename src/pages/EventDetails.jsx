@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, MapPin, Calendar, Clock, Share2, Heart, CheckCircle } from 'lucide-react';
-import { getMapIframeSrc } from '../utils/mapUtils';
+import { getMapIframeSrc, getDirectionsUrl, splitVenueLocation, splitEventDate } from '../utils/mapUtils';
 
 export default function EventDetails() {
   const navigate = useNavigate();
@@ -86,8 +86,8 @@ export default function EventDetails() {
               <Calendar size={24} color="var(--primary-color)" />
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '16px' }}>{event.date.split('•')[0].trim()}</div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{event.date.split('•')[1]?.trim() || "Time TBD"}</div>
+              <div style={{ fontWeight: 600, fontSize: '16px' }}>{splitEventDate(event.date).day}</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{splitEventDate(event.date).time}</div>
             </div>
           </div>
           
@@ -98,14 +98,14 @@ export default function EventDetails() {
             <div>
               <div style={{ fontWeight: 600, fontSize: '16px' }}>
                 {event.mapLink ? (
-                  <a href={event.mapLink} target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)', textDecoration: 'none' }}>
-                    {event.location.split('•')[0].trim()}
+                  <a href={getDirectionsUrl(event.location, event.mapLink)} target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)', textDecoration: 'none' }}>
+                    {splitVenueLocation(event.location).venue}
                   </a>
                 ) : (
-                  event.location.split('•')[0].trim()
+                  splitVenueLocation(event.location).venue
                 )}
               </div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{event.location.split('•')[1]?.trim() || "Location TBA"}</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{splitVenueLocation(event.location).city}</div>
             </div>
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function EventDetails() {
               title="Event Location"
             ></iframe>
             <a
-              href={event.mapLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((event.location || 'New York').replace(' • ', ', '))}`}
+              href={getDirectionsUrl(event.location, event.mapLink)}
               target="_blank"
               rel="noreferrer"
               style={{ 

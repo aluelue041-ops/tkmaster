@@ -252,6 +252,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      frameSrc: ["'self'", "https://www.google.com", "https://maps.google.com", "https://*.google.com", "https://*.openstreetmap.org"],
     }
   }
 }));
@@ -956,9 +957,47 @@ app.get('/api/events/:id/resale-tickets', async (req, res) => {
   }
 });
 
+// Helper to resolve shortened Google Maps links (e.g. maps.app.goo.gl)
+const resolveMapUrl = async (rawUrl) => {
+  if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+  const trimmed = rawUrl.trim();
+  const shortHosts = ['maps.app.goo.gl', 'goo.gl', 'g.co', 'bit.ly', 'tinyurl.com'];
+  try {
+    const parsed = new URL(trimmed);
+    if (shortHosts.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h))) {
+      // Follow HTTP redirects on the server side (not restricted by CORS)
+      const res = await fetch(trimmed, { method: 'HEAD', redirect: 'follow' });
+      if (res && res.url && res.url !== trimmed) {
+        return res.url;
+      }
+    }
+  } catch (_) {
+    try {
+      const res = await fetch(trimmed, { method: 'GET', redirect: 'follow' });
+      if (res && res.url && res.url !== trimmed) return res.url;
+    } catch (_) {}
+  }
+  return trimmed;
+};
+
+// API to resolve map URLs on demand
+app.get('/api/resolve-map', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) return res.status(400).json({ error: 'URL is required' });
+    const resolvedUrl = await resolveMapUrl(url);
+    res.json({ resolvedUrl });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to resolve URL' });
+  }
+});
+
 // 7. Create Event (Admin / Event Manager)
 app.post('/api/events', authMiddleware, eventManagerMiddleware, async (req, res) => {
   try {
+    if (req.body.mapLink) {
+      req.body.mapLink = await resolveMapUrl(req.body.mapLink);
+    }
     const newEvent = new Event(req.body);
     await newEvent.save();
 
@@ -994,6 +1033,9 @@ app.post('/api/events', authMiddleware, eventManagerMiddleware, async (req, res)
 app.put('/api/events/:id', authMiddleware, eventManagerMiddleware, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Event not found' });
+    if (req.body.mapLink) {
+      req.body.mapLink = await resolveMapUrl(req.body.mapLink);
+    }
     const updatedEvent = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updatedEvent) return res.status(404).json({ error: 'Event not found' });
     res.json(updatedEvent);
