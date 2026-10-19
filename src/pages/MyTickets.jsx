@@ -1057,34 +1057,7 @@ export default function MyTickets() {
                 </button>
               </div>
 
-              {/* WhatsApp Support for Ticket */}
-              <div style={{ padding: '14px 16px', borderRadius: '12px', backgroundColor: '#f0fff4', border: '1px solid #c6f6d5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '13px', color: '#22543d' }}>Need help with this ticket?</div>
-                  <div style={{ fontSize: '11px', color: '#38a169', marginTop: '2px' }}>Admin WhatsApp (+254107692553)</div>
-                </div>
-                <a
-                  href={`https://wa.me/254107692553?text=${encodeURIComponent(`Hello Admin, I need assistance with my ticket for "${selectedOrder.eventTitle}" (Booking ID: ${selectedOrder._id}).`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: '#25D366',
-                    color: 'white',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 2px 6px rgba(37,211,102,0.3)'
-                  }}
-                >
-                  <span>💬</span> WhatsApp
-                </a>
-              </div>
+
 
               {/* Promotion Banner */}
               <div style={{ border: '1px solid #eee', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'white' }}>
