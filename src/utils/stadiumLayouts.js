@@ -61,17 +61,19 @@ export const STADIUM_LAYOUTS = {
   'indoor-diamond': {
     id: 'indoor-diamond',
     name: 'Singapore Indoor Stadium — Diamond Center Stage',
-    subtitle: 'BOYNEXTDOOR Vol. 2 Style',
+    subtitle: 'BOYNEXTDOOR Vol. 2 Style (SGD Price-Led)',
     venueName: 'Singapore Indoor Stadium',
-    badge: 'Diamond Stage + 4 Pens',
-    description: 'End stage with runway connecting to a central Diamond satellite stage, 4 Standing Pens (A, B, C, D), FOH booth, and tiered stands.',
+    badge: 'Diamond Stage (SGD Price-Led)',
+    defaultCurrency: 'SGD',
+    pricingStyle: 'sgd-price',
+    description: 'End stage with runway connecting to a central Diamond satellite stage, 4 Standing Pens (A, B, C, D), FOH booth, and tiered stands labeled by SGD price tiers.',
     categories: [
-      { id: 'vip_standing', name: 'VIP STANDING (Pens A, B, C, D)', color: '#ec4899', isGA: true, multiplier: 4.1, defaultPrice: 328 },
-      { id: 'vip_seated', name: 'VIP SEATED (Lower Bowl 210-231)', color: '#06b6d4', isGA: false, multiplier: 4.1, defaultPrice: 328 },
-      { id: 'cat1', name: 'CAT 1 (Tiered Stands)', color: '#eab308', isGA: false, multiplier: 3.6, defaultPrice: 288 },
-      { id: 'cat2', name: 'CAT 2 (Mid Tiers 216-225)', color: '#3b82f6', isGA: false, multiplier: 3.2, defaultPrice: 258 },
-      { id: 'cat3', name: 'CAT 3 (Upper Tiers 312-330)', color: '#ef4444', isGA: false, multiplier: 2.8, defaultPrice: 228 },
-      { id: 'cat4', name: 'CAT 4 (Restricted View 311, 331)', color: '#22c55e', isGA: false, multiplier: 2.3, defaultPrice: 188 }
+      { id: 'vip_standing', name: 'VIP STANDING (Pens A-D)', priceLabel: 'SGD 328', color: '#ec4899', isGA: true, multiplier: 4.1, defaultPrice: 328 },
+      { id: 'vip_seated', name: 'VIP SEATED (210-231)', priceLabel: 'SGD 328', color: '#06b6d4', isGA: false, multiplier: 4.1, defaultPrice: 328 },
+      { id: 'cat1', name: 'Tier 1 Seated', priceLabel: 'SGD 288', color: '#eab308', isGA: false, multiplier: 3.6, defaultPrice: 288 },
+      { id: 'cat2', name: 'Tier 2 Seated (216-225)', priceLabel: 'SGD 258', color: '#3b82f6', isGA: false, multiplier: 3.2, defaultPrice: 258 },
+      { id: 'cat3', name: 'Tier 3 Upper (312-330)', priceLabel: 'SGD 228', color: '#ef4444', isGA: false, multiplier: 2.8, defaultPrice: 228 },
+      { id: 'cat4', name: 'Restricted View (311, 331)', priceLabel: 'SGD 188', color: '#22c55e', isGA: false, multiplier: 2.3, defaultPrice: 188 }
     ],
     defaultSeatConfig: {
       vip_standing: { rows: 0, seats: 0, enabled: true },

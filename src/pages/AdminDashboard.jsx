@@ -534,10 +534,30 @@ export default function AdminDashboard() {
                   <input type="text" placeholder="Display Date (e.g. Fri, Sep 19 • 7:00 PM)" value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} required style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none' }} />
                   <input type="datetime-local" title="Event date/time for expiry" value={newEvent.eventDate} onChange={e => setNewEvent({...newEvent, eventDate: e.target.value})} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input type="text" placeholder="Currency (e.g. $, £, €)" value={newEvent.currency} onChange={e => setNewEvent({...newEvent, currency: e.target.value})} required style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
-                  <input type="number" placeholder="Base Price (e.g. 80)" value={newEvent.basePrice} onChange={e => setNewEvent({...newEvent, basePrice: Number(e.target.value)})} required style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }} />
-                  <input type="text" placeholder="Location" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} required style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none' }} />
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <input type="text" placeholder="Currency (e.g. $, SGD, £, €)" value={newEvent.currency} onChange={e => setNewEvent({...newEvent, currency: e.target.value})} required style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', boxSizing: 'border-box' }} />
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                      {['SGD', '$', 'USD', 'MYR', '£', '€'].map(curr => (
+                        <button
+                          key={curr}
+                          type="button"
+                          onClick={() => setNewEvent(prev => ({ ...prev, currency: curr }))}
+                          style={{
+                            padding: '2px 6px', fontSize: '10px', borderRadius: '4px',
+                            border: newEvent.currency === curr ? '1px solid #6366f1' : '1px solid #444',
+                            background: newEvent.currency === curr ? 'rgba(99, 102, 241, 0.3)' : '#222',
+                            color: newEvent.currency === curr ? '#a5b4fc' : '#aaa',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {curr}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <input type="number" placeholder="Base Price (e.g. 80)" value={newEvent.basePrice} onChange={e => setNewEvent({...newEvent, basePrice: Number(e.target.value)})} required style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', height: '40px' }} />
+                  <input type="text" placeholder="Location" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} required style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none', height: '40px' }} />
                 </div>
                 <input 
                   type="text" 
@@ -641,6 +661,7 @@ export default function AdminDashboard() {
                             setNewEvent(prev => ({
                               ...prev,
                               venueLayout: item.id,
+                              currency: item.defaultCurrency || prev.currency,
                               seatConfig: item.defaultSeatConfig
                             }));
                             setPreviewActiveZone('All');

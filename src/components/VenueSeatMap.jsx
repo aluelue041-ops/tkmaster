@@ -867,6 +867,7 @@ export default function VenueSeatMap({
           {layoutData.categories.map((cat) => {
             const isSelected = activeZone === cat.id;
             const price = Math.round((Number(basePrice) || 80) * (cat.multiplier || 1));
+            const formattedPrice = cat.priceLabel ? cat.priceLabel : `${currency}${price}`;
             return (
               <button
                 key={cat.id}
@@ -882,7 +883,7 @@ export default function VenueSeatMap({
               >
                 <span style={{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: cat.color }} />
                 <span>{cat.name}</span>
-                <span style={{ color: '#94a3b8', fontSize: '10px' }}>• {currency}{price}</span>
+                <span style={{ color: '#94a3b8', fontSize: '10px' }}>• {formattedPrice}</span>
               </button>
             );
           })}
