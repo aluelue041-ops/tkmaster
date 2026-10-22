@@ -14,6 +14,21 @@ export default function SeatSelection() {
   const eventTitle = event?.title || 'Selected Event';
   const currency = event?.currency || '$';
   
+  const [currentUserRole, setCurrentUserRole] = useState('user');
+  const isSuperAdmin = currentUserRole === 'superadmin';
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    fetch(`${API}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.role) setCurrentUserRole(d.role);
+      })
+      .catch(() => {});
+  }, []);
+
   const [selectedSection, setSelectedSection] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedSpecificSeats, setSelectedSpecificSeats] = useState([]);
@@ -23,6 +38,7 @@ export default function SeatSelection() {
   // Limit modal state
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitMessage, setLimitMessage] = useState('');
+  const [limitType, setLimitType] = useState('daily_event_limit');
 
   const basePrice = event?.basePrice || 80;
 
@@ -141,6 +157,10 @@ export default function SeatSelection() {
       if (exists) {
         return prev.filter(s => s.id !== seatId);
       } else {
+        if (!isSuperAdmin && prev.length >= 2) {
+          toast.warning('Policy limit: Maximum 2 tickets allowed per event within a 24-hour period.');
+          return prev;
+        }
         return [...prev, { id: seatId, row: rowId, num: seatNum }];
       }
     });
@@ -154,6 +174,14 @@ export default function SeatSelection() {
     if (!selectedSection) return;
     if (!selectedSection.isGA && selectedSpecificSeats.length === 0) return;
     if (checkoutLoading) return;
+
+    if (!isSuperAdmin) {
+      const numRequested = selectedSection.isGA ? quantity : selectedSpecificSeats.length;
+      if (numRequested > 2) {
+        toast.warning('Policy limit: Maximum 2 tickets allowed per event within a 24-hour period.');
+        return;
+      }
+    }
     
     const token = localStorage.getItem('token');
     if (!token) {
@@ -190,6 +218,7 @@ export default function SeatSelection() {
         const errData = await res.json().catch(() => ({}));
         if (errData.limitExceeded) {
           setLimitMessage(errData.error);
+          setLimitType(errData.limitType || 'daily_event_limit');
           setShowLimitModal(true);
           return;
         }

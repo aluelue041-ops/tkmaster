@@ -576,6 +576,63 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
 
     // Check user subscription for auto-approval and limits
     const user = await User.findById(req.user.id);
+    const isSuperAdmin = user && user.role === 'superadmin';
+
+    // 24-HOUR DAILY EVENT LIMIT ENFORCEMENT (Except Super Admin)
+    // Rule: Restrict to 2 tickets per event per person on a rolling 24-hour cycle
+    const numSeatsRequested = seats ? seats.length : 1;
+
+    if (!isSuperAdmin) {
+      if (numSeatsRequested > 2) {
+        return res.status(400).json({ 
+          error: 'Daily limit exceeded: Maximum 2 tickets allowed per event per person within a 24-hour period.',
+          limitExceeded: true,
+          limitType: 'daily_event_limit'
+        });
+      }
+
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      const eventQueries = [];
+      if (eventId && eventId !== 'trending') {
+        eventQueries.push({ eventId: String(eventId) });
+      }
+      if (eventTitle) {
+        eventQueries.push({ eventTitle: eventTitle });
+      }
+
+      const existingEventTickets24h = await Ticket.find({
+        user: req.user.id,
+        $or: eventQueries.length > 0 ? eventQueries : [{ eventTitle }],
+        purchaseDate: { $gte: twentyFourHoursAgo },
+        status: { $nin: ['Cancelled', 'Rejected'] }
+      });
+
+      let seatsBoughtLast24h = 0;
+      existingEventTickets24h.forEach(t => {
+        seatsBoughtLast24h += (t.seats && t.seats.length > 0 ? t.seats.length : 1);
+      });
+
+      if (seatsBoughtLast24h + numSeatsRequested > 2) {
+        const earliestPurchase = existingEventTickets24h.reduce((min, t) => {
+          const pDate = new Date(t.purchaseDate || t._id.getTimestamp());
+          return pDate < min ? pDate : min;
+        }, new Date());
+        const resetTime = new Date(earliestPurchase.getTime() + 24 * 60 * 60 * 1000);
+        const msRemaining = Math.max(0, resetTime.getTime() - Date.now());
+        const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
+        const minutesRemaining = Math.ceil((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        const timeLeftStr = hoursRemaining > 0 ? `${hoursRemaining}h ${minutesRemaining}m` : `${minutesRemaining}m`;
+
+        return res.status(400).json({ 
+          error: `Daily limit reached: Maximum 2 tickets allowed per event every 24 hours. You have already booked ${seatsBoughtLast24h} ticket(s) for this event in the past 24 hours. Limit resets in approx ${timeLeftStr}.`,
+          limitExceeded: true,
+          limitType: 'daily_event_limit',
+          seatsBoughtLast24h,
+          hoursRemaining
+        });
+      }
+    }
 
     // Check if subscription has expired → revert to Free
     let subscription = user ? (user.subscription || 'Free') : 'Free';
@@ -600,15 +657,14 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       seatsBoughtThisMonth += (t.seats ? t.seats.length : 1);
     });
 
-    const numSeatsRequested = seats ? seats.length : 1;
-
     let limit = 2; // Free tier
-    if (subscription === 'VIP') limit = Infinity;
+    if (subscription === 'VIP' || isSuperAdmin) limit = Infinity;
 
-    if (seatsBoughtThisMonth + numSeatsRequested > limit) {
+    if (!isSuperAdmin && seatsBoughtThisMonth + numSeatsRequested > limit) {
       return res.status(400).json({ 
         error: `Monthly limit exceeded. Your ${subscription} plan allows ${limit} tickets/month. You have already booked ${seatsBoughtThisMonth}.`,
-        limitExceeded: true
+        limitExceeded: true,
+        limitType: 'monthly_plan_limit'
       });
     }
 
@@ -911,6 +967,42 @@ app.post('/api/tickets/:id/buy-resale', authMiddleware, ticketActionLimiter, asy
     if (ticket.status !== 'For Sale') return res.status(400).json({ error: 'Ticket is not for sale' });
     
     const sellerId = ticket.user ? ticket.user._id.toString() : null;
+
+    // Check if buyer is super admin
+    const buyer = await User.findById(req.user.id);
+    const isSuperAdmin = buyer && buyer.role === 'superadmin';
+
+    if (!isSuperAdmin) {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const eventQueries = [];
+      if (ticket.eventId && ticket.eventId !== 'trending') {
+        eventQueries.push({ eventId: String(ticket.eventId) });
+      }
+      if (ticket.eventTitle) {
+        eventQueries.push({ eventTitle: ticket.eventTitle });
+      }
+
+      const existingEventTickets24h = await Ticket.find({
+        user: req.user.id,
+        $or: eventQueries.length > 0 ? eventQueries : [{ eventTitle: ticket.eventTitle }],
+        purchaseDate: { $gte: twentyFourHoursAgo },
+        status: { $nin: ['Cancelled', 'Rejected'] }
+      });
+
+      let seatsBoughtLast24h = 0;
+      existingEventTickets24h.forEach(t => {
+        seatsBoughtLast24h += (t.seats && t.seats.length > 0 ? t.seats.length : 1);
+      });
+
+      const ticketSeats = ticket.seats && ticket.seats.length > 0 ? ticket.seats.length : 1;
+      if (seatsBoughtLast24h + ticketSeats > 2) {
+        return res.status(400).json({
+          error: `Daily limit reached: Maximum 2 tickets allowed per event every 24 hours. You have already booked ${seatsBoughtLast24h} ticket(s) for this event in the past 24 hours.`,
+          limitExceeded: true,
+          limitType: 'daily_event_limit'
+        });
+      }
+    }
     
     ticket.user = req.user.id;
     ticket.status = 'Active';
