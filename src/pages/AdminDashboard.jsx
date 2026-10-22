@@ -689,11 +689,22 @@ export default function AdminDashboard() {
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc', lineHeight: 1.3 }}>
-                            {item.name}
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>
-                            {item.subtitle}
+                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
+                            {item.image && (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                style={{ width: '46px', height: '46px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0 }}
+                              />
+                            )}
+                            <div>
+                              <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc', lineHeight: 1.3 }}>
+                                {item.name}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                                {item.subtitle}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       );

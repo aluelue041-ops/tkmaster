@@ -22,6 +22,8 @@ export default function VenueSeatMap({
   style = {}
 }) {
   const [hoveredZone, setHoveredZone] = useState(null);
+  const [viewType, setViewType] = useState('real'); // 'real' for real stadium poster layout, 'schematic' for vector
+  const [isZoomed, setIsZoomed] = useState(false);
   const layoutData = getLayoutById(layout);
 
   const getZoneOpacity = (zoneId) => {
@@ -832,8 +834,8 @@ export default function VenueSeatMap({
 
   return (
     <div style={{ width: '100%', position: 'relative', ...style }}>
-      {/* Venue Header Tag */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+      {/* Venue Header & View Mode Switcher */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
         <div>
           <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#6366f1', letterSpacing: '1px' }}>
             {layoutData.venueName}
@@ -842,21 +844,108 @@ export default function VenueSeatMap({
             {layoutData.name}
           </div>
         </div>
-        <span style={{ 
-          fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '12px', 
-          background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.3)' 
-        }}>
-          {layoutData.badge}
-        </span>
+
+        {/* View Mode Toggle: Real Stadium Layout vs Vector Blueprint */}
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setViewType('real')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
+              border: viewType === 'real' ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.1)',
+              background: viewType === 'real' ? '#6366f1' : 'rgba(255,255,255,0.05)',
+              color: 'white', cursor: 'pointer', transition: 'all 0.15s ease'
+            }}
+          >
+            🏟️ Real Stadium Layout
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewType('schematic')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
+              border: viewType === 'schematic' ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.1)',
+              background: viewType === 'schematic' ? '#6366f1' : 'rgba(255,255,255,0.05)',
+              color: 'white', cursor: 'pointer', transition: 'all 0.15s ease'
+            }}
+          >
+            📐 Blueprint
+          </button>
+        </div>
       </div>
 
-      {/* SVG Container */}
+      {/* Main Display Container */}
       <div style={{ 
         position: 'relative', borderRadius: '12px', overflow: 'hidden', 
-        border: '1px solid rgba(255,255,255,0.1)', background: '#0b1120' 
+        border: '1px solid rgba(255,255,255,0.12)', background: '#05070e',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.5)'
       }}>
-        {renderLayoutSvg()}
+        {viewType === 'real' && layoutData.image ? (
+          /* 📸 REAL OFFICIAL STADIUM POSTER LAYOUT */
+          <div style={{ position: 'relative', textAlign: 'center', padding: '12px', background: '#04060c' }}>
+            <img
+              src={layoutData.image}
+              alt={layoutData.name}
+              style={{
+                width: '100%',
+                maxHeight: '480px',
+                objectFit: 'contain',
+                display: 'block',
+                margin: '0 auto',
+                borderRadius: '8px',
+                cursor: 'zoom-in',
+                filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.6))'
+              }}
+              onClick={() => setIsZoomed(true)}
+            />
+            {/* Floating Zoom Action Badge */}
+            <div 
+              onClick={() => setIsZoomed(true)}
+              style={{
+                position: 'absolute', bottom: '16px', right: '16px',
+                background: 'rgba(15, 23, 42, 0.85)', color: '#f8fafc',
+                padding: '6px 14px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
+                cursor: 'pointer', border: '1px solid rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(8px)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                display: 'flex', alignItems: 'center', gap: '6px'
+              }}
+            >
+              <span>🔍 Click to View Full Resolution</span>
+            </div>
+          </div>
+        ) : (
+          /* 📐 INTERACTIVE SCHEMATIC BLUEPRINT */
+          <div>
+            {renderLayoutSvg()}
+          </div>
+        )}
       </div>
+
+      {/* Fullscreen Zoom Modal */}
+      {isZoomed && layoutData.image && (
+        <div 
+          onClick={() => setIsZoomed(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0, 0, 0, 0.94)', zIndex: 999999,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            padding: '20px', cursor: 'zoom-out', backdropFilter: 'blur(8px)'
+          }}
+        >
+          <div style={{ position: 'relative', maxWidth: '96vw', maxHeight: '92vh', textAlign: 'center' }}>
+            <img 
+              src={layoutData.image} 
+              alt={layoutData.name} 
+              style={{ maxWidth: '100%', maxHeight: '86vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 12px 48px rgba(0,0,0,0.9)' }} 
+            />
+            <div style={{ marginTop: '12px', color: '#cbd5e1', fontSize: '13px', fontWeight: 600 }}>
+              {layoutData.name} • <span style={{ color: '#94a3b8' }}>Click anywhere to close full screen view</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Color Legend & Category List */}
       {showLegend && layoutData.categories && (

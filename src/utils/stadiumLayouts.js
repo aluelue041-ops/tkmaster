@@ -8,6 +8,7 @@ export const STADIUM_LAYOUTS = {
     subtitle: 'Stray Kids <RUN IT> Style',
     venueName: 'Singapore Indoor Stadium',
     badge: 'End-Stage + Runway',
+    image: '/images/stadiums/straykids-indoor-runway.jpg',
     description: 'End stage with long thrust catwalk extending into standing pens A & B, surrounded by a tiered horseshoe arena bowl.',
     categories: [
       { id: 'vip_standing', name: 'VIP STANDING (Pen A & B)', color: '#ec4899', isGA: true, multiplier: 4.6, defaultPrice: 368 },
@@ -37,6 +38,7 @@ export const STADIUM_LAYOUTS = {
     subtitle: 'BTS World Tour Arirang Style',
     venueName: 'Singapore National Stadium',
     badge: '360° In-the-Round',
+    image: '/images/stadiums/bts-national-360.jpg',
     description: 'Full 360-degree oval stadium with central stage and 4-way diagonal X catwalks, surrounded by VIP floor pens and multi-tier concentric bowls.',
     categories: [
       { id: 'vip', name: 'VIP Floor Surround', color: '#d946ef', isGA: false, multiplier: 4.8, defaultPrice: 388 },
@@ -64,6 +66,7 @@ export const STADIUM_LAYOUTS = {
     subtitle: 'BOYNEXTDOOR Vol. 2 Style (SGD Price-Led)',
     venueName: 'Singapore Indoor Stadium',
     badge: 'Diamond Stage (SGD Price-Led)',
+    image: '/images/stadiums/boynextdoor-indoor-diamond.jpg',
     defaultCurrency: 'SGD',
     pricingStyle: 'sgd-price',
     description: 'End stage with runway connecting to a central Diamond satellite stage, 4 Standing Pens (A, B, C, D), FOH booth, and tiered stands labeled by SGD price tiers.',
@@ -91,6 +94,7 @@ export const STADIUM_LAYOUTS = {
     subtitle: 'BABYMONSTER CHOOM Style',
     venueName: 'Singapore Indoor Stadium',
     badge: 'T-Stage + Seated Floor',
+    image: '/images/stadiums/babymonster-indoor-tstage.jpg',
     description: 'End stage with T-thrust catwalk, VIP Standing Pens + Reserved Floor Seating blocks (PA1, PA2, PA3), FOH console, and horseshoe bowl.',
     categories: [
       { id: 'vip_seated', name: 'VIP SEATED (Floor PA1, PA2, PA3)', color: '#06b6d4', isGA: false, multiplier: 4.5, defaultPrice: 358 },
@@ -120,6 +124,7 @@ export const STADIUM_LAYOUTS = {
     subtitle: 'LE SSERAFIM PUREFLOW Style',
     venueName: 'APEX @ EXPO',
     badge: 'Exhibition Arena + Satellite',
+    image: '/images/stadiums/lesserafim-expo-hall.jpg',
     description: 'Wide main stage with thrust catwalk into hexagonal satellite stage, Standing Pens A, B, C, FOH console, and surrounding tiered bleachers.',
     categories: [
       { id: 'vip_standing', name: 'VIP STANDING (Pens A & B)', color: '#06b6d4', isGA: true, multiplier: 4.3, defaultPrice: 348 },
@@ -147,6 +152,7 @@ export const STADIUM_LAYOUTS = {
     subtitle: 'Classic Oval Arena',
     venueName: 'Concert Stadium',
     badge: 'Classic Oval',
+    image: '/images/stadiums/bts-national-360.jpg',
     description: 'Traditional oval concert layout with end stage, catwalk, VIP standing pens, and concentric CAT 1-6 tiered rings.',
     categories: [
       { id: 'vip_standing', name: 'VIP STANDING PEN', color: '#e040fb', isGA: true, multiplier: 4.6, defaultPrice: 368 },
