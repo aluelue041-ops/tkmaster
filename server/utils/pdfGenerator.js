@@ -196,32 +196,70 @@ async function generateTicketPDF({ ticketId, eventTitle, eventImage, seatString,
 
       // ── Seats Box ─────────────────────────────────────
       const boxY = typeY + 24;
-      const boxH = 78;
+
+      // Column positions inside the box: give SECTION generous width (58%)
+      const col1 = rx + 20;
+      const col2 = rx + rw * 0.58;
+      const col3 = rx + rw * 0.79;
+      const secColWidth = col2 - col1 - 8;
+
+      // Parse section into main category (e.g. "CAT 1") and optional sub-detail (e.g. "(Inner Floor PA/PB/PC/PD)")
+      let mainSec = (parsed.section || '-').trim();
+      let subSec = '';
+      const parenMatch = mainSec.match(/^(.*?)\s*(\(.*?\))\s*$/);
+      if (parenMatch) {
+        mainSec = parenMatch[1].trim();
+        subSec = parenMatch[2].trim();
+      }
+
+      // Determine main font size based on text length
+      let mainFontSize = 17;
+      if (mainSec.length > 20) mainFontSize = 11;
+      else if (mainSec.length > 14) mainFontSize = 13;
+      else if (mainSec.length > 9) mainFontSize = 15;
+
+      doc.font('Helvetica-Bold').fontSize(mainFontSize);
+      const mainHeight = doc.heightOfString(mainSec, { width: secColWidth });
+
+      let subHeight = 0;
+      if (subSec) {
+        doc.font('Helvetica').fontSize(8.5);
+        subHeight = doc.heightOfString(subSec, { width: secColWidth }) + 2;
+      }
+      const totalSecHeight = mainHeight + subHeight;
+      const boxH = Math.max(78, 34 + totalSecHeight + 12);
+
       doc.roundedRect(rx, boxY, rw, boxH, 8).fillColor('#f8f8f8').fill();
       doc.roundedRect(rx, boxY, rw, boxH, 8).lineWidth(1).strokeColor('#dcdcdc').stroke();
 
-      // Column positions inside the box
-      const col1 = rx + 28, col2 = rx + rw * 0.40, col3 = rx + rw * 0.68;
-
+      // Labels
       doc.fillColor('#828282').font('Helvetica').fontSize(9);
-      doc.text('SECTION', col1, boxY + 16);
-      doc.text('ROW',     col2, boxY + 16);
-      doc.text('SEAT',    col3, boxY + 16);
+      doc.text('SECTION', col1, boxY + 14);
+      doc.text('ROW',     col2, boxY + 14);
+      doc.text('SEAT',    col3, boxY + 14);
 
-      doc.fillColor('#141414').font('Helvetica-Bold').fontSize(18);
-      doc.text(parsed.section,       col1, boxY + 36, { width: col2 - col1 - 4 });
-      doc.text(String(parsed.row),   col2, boxY + 36, { width: col3 - col2 - 4 });
-      doc.text(String(parsed.seat),  col3, boxY + 36, { width: rw - (col3 - rx) });
+      // Section values: main category in bold, detail subtitle underneath in neat smaller font
+      doc.fillColor('#141414').font('Helvetica-Bold').fontSize(mainFontSize);
+      doc.text(mainSec, col1, boxY + 32, { width: secColWidth });
+      if (subSec) {
+        doc.fillColor('#555555').font('Helvetica').fontSize(8.5);
+        doc.text(subSec, col1, boxY + 32 + mainHeight + 2, { width: secColWidth });
+      }
 
-      // ── Order Details ─────────────────────────────────
-      const orderY = boxY + boxH + 18;
+      // Row and Seat values
+      doc.fillColor('#141414').font('Helvetica-Bold').fontSize(17);
+      doc.text(String(parsed.row),  col2, boxY + 32, { width: col3 - col2 - 6 });
+      doc.text(String(parsed.seat), col3, boxY + 32, { width: rw - (col3 - rx) - 6 });
+
+      // ── Order Details (positioned safely below dynamic box) ──
+      const orderY = boxY + boxH + 16;
       doc.fillColor('#828282').font('Helvetica').fontSize(9);
       doc.text('ORDER ID',   rx,           orderY);
       doc.text('TOTAL PAID', rx + rw * 0.46, orderY);
 
       doc.fillColor('#141414').font('Helvetica-Bold').fontSize(15);
-      doc.text(String(orderNumber || ticketId), rx, orderY + 18, { width: rw * 0.42 });
-      doc.text(`${currency || '$'}${totalPrice || ''}`, rx + rw * 0.46, orderY + 18);
+      doc.text(String(orderNumber || ticketId), rx, orderY + 16, { width: rw * 0.42 });
+      doc.text(`${currency || '$'}${totalPrice || ''}`, rx + rw * 0.46, orderY + 16);
 
       // ── QR Code ───────────────────────────────────────
       const qrSize = 88;

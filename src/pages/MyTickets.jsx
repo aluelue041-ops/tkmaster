@@ -441,25 +441,48 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
 
       // Seats Box
       const boxY = Math.max(typeEndY, 56);
+      let mainSec = (parsed.section || '-').trim();
+      let subSec = '';
+      const parenMatch = mainSec.match(/^(.*?)\s*(\(.*?\))\s*$/);
+      if (parenMatch) {
+        mainSec = parenMatch[1].trim();
+        subSec = parenMatch[2].trim();
+      }
+
+      const boxH = subSec ? 30 : 28;
       doc.setFillColor(248, 248, 248);
       doc.setDrawColor(220, 220, 220);
-      doc.roundedRect(96, boxY, 99, 28, 3, 3, 'FD');
+      doc.roundedRect(96, boxY, 99, boxH, 3, 3, 'FD');
       
       doc.setFontSize(7);
       doc.setTextColor(130, 130, 130);
-      doc.text('SECTION', 104, boxY + 9);
-      doc.text('ROW', 148, boxY + 9);
-      doc.text('SEAT', 173, boxY + 9);
+      doc.text('SECTION', 102, boxY + 8);
+      doc.text('ROW',     156, boxY + 8);
+      doc.text('SEAT',    178, boxY + 8);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
       doc.setTextColor(20, 20, 20);
-      doc.text(parsed.section, 104, boxY + 20, { maxWidth: 40 });
-      doc.text(String(parsed.row), 148, boxY + 20);
-      doc.text(String(parsed.seat), 173, boxY + 20);
+      if (subSec) {
+        doc.setFontSize(11);
+        doc.text(mainSec, 102, boxY + 16, { maxWidth: 50 });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(80, 80, 80);
+        doc.text(subSec, 102, boxY + 22, { maxWidth: 50 });
+      } else {
+        const secFontSize = mainSec.length > 15 ? 9 : 11;
+        doc.setFontSize(secFontSize);
+        doc.text(mainSec, 102, boxY + 18, { maxWidth: 50 });
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(20, 20, 20);
+      doc.text(String(parsed.row),  156, boxY + 18);
+      doc.text(String(parsed.seat), 178, boxY + 18);
 
       // Order Details
-      const orderLabelY = boxY + 36;
+      const orderLabelY = boxY + boxH + 8;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.setTextColor(130, 130, 130);
@@ -469,8 +492,8 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(20, 20, 20);
-      doc.text(String(orderNumber || ticketId), 96, orderLabelY + 9, { maxWidth: 48 });
-      doc.text(`${currency || '$'}${totalPrice || ''}`, 148, orderLabelY + 9);
+      doc.text(String(orderNumber || ticketId), 96, orderLabelY + 8, { maxWidth: 48 });
+      doc.text(`${currency || '$'}${totalPrice || ''}`, 148, orderLabelY + 8);
 
       // QR Code
       const rawQrData = `TICKET:${ticketId}`;
@@ -930,25 +953,48 @@ export default function MyTickets() {
 
                       // Seats Box
                       const boxY = Math.max(typeEndY, 56);
+                      let mainSec = (parsed.section || '-').trim();
+                      let subSec = '';
+                      const parenMatch = mainSec.match(/^(.*?)\s*(\(.*?\))\s*$/);
+                      if (parenMatch) {
+                        mainSec = parenMatch[1].trim();
+                        subSec = parenMatch[2].trim();
+                      }
+
+                      const boxH = subSec ? 30 : 28;
                       doc.setFillColor(248, 248, 248);
                       doc.setDrawColor(220, 220, 220);
-                      doc.roundedRect(96, boxY, 99, 28, 3, 3, 'FD');
+                      doc.roundedRect(96, boxY, 99, boxH, 3, 3, 'FD');
                       
                       doc.setFontSize(7);
                       doc.setTextColor(130, 130, 130);
-                      doc.text('SECTION', 104, boxY + 9);
-                      doc.text('ROW', 148, boxY + 9);
-                      doc.text('SEAT', 173, boxY + 9);
+                      doc.text('SECTION', 102, boxY + 8);
+                      doc.text('ROW',     156, boxY + 8);
+                      doc.text('SEAT',    178, boxY + 8);
 
                       doc.setFont('helvetica', 'bold');
-                      doc.setFontSize(12);
                       doc.setTextColor(20, 20, 20);
-                      doc.text(parsed.section, 104, boxY + 20, { maxWidth: 40 });
-                      doc.text(String(parsed.row), 148, boxY + 20);
-                      doc.text(String(parsed.seat), 173, boxY + 20);
+                      if (subSec) {
+                        doc.setFontSize(11);
+                        doc.text(mainSec, 102, boxY + 16, { maxWidth: 50 });
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(6);
+                        doc.setTextColor(80, 80, 80);
+                        doc.text(subSec, 102, boxY + 22, { maxWidth: 50 });
+                      } else {
+                        const secFontSize = mainSec.length > 15 ? 9 : 11;
+                        doc.setFontSize(secFontSize);
+                        doc.text(mainSec, 102, boxY + 18, { maxWidth: 50 });
+                      }
+
+                      doc.setFont('helvetica', 'bold');
+                      doc.setFontSize(11);
+                      doc.setTextColor(20, 20, 20);
+                      doc.text(String(parsed.row),  156, boxY + 18);
+                      doc.text(String(parsed.seat), 178, boxY + 18);
 
                       // Order Details
-                      const orderLabelY = boxY + 36;
+                      const orderLabelY = boxY + boxH + 8;
                       doc.setFont('helvetica', 'normal');
                       doc.setFontSize(7);
                       doc.setTextColor(130, 130, 130);
@@ -958,8 +1004,8 @@ export default function MyTickets() {
                       doc.setFont('helvetica', 'bold');
                       doc.setFontSize(11);
                       doc.setTextColor(20, 20, 20);
-                      doc.text(String(oNum), 96, orderLabelY + 9, { maxWidth: 48 });
-                      doc.text(`${selectedOrder.currency || '$'}${selectedOrder.totalPrice || ''}`, 148, orderLabelY + 9);
+                      doc.text(String(oNum), 96, orderLabelY + 8, { maxWidth: 48 });
+                      doc.text(`${selectedOrder.currency || '$'}${selectedOrder.totalPrice || ''}`, 148, orderLabelY + 8);
 
                       // QR Code
                       const rawQrData = `TICKET:${tId}`;
