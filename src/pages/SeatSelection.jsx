@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ChevronLeft, Check, Plus, Minus } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { STADIUM_LAYOUTS, getLayoutById, generateSectionsForLayout } from '../utils/stadiumLayouts';
+import VenueSeatMap from '../components/VenueSeatMap';
 
 export default function SeatSelection() {
   const navigate = useNavigate();
@@ -25,84 +27,11 @@ export default function SeatSelection() {
   const basePrice = event?.basePrice || 80;
 
   const generateSections = (base) => {
-    const list = [];
-    
-    if (event?.venueLayout === 'concert-oval' && event?.seatConfig) {
-      const c = event.seatConfig;
-      if (c.vipStanding?.enabled) {
-        list.push({ id: 'vip_standing_a', name: 'VIP STANDING PEN A', ticketName: 'VIP STANDING PEN A', price: Math.round(base * 4.6), color: '#e040fb', isGA: true, config: c.vipStanding });
-        list.push({ id: 'vip_standing_b', name: 'VIP STANDING PEN B', ticketName: 'VIP STANDING PEN B', price: Math.round(base * 4.6), color: '#e040fb', isGA: true, config: c.vipStanding });
-      }
-      if (c.vipSeated?.enabled) {
-        list.push({ id: 'vip_seated', name: 'VIP Seated', ticketName: 'VIP Seated', price: Math.round(base * 4.7), color: '#06b6d4', isGA: false, config: c.vipSeated });
-      }
-      if (c.cat1?.enabled) list.push({ id: 'cat1', name: 'CAT 1', ticketName: 'CAT 1', price: Math.round(base * 3.7), color: '#fdd835', isGA: false, config: c.cat1 });
-      if (c.cat2?.enabled) list.push({ id: 'cat2', name: 'CAT 2', ticketName: 'CAT 2', price: Math.round(base * 3.8), color: '#42a5f5', isGA: false, config: c.cat2 });
-      if (c.cat3?.enabled) list.push({ id: 'cat3', name: 'CAT 3', ticketName: 'CAT 3', price: Math.round(base * 3.2), color: '#ef5350', isGA: false, config: c.cat3 });
-      if (c.cat4?.enabled) list.push({ id: 'cat4', name: 'CAT 4', ticketName: 'CAT 4', price: Math.round(base * 2.3), color: '#66bb6a', isGA: false, config: c.cat4 });
-      if (c.cat5?.enabled) list.push({ id: 'cat5', name: 'CAT 5 (Restricted)', ticketName: 'CAT 5', price: Math.round(base * 3.2), color: '#ff9800', isGA: false, config: c.cat5 });
-      if (c.cat6?.enabled) list.push({ id: 'cat6', name: 'CAT 6 (Restricted)', ticketName: 'CAT 6', price: Math.round(base * 2.1), color: '#ab47bc', isGA: false, config: c.cat6 });
-      return list;
+    const layoutKey = event?.venueLayout || 'indoor-runway';
+    if (STADIUM_LAYOUTS[layoutKey]) {
+      return generateSectionsForLayout(layoutKey, base, event?.seatConfig);
     }
-
-    const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i);
-    const charRange = (startChar, endChar) => {
-      const start = startChar.charCodeAt(0);
-      const end = endChar.charCodeAt(0);
-      return Array.from({ length: end - start + 1 }, (_, i) => String.fromCharCode(start + i));
-    };
-
-    // 1. VIP (Floor A-D)
-    charRange('A', 'D').forEach(char => {
-      list.push({ id: `vip_floor_${char}`, name: `VIP - Floor ${char}`, ticketName: `VIP - Floor ${char}`, price: Math.round(base * 4.5), color: '#ff3b30', isGA: false, config: { rows: 13, seats: 30 } });
-    });
-
-    // 2. Premium Floor (Floor E-L)
-    charRange('E', 'L').forEach(char => {
-      list.push({ id: `premium_floor_${char}`, name: `Premium Floor - Floor ${char}`, ticketName: `Floor ${char}`, price: Math.round(base * 4), color: '#ff2d55', isGA: false, config: { rows: 13, seats: 40 } });
-    });
-
-    // 3. Gold (110-114, 128-132)
-    [...range(110, 114), ...range(128, 132)].forEach(num => {
-      list.push({ id: `gold_${num}`, name: `Gold - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 3), color: '#ffcc00', isGA: false, config: { rows: 13, seats: 35 } });
-    });
-    
-    // 4. Gold (115-127)
-    range(115, 127).forEach(num => {
-      list.push({ id: `gold_${num}`, name: `Gold - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 3), color: '#ffc107', isGA: false, config: { rows: 13, seats: 40 } });
-    });
-
-    // 5. Silver (105-109, 133-138)
-    [...range(105, 109), ...range(133, 138)].forEach(num => {
-      list.push({ id: `silver_${num}`, name: `Silver - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 2.5), color: '#a1a1aa', isGA: false, config: { rows: 13, seats: 35 } });
-    });
-
-    // 6. Bronze (102-104, 139-156)
-    [...range(102, 104), ...range(139, 156)].forEach(num => {
-      list.push({ id: `bronze_${num}`, name: `Bronze - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 2), color: '#cd7f32', isGA: false, config: { rows: 13, seats: 40 } });
-    });
-
-    // 7. Club London (M1-M16)
-    range(1, 16).forEach(num => {
-      list.push({ id: `club_london_m${num}`, name: `Club London - M${num}`, ticketName: `Section M${num}`, price: Math.round(base * 6), color: '#000000', isGA: false, config: { rows: 13, seats: 25 } });
-    });
-
-    // 8. Upper Gold (210-214, 228-232)
-    [...range(210, 214), ...range(228, 232)].forEach(num => {
-      list.push({ id: `upper_gold_${num}`, name: `Upper Gold - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 2.5), color: '#f59e0b', isGA: false, config: { rows: 13, seats: 30 } });
-    });
-
-    // 9. Upper Silver (205-209, 233-240)
-    [...range(205, 209), ...range(233, 240)].forEach(num => {
-      list.push({ id: `upper_silver_${num}`, name: `Upper Silver - Section ${num}`, ticketName: `Section ${num}`, price: Math.round(base * 1.8), color: '#d4d4d8', isGA: false, config: { rows: 13, seats: 35 } });
-    });
-
-    // 10. Upper Bronze (201-204, 241-256)
-    [...range(201, 204), ...range(241, 256)].forEach(num => {
-      list.push({ id: `upper_bronze_${num}`, name: `Upper Bronze - Section ${num}`, ticketName: `Section ${num}`, price: base, color: '#b45309', isGA: false, config: { rows: 13, seats: 40 } });
-    });
-
-    return list;
+    return generateSectionsForLayout('indoor-runway', base, event?.seatConfig);
   };
 
   const sections = generateSections(basePrice);
@@ -114,16 +43,7 @@ export default function SeatSelection() {
     if (searchQuery && !sec.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (activeZone === 'All') return true;
     
-    if (event?.venueLayout === 'concert-oval') {
-      return sec.id.includes(activeZone);
-    }
-    
-    // Fallback filters for legacy layout
-    if (activeZone === 'VIP' && sec.name.includes('VIP')) return true;
-    if (activeZone === 'Floor' && sec.name.includes('Floor') && !sec.name.includes('VIP')) return true;
-    if (activeZone === 'Level 100' && (sec.name.includes('1') && sec.name.length <= 15)) return true;
-    if (activeZone === 'Level 200' && sec.name.includes('2')) return true;
-    return false;
+    return sec.id === activeZone || sec.id.startsWith(activeZone) || activeZone.startsWith(sec.id);
   });
 
   const getSeatedRows = (section) => {
@@ -364,196 +284,29 @@ export default function SeatSelection() {
           <>
             {/* Interactive Stadium Map — Oval Concert Layout */}
           <div style={{ padding: '20px 16px 16px', backgroundColor: 'white', borderBottom: '1px solid #eaeaea' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 14px', textAlign: 'center', color: '#111' }}>Interactive Stadium Map</h3>
-            <div style={{ position: 'relative', width: '100%', maxWidth: '480px', margin: '0 auto' }}>
-              <svg viewBox="0 0 480 310" style={{ width: '100%', height: 'auto', display: 'block' }}>
-                {/* Stadium oval background */}
-                <ellipse cx="240" cy="155" rx="225" ry="140" fill="#1e1e2e" stroke="#444" strokeWidth="1.5"/>
-
-                {/* Compass labels */}
-                <text x="240" y="16" textAnchor="middle" fill="#666" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="2">NORTH</text>
-                <text x="240" y="304" textAnchor="middle" fill="#666" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="2">SOUTH</text>
-                <text x="11" y="159" textAnchor="middle" fill="#666" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="2" transform="rotate(-90,11,159)">WEST</text>
-                <text x="469" y="159" textAnchor="middle" fill="#666" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="2" transform="rotate(90,469,159)">EAST</text>
-
-                {/* 🏟️ STAGE (left / west side) ── */}
-                <rect x="62" y="122" width="100" height="62" rx="4" fill="#f0f0f0"/>
-                <rect x="162" y="137" width="130" height="32" rx="3" fill="#f0f0f0"/>
-                <rect x="200" y="108" width="52" height="29" rx="3" fill="#f0f0f0"/>
-                <rect x="200" y="173" width="52" height="29" rx="3" fill="#f0f0f0"/>
-                <rect x="236" y="202" width="28" height="24" rx="3" fill="#f0f0f0"/>
-                <text x="112" y="157" textAnchor="middle" fill="#333" fontFamily="sans-serif" fontSize="10" fontWeight="900" letterSpacing="1.5">STAGE</text>
-
-                {/* ── VIP STANDING PEN A (magenta, right of catwalk) ── */}
-                <rect x="296" y="133" width="38" height="46" rx="4"
-                  fill={activeZone === 'vip_standing' ? '#e040fb' : 'rgba(224,64,251,0.25)'}
-                  stroke="#e040fb" strokeWidth="1.5" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'vip_standing' ? 'All' : 'vip_standing')}/>
-                <text x="315" y="153" textAnchor="middle" fill={activeZone === 'vip_standing' ? '#fff' : '#e040fb'} fontFamily="sans-serif" fontSize="6.5" fontWeight="700" pointerEvents="none">STANDING</text>
-                <text x="315" y="163" textAnchor="middle" fill={activeZone === 'vip_standing' ? '#fff' : '#e040fb'} fontFamily="sans-serif" fontSize="6.5" fontWeight="700" pointerEvents="none">PEN A</text>
-
-                {/* VIP STANDING PEN B (magenta, above/below catwalk) */}
-                <rect x="174" y="107" width="32" height="28" rx="3"
-                  fill={activeZone === 'vip_standing' ? '#e040fb' : 'rgba(224,64,251,0.25)'}
-                  stroke="#e040fb" strokeWidth="1.5" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'vip_standing' ? 'All' : 'vip_standing')}/>
-                <rect x="174" y="175" width="32" height="28" rx="3"
-                  fill={activeZone === 'vip_standing' ? '#e040fb' : 'rgba(224,64,251,0.25)'}
-                  stroke="#e040fb" strokeWidth="1.5" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'vip_standing' ? 'All' : 'vip_standing')}/>
-                <text x="190" y="120" textAnchor="middle" fill={activeZone === 'vip_standing' ? '#fff' : '#e040fb'} fontFamily="sans-serif" fontSize="5.5" fontWeight="700" pointerEvents="none">PEN B</text>
-
-                {/* ── CAT 1 — YELLOW (VIP Seated inner strip) ── */}
-                <rect x="174" y="90" width="162" height="16" rx="3"
-                  fill={activeZone === 'cat1' ? '#fdd835' : 'rgba(253,216,53,0.3)'}
-                  stroke="#fdd835" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat1' ? 'All' : 'cat1')}/>
-                <rect x="174" y="204" width="162" height="16" rx="3"
-                  fill={activeZone === 'cat1' ? '#fdd835' : 'rgba(253,216,53,0.3)'}
-                  stroke="#fdd835" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat1' ? 'All' : 'cat1')}/>
-                <text x="255" y="101" textAnchor="middle" fill={activeZone === 'cat1' ? '#333' : '#fdd835'} fontFamily="sans-serif" fontSize="6" fontWeight="700" pointerEvents="none">CAT 1</text>
-
-                {/* ── CAT 2 — BLUE (mid ring) ── */}
-                <rect x="160" y="71" width="180" height="17" rx="3"
-                  fill={activeZone === 'cat2' ? '#42a5f5' : 'rgba(66,165,245,0.25)'}
-                  stroke="#42a5f5" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat2' ? 'All' : 'cat2')}/>
-                <rect x="160" y="222" width="180" height="17" rx="3"
-                  fill={activeZone === 'cat2' ? '#42a5f5' : 'rgba(66,165,245,0.25)'}
-                  stroke="#42a5f5" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat2' ? 'All' : 'cat2')}/>
-                <text x="250" y="83" textAnchor="middle" fill={activeZone === 'cat2' ? '#fff' : '#42a5f5'} fontFamily="sans-serif" fontSize="6" fontWeight="700" pointerEvents="none">CAT 2</text>
-
-                {/* ── CAT 3 — RED (outer ring top/bottom) ── */}
-                {[144, 212, 280].map((x, i) => (
-                  <rect key={`cat3t-${i}`} x={x} y="51" width="62" height="18" rx="3"
-                    fill={activeZone === 'cat3' ? '#ef5350' : 'rgba(239,83,80,0.25)'}
-                    stroke="#ef5350" strokeWidth="1.2" cursor="pointer"
-                    onClick={() => setActiveZone(activeZone === 'cat3' ? 'All' : 'cat3')}/>
-                ))}
-                {[144, 212, 280].map((x, i) => (
-                  <rect key={`cat3b-${i}`} x={x} y="241" width="62" height="18" rx="3"
-                    fill={activeZone === 'cat3' ? '#ef5350' : 'rgba(239,83,80,0.25)'}
-                    stroke="#ef5350" strokeWidth="1.2" cursor="pointer"
-                    onClick={() => setActiveZone(activeZone === 'cat3' ? 'All' : 'cat3')}/>
-                ))}
-                <text x="238" y="63" textAnchor="middle" fill={activeZone === 'cat3' ? '#fff' : '#ef5350'} fontFamily="sans-serif" fontSize="6" fontWeight="700" pointerEvents="none">CAT 3</text>
-
-                {/* ── CAT 4 — GREEN (outer sides) ── */}
-                {/* Left / West side */}
-                <rect x="82" y="58" width="60" height="36" rx="4"
-                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
-                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
-                <rect x="54" y="100" width="88" height="30" rx="4"
-                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
-                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
-                <rect x="40" y="135" width="22" height="42" rx="4"
-                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
-                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
-                <rect x="54" y="180" width="88" height="30" rx="4"
-                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
-                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
-                <rect x="82" y="215" width="60" height="36" rx="4"
-                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
-                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
-                <text x="66" y="158" textAnchor="middle" fill={activeZone === 'cat4' ? '#fff' : '#66bb6a'} fontFamily="sans-serif" fontSize="6" fontWeight="700" pointerEvents="none">CAT 4</text>
-                {/* Right / East side */}
-                <rect x="346" y="58" width="60" height="36" rx="4"
-                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
-                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
-                <rect x="346" y="100" width="78" height="30" rx="4"
-                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
-                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
-                <rect x="424" y="135" width="22" height="42" rx="4"
-                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
-                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
-                <rect x="346" y="180" width="78" height="30" rx="4"
-                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
-                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
-                <rect x="346" y="215" width="60" height="36" rx="4"
-                  fill={activeZone === 'cat4' ? '#66bb6a' : 'rgba(102,187,106,0.25)'}
-                  stroke="#66bb6a" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat4' ? 'All' : 'cat4')}/>
-
-                {/* ── CAT 5 — ORANGE restricted (corner ellipses) ── */}
-                <ellipse cx="106" cy="40" rx="36" ry="18"
-                  fill={activeZone === 'cat5' ? '#fb8c00' : 'rgba(251,140,0,0.3)'}
-                  stroke="#fb8c00" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat5' ? 'All' : 'cat5')}/>
-                <ellipse cx="106" cy="272" rx="36" ry="18"
-                  fill={activeZone === 'cat5' ? '#fb8c00' : 'rgba(251,140,0,0.3)'}
-                  stroke="#fb8c00" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat5' ? 'All' : 'cat5')}/>
-                <ellipse cx="374" cy="40" rx="36" ry="18"
-                  fill={activeZone === 'cat5' ? '#fb8c00' : 'rgba(251,140,0,0.3)'}
-                  stroke="#fb8c00" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat5' ? 'All' : 'cat5')}/>
-                <ellipse cx="374" cy="272" rx="36" ry="18"
-                  fill={activeZone === 'cat5' ? '#fb8c00' : 'rgba(251,140,0,0.3)'}
-                  stroke="#fb8c00" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat5' ? 'All' : 'cat5')}/>
-                <text x="106" y="43" textAnchor="middle" fill={activeZone === 'cat5' ? '#fff' : '#fb8c00'} fontFamily="sans-serif" fontSize="6" fontWeight="700" pointerEvents="none">CAT 5</text>
-
-                {/* ── CAT 6 — PURPLE restricted (far end ellipses) ── */}
-                <ellipse cx="28" cy="130" rx="18" ry="24"
-                  fill={activeZone === 'cat6' ? '#ab47bc' : 'rgba(171,71,188,0.3)'}
-                  stroke="#ab47bc" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat6' ? 'All' : 'cat6')}/>
-                <ellipse cx="28" cy="182" rx="18" ry="24"
-                  fill={activeZone === 'cat6' ? '#ab47bc' : 'rgba(171,71,188,0.3)'}
-                  stroke="#ab47bc" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat6' ? 'All' : 'cat6')}/>
-                <ellipse cx="452" cy="130" rx="18" ry="24"
-                  fill={activeZone === 'cat6' ? '#ab47bc' : 'rgba(171,71,188,0.3)'}
-                  stroke="#ab47bc" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat6' ? 'All' : 'cat6')}/>
-                <ellipse cx="452" cy="182" rx="18" ry="24"
-                  fill={activeZone === 'cat6' ? '#ab47bc' : 'rgba(171,71,188,0.3)'}
-                  stroke="#ab47bc" strokeWidth="1.2" cursor="pointer"
-                  onClick={() => setActiveZone(activeZone === 'cat6' ? 'All' : 'cat6')}/>
-                <text x="28" y="156" textAnchor="middle" fill={activeZone === 'cat6' ? '#fff' : '#ab47bc'} fontFamily="sans-serif" fontSize="5.5" fontWeight="700" pointerEvents="none" transform="rotate(-90,28,156)">CAT 6</text>
-              </svg>
-            </div>
-
-            {/* Color Legend */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', justifyContent: 'center', marginTop: '12px' }}>
-              {[
-                { label: 'VIP STANDING', color: '#e040fb' },
-                { label: 'VIP Seated', color: '#06b6d4' },
-                { label: 'CAT 1', color: '#fdd835' },
-                { label: 'CAT 2', color: '#42a5f5' },
-                { label: 'CAT 3', color: '#ef5350' },
-                { label: 'CAT 4', color: '#66bb6a' },
-                { label: 'CAT 5', color: '#ff9800' },
-                { label: 'CAT 6', color: '#ab47bc' }
-              ].map(item => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600, color: '#333' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: item.color }} />
-                  {item.label}
-                </div>
-              ))}
+            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 14px', textAlign: 'center', color: '#111' }}>
+              Interactive Stadium Map
+            </h3>
+            
+            <div style={{ position: 'relative', width: '100%', maxWidth: '540px', margin: '0 auto' }}>
+              <VenueSeatMap
+                layout={event?.venueLayout || 'indoor-runway'}
+                basePrice={basePrice}
+                currency={currency}
+                seatConfig={event?.seatConfig}
+                activeZone={activeZone}
+                onZoneClick={setActiveZone}
+                interactive={true}
+                showLegend={true}
+              />
             </div>
 
             {/* Zone Filter Chips */}
             <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '14px 0 4px', scrollbarWidth: 'none' }}>
-              {(event?.venueLayout === 'concert-oval' 
-                ? ['All', 'vip_standing', 'vip_seated', 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6'] 
-                : ['All', 'VIP', 'Floor', 'Level 100', 'Level 200']
-              ).map(zone => {
-                let label = zone;
-                if (zone === 'vip_standing') label = 'VIP STANDING';
-                else if (zone === 'vip_seated') label = 'VIP Seated';
-                else if (zone.startsWith('cat')) label = zone.replace('cat', 'CAT ');
+              {['All', ...(getLayoutById(event?.venueLayout || 'indoor-runway').categories || []).map(c => c.id)].map(zone => {
+                const layoutCats = getLayoutById(event?.venueLayout || 'indoor-runway').categories || [];
+                const catObj = layoutCats.find(c => c.id === zone);
+                const label = zone === 'All' ? 'All Sections' : (catObj ? catObj.name : zone);
                 
                 return (
                   <button

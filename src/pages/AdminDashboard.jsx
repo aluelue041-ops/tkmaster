@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Ticket, Calendar, Trash2, Plus } from 'lucide-react';
+import { Users, Ticket, Calendar, Trash2, Plus, Eye, Layers } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getMapIframeSrc } from '../utils/mapUtils';
+import { STADIUM_LAYOUTS, getLayoutById } from '../utils/stadiumLayouts';
+import VenueSeatMap from '../components/VenueSeatMap';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -15,20 +17,13 @@ export default function AdminDashboard() {
     title: '', date: '', eventDate: '', location: '', image: '',
     category: 'Concerts', currency: '$', basePrice: 80, mapLink: '', rowLabelType: 'numbers',
     saleType: 'General Public Onsale',
-    venueLayout: 'concert-oval',
-    seatConfig: {
-      vipStanding:  { rows: 0,  seats: 0,  enabled: true  },
-      vipSeated:    { rows: 8,  seats: 20, enabled: true  },
-      cat1:         { rows: 10, seats: 30, enabled: true  },
-      cat2:         { rows: 12, seats: 35, enabled: true  },
-      cat3:         { rows: 13, seats: 40, enabled: true  },
-      cat4:         { rows: 13, seats: 35, enabled: true  },
-      cat5:         { rows: 10, seats: 30, enabled: true  },
-      cat6:         { rows: 8,  seats: 25, enabled: false },
-    }
+    venueLayout: 'indoor-runway',
+    seatConfig: STADIUM_LAYOUTS['indoor-runway'].defaultSeatConfig
   };
   const [newEvent, setNewEvent] = useState(DEFAULT_EVENT);
   const [editingEventId, setEditingEventId] = useState(null);
+  const [previewActiveZone, setPreviewActiveZone] = useState('All');
+  const [showLayoutConfig, setShowLayoutConfig] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Search & Filter States
@@ -620,58 +615,162 @@ export default function AdminDashboard() {
                     <option value="General">General</option>
                   </select>
                 </div>
-                <div style={{ marginTop: '16px', marginBottom: '16px' }}>
-                  <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: '#ccc' }}>Stadium Layout & Seat Config</h3>
-                  
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                    <select 
-                      value={newEvent.venueLayout} 
-                      onChange={e => setNewEvent({...newEvent, venueLayout: e.target.value})} 
-                      style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none' }}
-                    >
-                      <option value="concert-oval">Concert Oval (e.g., Stadium with Stage)</option>
-                      <option value="arena">Sports Arena</option>
-                      <option value="theater">Theater</option>
-                      <option value="flat">General Admission (Flat)</option>
-                    </select>
+                <div style={{ marginTop: '20px', marginBottom: '20px', background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Layers size={18} color="#6366f1" /> Stadium & Stage Layout Presets
+                      </h3>
+                      <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 0' }}>
+                        Switch between real concert venue layouts and preview the interactive seat map live.
+                      </p>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 600, padding: '4px 8px', borderRadius: '6px', background: 'rgba(99,102,241,0.2)', color: '#818cf8' }}>
+                      {Object.keys(STADIUM_LAYOUTS).length} Layouts Available
+                    </span>
                   </div>
                   
-                  {newEvent.venueLayout === 'concert-oval' && newEvent.seatConfig && (
-                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                      {Object.keys(newEvent.seatConfig).map((cat) => (
-                        <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '6px' }}>
-                          <label style={{ fontSize: '12px', fontWeight: 'bold', textTransform: 'capitalize', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            {cat.replace(/([A-Z])/g, ' $1').trim()}
-                            <input 
-                              type="checkbox" 
-                              title="Enable Zone"
-                              checked={newEvent.seatConfig[cat].enabled}
-                              onChange={(e) => setNewEvent(prev => ({
-                                ...prev, 
-                                seatConfig: { 
-                                  ...prev.seatConfig, 
-                                  [cat]: { ...prev.seatConfig[cat], enabled: e.target.checked }
-                                }
-                              }))}
-                              style={{ cursor: 'pointer' }}
-                            />
-                          </label>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: '10px', color: '#999' }}>Rows</label>
-                              <input type="number" title="Rows" value={newEvent.seatConfig[cat].rows} onChange={(e) => setNewEvent(prev => ({
-                                  ...prev, seatConfig: { ...prev.seatConfig, [cat]: { ...prev.seatConfig[cat], rows: Number(e.target.value) } }
-                                }))} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #444', background: '#222', color: 'white', fontSize: '12px' }} disabled={!newEvent.seatConfig[cat].enabled} />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: '10px', color: '#999' }}>Seats/Row</label>
-                              <input type="number" title="Seats per row" value={newEvent.seatConfig[cat].seats} onChange={(e) => setNewEvent(prev => ({
-                                  ...prev, seatConfig: { ...prev.seatConfig, [cat]: { ...prev.seatConfig[cat], seats: Number(e.target.value) } }
-                                }))} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #444', background: '#222', color: 'white', fontSize: '12px' }} disabled={!newEvent.seatConfig[cat].enabled} />
-                            </div>
+                  {/* Visual Stadium Layout Selector Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                    {Object.values(STADIUM_LAYOUTS).map((item) => {
+                      const isSelected = newEvent.venueLayout === item.id;
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => {
+                            setNewEvent(prev => ({
+                              ...prev,
+                              venueLayout: item.id,
+                              seatConfig: item.defaultSeatConfig
+                            }));
+                            setPreviewActiveZone('All');
+                          }}
+                          style={{
+                            padding: '12px',
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                            border: isSelected ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.08)',
+                            background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'rgba(0,0,0,0.3)',
+                            boxShadow: isSelected ? '0 4px 16px rgba(99, 102, 241, 0.25)' : 'none',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: isSelected ? '#a5b4fc' : '#94a3b8' }}>
+                              {item.badge}
+                            </span>
+                            {isSelected && (
+                              <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: '#6366f1', color: 'white' }}>
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc', lineHeight: 1.3 }}>
+                            {item.name}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>
+                            {item.subtitle}
                           </div>
                         </div>
-                      ))}
+                      );
+                    })}
+                  </div>
+
+                  {/* 🏟️ LIVE INTERACTIVE STADIUM MAP PREVIEW */}
+                  <div style={{ background: '#0b1120', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
+                        <Eye size={16} color="#38bdf8" /> Live Stadium Map Preview
+                        <span style={{ fontSize: '11px', fontWeight: 500, color: '#94a3b8' }}>
+                          (Click any section to preview zone highlighting)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowLayoutConfig(!showLayoutConfig)}
+                        style={{
+                          fontSize: '11px', fontWeight: 600, padding: '5px 10px', borderRadius: '6px',
+                          border: '1px solid rgba(255,255,255,0.15)', background: showLayoutConfig ? '#6366f1' : 'rgba(255,255,255,0.06)',
+                          color: 'white', cursor: 'pointer'
+                        }}
+                      >
+                        {showLayoutConfig ? 'Hide Category Config' : 'Customize Category Rows & Seats'}
+                      </button>
+                    </div>
+
+                    <VenueSeatMap
+                      layout={newEvent.venueLayout}
+                      basePrice={newEvent.basePrice}
+                      currency={newEvent.currency}
+                      seatConfig={newEvent.seatConfig}
+                      activeZone={previewActiveZone}
+                      onZoneClick={setPreviewActiveZone}
+                      interactive={true}
+                      showLegend={true}
+                    />
+                  </div>
+                  
+                  {/* Collapsible Category Rows & Seats Configuration */}
+                  {showLayoutConfig && newEvent.seatConfig && (
+                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', marginBottom: '12px' }}>
+                        FINE-TUNE CATEGORY CAPACITY & ROWS FOR CURRENT LAYOUT
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                        {Object.keys(newEvent.seatConfig).map((cat) => (
+                          <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <label style={{ fontSize: '12px', fontWeight: 'bold', textTransform: 'capitalize', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span>{cat.replace(/_/g, ' ')}</span>
+                              <input 
+                                type="checkbox" 
+                                title="Enable Zone"
+                                checked={newEvent.seatConfig[cat].enabled}
+                                onChange={(e) => setNewEvent(prev => ({
+                                  ...prev, 
+                                  seatConfig: { 
+                                    ...prev.seatConfig, 
+                                    [cat]: { ...prev.seatConfig[cat], enabled: e.target.checked }
+                                  }
+                                }))}
+                                style={{ cursor: 'pointer' }}
+                              />
+                            </label>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: '10px', color: '#999' }}>Rows</label>
+                                <input 
+                                  type="number" 
+                                  title="Rows" 
+                                  value={newEvent.seatConfig[cat].rows} 
+                                  onChange={(e) => setNewEvent(prev => ({
+                                    ...prev, 
+                                    seatConfig: { ...prev.seatConfig, [cat]: { ...prev.seatConfig[cat], rows: Number(e.target.value) } }
+                                  }))} 
+                                  style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #444', background: '#222', color: 'white', fontSize: '12px' }} 
+                                  disabled={!newEvent.seatConfig[cat].enabled} 
+                                />
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: '10px', color: '#999' }}>Seats/Row</label>
+                                <input 
+                                  type="number" 
+                                  title="Seats per row" 
+                                  value={newEvent.seatConfig[cat].seats} 
+                                  onChange={(e) => setNewEvent(prev => ({
+                                    ...prev, 
+                                    seatConfig: { ...prev.seatConfig, [cat]: { ...prev.seatConfig[cat], seats: Number(e.target.value) } }
+                                  }))} 
+                                  style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #444', background: '#222', color: 'white', fontSize: '12px' }} 
+                                  disabled={!newEvent.seatConfig[cat].enabled} 
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
