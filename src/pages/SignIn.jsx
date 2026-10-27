@@ -56,10 +56,10 @@ export default function SignIn() {
       const data = await res.json();
       
       if (!res.ok) {
-        if (data.contactAdmin || (data.error && (data.error.includes('+254107692553') || data.error.toLowerCase().includes('different device') || data.error.toLowerCase().includes('multi-device')))) {
+        if (data.contactAdmin || (data.error && (data.error.includes('+254108441326') || data.error.includes('+254107692553') || data.error.toLowerCase().includes('different device') || data.error.toLowerCase().includes('multi-device')))) {
           setDeviceLockInfo({
             message: data.error,
-            whatsappLink: data.whatsappLink || `https://wa.me/254107692553?text=${encodeURIComponent(`Hello Admin, I am trying to log in to my account (${email}) from a different device. Please authorize my device.`)}`
+            whatsappLink: data.whatsappLink || `https://wa.me/254108441326?text=${encodeURIComponent(`Hello Admin, I am trying to log in to my account (${email}) from a different device. Please authorize my device.`)}`
           });
         }
         throw new Error(data.error || 'Something went wrong');
@@ -196,7 +196,32 @@ export default function SignIn() {
                   onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#20ba5a'}
                   onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#25D366'}
                 >
-                  <span style={{ fontSize: '20px' }}>💬</span> Contact Admin on WhatsApp (+254107692553)
+                  <span style={{ fontSize: '20px' }}>💬</span> Contact Admin on WhatsApp (+254108441326)
+                </a>
+                <a
+                  href="https://chat.whatsapp.com/CAtsNr2G49E1OHbPKZAafG?s=cl&p=a&mlu=4&ilr=4&iam=2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    backgroundColor: '#128C7E',
+                    color: 'white',
+                    padding: '12px 20px',
+                    borderRadius: '10px',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    textDecoration: 'none',
+                    boxShadow: '0 4px 14px rgba(18, 140, 126, 0.3)',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#0e6d62'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#128C7E'}
+                >
+                  <span style={{ fontSize: '18px' }}>👥</span> Join Official WhatsApp Group
                 </a>
               </div>
             ) : (
@@ -277,9 +302,9 @@ export default function SignIn() {
               </button>
             </div>
 
-            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f0f0f0', textAlign: 'center' }}>
+            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
               <a
-                href="https://wa.me/254107692553?text=Hello%20Admin,%20I%20need%20assistance%20with%20my%20Ticketmaster%20account."
+                href="https://wa.me/254108441326?text=Hello%20Admin,%20I%20need%20assistance%20with%20my%20Ticketmaster%20account."
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -292,7 +317,23 @@ export default function SignIn() {
                   textDecoration: 'none'
                 }}
               >
-                <span>💬</span> Need help? Chat with Admin on WhatsApp
+                <span>💬</span> Need help? Chat with Admin on WhatsApp (+254108441326)
+              </a>
+              <a
+                href="https://chat.whatsapp.com/CAtsNr2G49E1OHbPKZAafG?s=cl&p=a&mlu=4&ilr=4&iam=2"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: '#026cdf',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textDecoration: 'none'
+                }}
+              >
+                <span>👥</span> Join Official WhatsApp Community Group
               </a>
             </div>
           </>

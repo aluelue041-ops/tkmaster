@@ -389,10 +389,10 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
       if (isMultiDevice) {
         const waMsg = encodeURIComponent(`Hello Admin, I am trying to log in to my account (${user.email}) from a different device. Please assist.`);
         return res.status(403).json({
-          error: `Login from a different device detected. Please contact the administrator on WhatsApp at +254107692553 to authorize this device.`,
+          error: `Login from a different device detected. Please contact the administrator on WhatsApp at +254108441326 to authorize this device.`,
           contactAdmin: true,
-          whatsapp: '+254107692553',
-          whatsappLink: `https://wa.me/254107692553?text=${waMsg}`
+          whatsapp: '+254108441326',
+          whatsappLink: `https://wa.me/254108441326?text=${waMsg}`
         });
       }
       const reason = user.bannedReason ? ` Reason: ${user.bannedReason}` : '';
@@ -435,10 +435,10 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
       await user.save();
       const waMsg = encodeURIComponent(`Hello Admin, I am trying to log in to my account (${user.email}) from a different device (${label}). Please authorize my device.`);
       return res.status(403).json({
-        error: `Login from a different device detected. Please contact the administrator on WhatsApp at +254107692553 to authorize this device.`,
+        error: `Login from a different device detected. Please contact the administrator on WhatsApp at +254108441326 to authorize this device.`,
         contactAdmin: true,
-        whatsapp: '+254107692553',
-        whatsappLink: `https://wa.me/254107692553?text=${waMsg}`
+        whatsapp: '+254108441326',
+        whatsappLink: `https://wa.me/254108441326?text=${waMsg}`
       });
     }
 

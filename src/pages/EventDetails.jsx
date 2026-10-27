@@ -155,7 +155,7 @@ export default function EventDetails() {
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>Chat directly with the admin on WhatsApp</div>
           </div>
           <a
-            href={`https://wa.me/254107692553?text=${encodeURIComponent(`Hello Admin, I have a question regarding "${event.title}".`)}`}
+            href={`https://wa.me/254108441326?text=${encodeURIComponent(`Hello Admin, I have a question regarding "${event.title}".`)}`}
             target="_blank"
             rel="noopener noreferrer"
             style={{

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, MapPin, Globe, Heart, CreditCard, HelpCircle, MessageSquare, BookOpen, ChevronRight, Bell, Download, Zap, User, Lock, Ticket, MessageCircle } from 'lucide-react';
+import { Mail, MapPin, Globe, Heart, CreditCard, HelpCircle, MessageSquare, BookOpen, ChevronRight, Bell, Download, Zap, User, Lock, Ticket, MessageCircle, Users } from 'lucide-react';
 
 export default function MyAccount() {
   const [receiveNotifs, setReceiveNotifs] = useState(false);
@@ -360,7 +360,7 @@ export default function MyAccount() {
           </div>
           
           <a 
-            href={`https://wa.me/254107692553?text=${encodeURIComponent(`Hello Admin, I am reaching out from my Ticketmaster account (${user?.email || 'client'}). I need some assistance.`)}`}
+            href={`https://wa.me/254108441326?text=${encodeURIComponent(`Hello Admin, I am reaching out from my Ticketmaster account (${user?.email || 'client'}). I need some assistance.`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="settings-item"
@@ -372,7 +372,7 @@ export default function MyAccount() {
               </div>
               <div>
                 <span style={{ fontWeight: 600, color: '#111' }}>Chat with Admin (WhatsApp)</span>
-                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#666' }}>+254107692553 • Online Support</p>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#666' }}>+254108441326 • Online Support</p>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -381,8 +381,27 @@ export default function MyAccount() {
             </div>
           </a>
 
+          <a 
+            href="https://chat.whatsapp.com/CAtsNr2G49E1OHbPKZAafG?s=cl&p=a&mlu=4&ilr=4&iam=2"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="settings-item"
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            <div className="settings-item-left">
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#128C7E', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                <Users size={16} />
+              </div>
+              <div>
+                <span style={{ fontWeight: 600, color: '#111' }}>Join WhatsApp Community Group</span>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#666' }}>Official Group • Updates & Drops</p>
+              </div>
+            </div>
+            <ChevronRight size={20} color="#ccc" />
+          </a>
+
           <a
-            href="https://wa.me/254107692553?text=Hello%20Admin,%20I%20need%20help%20with%20Ticketmaster."
+            href="https://wa.me/254108441326?text=Hello%20Admin,%20I%20need%20help%20with%20Ticketmaster."
             target="_blank"
             rel="noopener noreferrer"
             className="settings-item"

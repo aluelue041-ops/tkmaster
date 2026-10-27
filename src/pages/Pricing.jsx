@@ -313,30 +313,54 @@ export default function Pricing() {
         <div style={{ maxWidth: '600px', margin: '40px auto 0', padding: '24px 20px', borderRadius: '16px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', textAlign: 'center' }}>
           <h4 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700, color: '#1e293b' }}>Need Assistance with Plans or Payments?</h4>
           <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>
-            Our admin is available on WhatsApp to assist with instant activations, payment confirmations, or custom queries.
+            Our admin is available on WhatsApp to assist with instant activations, payment confirmations, or custom queries. You can also join our official WhatsApp Community Group!
           </p>
-          <a
-            href={`https://wa.me/254107692553?text=${encodeURIComponent('Hello Admin, I have a question about the Ticketmaster subscription plans.')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              backgroundColor: '#25D366',
-              color: 'white',
-              padding: '11px 22px',
-              borderRadius: '24px',
-              fontWeight: 700,
-              fontSize: '14px',
-              textDecoration: 'none',
-              boxShadow: '0 2px 10px rgba(37,211,102,0.3)',
-              cursor: 'pointer'
-            }}
-          >
-            <span style={{ fontSize: '16px' }}>💬</span> Chat with Admin (+254107692553)
-          </a>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+            <a
+              href={`https://wa.me/254108441326?text=${encodeURIComponent('Hello Admin, I have a question about the Ticketmaster subscription plans.')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                backgroundColor: '#25D366',
+                color: 'white',
+                padding: '11px 20px',
+                borderRadius: '24px',
+                fontWeight: 700,
+                fontSize: '13px',
+                textDecoration: 'none',
+                boxShadow: '0 2px 10px rgba(37,211,102,0.3)',
+                cursor: 'pointer'
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>💬</span> Chat with Admin (+254108441326)
+            </a>
+            <a
+              href="https://chat.whatsapp.com/CAtsNr2G49E1OHbPKZAafG?s=cl&p=a&mlu=4&ilr=4&iam=2"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                backgroundColor: '#128C7E',
+                color: 'white',
+                padding: '11px 20px',
+                borderRadius: '24px',
+                fontWeight: 700,
+                fontSize: '13px',
+                textDecoration: 'none',
+                boxShadow: '0 2px 10px rgba(18,140,126,0.3)',
+                cursor: 'pointer'
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>👥</span> Join WhatsApp Group
+            </a>
+          </div>
         </div>
       </div>
 
@@ -501,12 +525,12 @@ export default function Pricing() {
 
             <div style={{ marginTop: '14px', textAlign: 'center' }}>
               <a 
-                href={`https://wa.me/254107692553?text=${encodeURIComponent(`Hello Admin, I need help with my payment for the ${selectedPlan.name} plan.`)}`}
+                href={`https://wa.me/254108441326?text=${encodeURIComponent(`Hello Admin, I need help with my payment for the ${selectedPlan.name} plan.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ fontSize: '12px', color: '#026cdf', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
               >
-                <span>💬</span> Having issues? Chat with Admin on WhatsApp
+                <span>💬</span> Having issues? Chat with Admin on WhatsApp (+254108441326)
               </a>
             </div>
           </div>
