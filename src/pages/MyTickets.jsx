@@ -24,12 +24,22 @@ const CustomBarcodeIcon = ({ size = 24, color = "white" }) => (
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// Returns true if a Free-tier ticket is older than 24 hours and should be blurred
+// Cutoff timestamp: All existing free-tier tickets up to this point are immediately blurred.
+// Newly booked Free-tier tickets will blur after 24 hours.
+const EXISTING_FREE_CUTOFF = new Date('2026-10-27T13:30:00+03:00').getTime();
+
+// Returns true if a Free-tier ticket is an existing ticket or older than 24 hours
 function isTicketBlurred(ticket, userSubscription) {
   if (userSubscription !== 'Free') return false;
-  const purchaseDate = ticket?.purchaseDate || ticket?.createdAt;
-  if (!purchaseDate) return false;
-  const ageMs = Date.now() - new Date(purchaseDate).getTime();
+  const rawDate = ticket?.purchaseDate || ticket?.createdAt;
+  // If there is no purchase date, it is an existing ticket and blurred
+  if (!rawDate) return true;
+  const purchaseTime = new Date(rawDate).getTime();
+  if (isNaN(purchaseTime)) return true;
+  // All existing Free-tier tickets are immediately blurred
+  if (purchaseTime <= EXISTING_FREE_CUTOFF) return true;
+  // Any newly booked tickets blur after 24 hours
+  const ageMs = Date.now() - purchaseTime;
   return ageMs > 24 * 60 * 60 * 1000; // 24 hours
 }
 
@@ -585,10 +595,7 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
   };
 
   const navigate = useNavigate();
-  const blurred = userSubscription === 'Free' && (() => {
-    if (!purchaseDate) return false;
-    return Date.now() - new Date(purchaseDate).getTime() > 2 * 24 * 60 * 60 * 1000;
-  })();
+  const blurred = isTicketBlurred({ purchaseDate }, userSubscription);
 
   return (
     <div style={{ marginBottom: '0', borderRadius: '0', overflow: 'hidden', borderBottom: '1px solid #e8e8e8', borderLeft: 'none', position: 'relative', borderTop: '0' }}>
@@ -853,6 +860,10 @@ export default function MyTickets() {
 
   // Detailed ticket order view
   if (selectedOrder) {
+    if (isTicketBlurred(selectedOrder, userSubscription)) {
+      setSelectedOrder(null);
+      return null;
+    }
     const eventMeta = getEventMeta(selectedOrder);
     const image = eventMeta?.image;
 
