@@ -15,6 +15,7 @@ export default function SeatSelection() {
   const currency = event?.currency || '$';
   
   const [currentUserRole, setCurrentUserRole] = useState('user');
+  const [userSubscription, setUserSubscription] = useState('Free');
   const isSuperAdmin = currentUserRole === 'superadmin';
 
   useEffect(() => {
@@ -25,9 +26,15 @@ export default function SeatSelection() {
       .then(r => r.json())
       .then(d => {
         if (d && d.role) setCurrentUserRole(d.role);
+        if (d && d.subscription) setUserSubscription(d.subscription);
       })
       .catch(() => {});
   }, []);
+
+  // KES 50 surcharge per extra ticket beyond 2 for paid plans
+  const EXTRA_TICKET_FEE = 50; // KES
+  const FREE_TICKET_ALLOWANCE = 2;
+  const isPaidPlan = userSubscription !== 'Free';
 
   const [selectedSection, setSelectedSection] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -166,9 +173,18 @@ export default function SeatSelection() {
     });
   };
 
-  const totalPrice = selectedSection 
-    ? (selectedSection.isGA ? selectedSection.price * quantity : selectedSection.price * selectedSpecificSeats.length) 
+  const numTickets = selectedSection
+    ? (selectedSection.isGA ? quantity : selectedSpecificSeats.length)
     : 0;
+
+  const baseTicketTotal = selectedSection
+    ? (selectedSection.isGA ? selectedSection.price * quantity : selectedSection.price * selectedSpecificSeats.length)
+    : 0;
+
+  // Extra-ticket surcharge: KES 50 per ticket beyond 2, for paid plans only
+  const extraTickets = isPaidPlan ? Math.max(0, numTickets - FREE_TICKET_ALLOWANCE) : 0;
+  const surchargeFee = extraTickets * EXTRA_TICKET_FEE;
+  const totalPrice = baseTicketTotal + surchargeFee;
 
   const handleCheckout = async () => {
     if (!selectedSection) return;
@@ -210,7 +226,9 @@ export default function SeatSelection() {
           eventImage: event?.image || null,
           seats: seats,
           totalPrice,
-          currency
+          currency,
+          extraTickets,
+          surchargeFee
         })
       });
 
@@ -578,7 +596,7 @@ export default function SeatSelection() {
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
+          <div style={{ flex: 1, marginRight: '16px' }}>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
               {selectedSection 
                 ? (selectedSection.isGA 
@@ -588,7 +606,37 @@ export default function SeatSelection() {
                       : `${selectedSection.ticketName} (Select seats)`) 
                 : 'Select a section'}
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800 }}>{currency}{totalPrice}</div>
+
+            {/* Surcharge notice for paid plans with >2 tickets */}
+            {surchargeFee > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                marginTop: '4px', padding: '4px 10px',
+                backgroundColor: '#fff8e1', borderRadius: '8px',
+                border: '1px solid #ffe082'
+              }}>
+                <span style={{ fontSize: '13px' }}>⚠️</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: '#b45309' }}>
+                  +KES {surchargeFee} surcharge ({extraTickets} extra ticket{extraTickets !== 1 ? 's' : ''} × KES {EXTRA_TICKET_FEE})
+                </span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '2px' }}>
+              {surchargeFee > 0 && (
+                <span style={{ fontSize: '14px', color: '#888', textDecoration: 'line-through' }}>
+                  {currency}{baseTicketTotal}
+                </span>
+              )}
+              <div style={{ fontSize: '24px', fontWeight: 800 }}>
+                {currency}{baseTicketTotal}
+                {surchargeFee > 0 && (
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#b45309', marginLeft: '4px' }}>
+                    + KES {surchargeFee}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
           <button 
             className="btn-primary" 
@@ -597,7 +645,8 @@ export default function SeatSelection() {
               opacity: (!selectedSection || checkoutLoading) ? 0.7 : 1, 
               cursor: (!selectedSection || checkoutLoading) ? 'not-allowed' : 'pointer',
               backgroundColor: '#026cdf', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '16px',
-              transition: 'opacity 0.2s'
+              transition: 'opacity 0.2s',
+              flexShrink: 0
             }} 
             onClick={handleCheckout}
             disabled={!selectedSection || (!selectedSection.isGA && selectedSpecificSeats.length === 0) || checkoutLoading}

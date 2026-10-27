@@ -568,7 +568,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // 4. Book Tickets
 app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, res) => {
   try {
-    const { eventId, eventTitle, seats, totalPrice, currency, eventImage } = req.body;
+    const { eventId, eventTitle, seats, totalPrice, currency, eventImage, extraTickets, surchargeFee } = req.body;
 
     // Auto-increment order number
     const orderCount = await Ticket.countDocuments();
@@ -657,12 +657,14 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       seatsBoughtThisMonth += (t.seats ? t.seats.length : 1);
     });
 
-    let limit = 2; // Free tier
+    let limit = 2; // Free tier hard cap
     if (subscription === 'VIP' || isSuperAdmin) limit = Infinity;
 
-    if (!isSuperAdmin && seatsBoughtThisMonth + numSeatsRequested > limit) {
+    // Free-tier users are hard-blocked beyond 2 tickets/month.
+    // Paid (VIP/etc) users can book beyond 2 — they just pay KES 50 surcharge per extra ticket.
+    if (!isSuperAdmin && subscription === 'Free' && seatsBoughtThisMonth + numSeatsRequested > limit) {
       return res.status(400).json({ 
-        error: `Monthly limit exceeded. Your ${subscription} plan allows ${limit} tickets/month. You have already booked ${seatsBoughtThisMonth}.`,
+        error: `Monthly limit exceeded. Your Free plan allows ${limit} tickets/month. You have already booked ${seatsBoughtThisMonth}. Upgrade to book more tickets.`,
         limitExceeded: true,
         limitType: 'monthly_plan_limit'
       });
@@ -705,7 +707,11 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
     const emailUser = await User.findById(req.user.id).select('email');
     if (emailUser) sendBookingConfirmationEmail(emailUser.email, newTicket);
 
-    res.json(newTicket);
+    res.json({
+      ...newTicket.toObject(),
+      extraTickets: extraTickets || 0,
+      surchargeFee: surchargeFee || 0
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
