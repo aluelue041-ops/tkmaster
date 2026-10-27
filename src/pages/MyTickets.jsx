@@ -1336,7 +1336,9 @@ export default function MyTickets() {
                         ticket.status === 'Expired' ? '#9e9e9e' :
                         ticket.status === 'Rejected' ? '#c62828' : '#f57f17'
                     }}>
-                      {ticket.status || 'Active'}
+                      {ticket.status === 'Pending' && ticket.surchargeFee > 0 && ticket.paymentStatus !== 'Paid'
+                        ? 'Pending M-Pesa Payment'
+                        : (ticket.status || 'Active')}
                     </span>
                   </div>
                 </div>

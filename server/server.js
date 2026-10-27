@@ -565,6 +565,47 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 
 
+// Reusable PayHero M-Pesa STK Push helper
+async function sendPayHeroSTKPush({ phoneNumber, amount, reference }) {
+  const apiUser = process.env.PAYHERO_API_USER;
+  const apiPass = process.env.PAYHERO_API_PASS;
+  const channelId = process.env.PAYHERO_CHANNEL_ID;
+
+  let formattedPhone = String(phoneNumber).trim().replace(/[\s+-]/g, '');
+  if (formattedPhone.startsWith('0')) {
+    formattedPhone = '254' + formattedPhone.slice(1);
+  }
+
+  if (!apiUser || !apiPass || !channelId) {
+    console.log(`[Demo STK Push] PayHero credentials missing. Ref: ${reference}, Phone: ${formattedPhone}, Amount: ${amount}`);
+    return { success: true, isDemo: true, message: 'STK Push sent! Please check your phone and enter your M-Pesa PIN.', reference };
+  }
+
+  const payheroAuth = Buffer.from(`${apiUser}:${apiPass}`).toString('base64');
+  const response = await fetch('https://backend.payhero.co.ke/api/v2/payments', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${payheroAuth}`
+    },
+    body: JSON.stringify({
+      amount: Number(amount),
+      phone_number: formattedPhone,
+      channel_id: Number(channelId) || channelId,
+      provider: 'm-pesa',
+      external_reference: reference,
+      callback_url: `${process.env.APP_URL || 'https://tkmaster.onrender.com'}/api/payhero/callback`
+    })
+  });
+
+  const data = await response.json();
+  if (response.ok && (data.success !== false)) {
+    return { success: true, message: 'STK Push sent! Please check your phone and enter your M-Pesa PIN.', reference };
+  } else {
+    throw new Error(data.message || 'Payment initiation failed. Please check your phone number.');
+  }
+}
+
 // 4. Book Tickets
 app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, res) => {
   try {
@@ -647,6 +688,12 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       } catch (_) {}
     }
 
+    // Surcharge payment requirement:
+    // If extra tickets are requested beyond the 2 included per event, payment via M-Pesa STK push is required before approval.
+    const requiresPayment = calculatedSurchargeFee > 0;
+    const initialStatus = (isPaidPlan && !requiresPayment) ? 'Approved' : 'Pending';
+    const initialPaymentStatus = requiresPayment ? 'Pending' : 'Paid';
+
     const newTicket = new Ticket({
       user: req.user.id,
       eventId,
@@ -655,10 +702,13 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       seats,
       totalPrice,
       currency: currency || '$',
-      status: autoApprove ? 'Approved' : 'Pending',
+      status: initialStatus,
+      paymentStatus: initialPaymentStatus,
+      extraTickets: calculatedExtraTickets || extraTickets || 0,
+      surchargeFee: calculatedSurchargeFee || surchargeFee || 0,
+      mpesaPhone: req.body.phoneNumber || null,
       orderNumber
     });
-
 
     await newTicket.save();
 
@@ -672,14 +722,54 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       } catch (e) { console.error('Seat tracking error:', e.message); }
     }
 
-    // Send booking confirmation email with QR code
-    const emailUser = await User.findById(req.user.id).select('email');
-    if (emailUser) sendBookingConfirmationEmail(emailUser.email, newTicket);
+    // If payment is required and phone number is provided, trigger STK Push immediately
+    let stkResult = null;
+    if (requiresPayment && req.body.phoneNumber) {
+      const reference = `EXTRA_${newTicket._id}_${req.user.id}_${Date.now()}`;
+      newTicket.mpesaReference = reference;
+      await newTicket.save();
+
+      try {
+        stkResult = await sendPayHeroSTKPush({
+          phoneNumber: req.body.phoneNumber,
+          amount: calculatedSurchargeFee,
+          reference
+        });
+
+        // In demo mode (missing PayHero credentials), simulate approval after 4 seconds
+        if (stkResult.isDemo) {
+          setTimeout(async () => {
+            try {
+              const t = await Ticket.findById(newTicket._id);
+              if (t && t.status === 'Pending') {
+                t.status = 'Approved';
+                t.paymentStatus = 'Paid';
+                await t.save();
+                console.log(`[Demo] Ticket ${newTicket._id} extra fee simulated paid. Approved!`);
+                const emailUser = await User.findById(t.user).select('email');
+                if (emailUser) sendBookingConfirmationEmail(emailUser.email, t);
+              }
+            } catch (_) {}
+          }, 4000);
+        }
+      } catch (stkErr) {
+        console.error('STK Push initiation error:', stkErr.message);
+        stkResult = { success: false, error: stkErr.message };
+      }
+    }
+
+    // Only send booking confirmation email if ticket is already approved
+    if (initialStatus === 'Approved') {
+      const emailUser = await User.findById(req.user.id).select('email');
+      if (emailUser) sendBookingConfirmationEmail(emailUser.email, newTicket);
+    }
 
     res.json({
       ...newTicket.toObject(),
       extraTickets: calculatedExtraTickets || extraTickets || 0,
-      surchargeFee: calculatedSurchargeFee || surchargeFee || 0
+      surchargeFee: calculatedSurchargeFee || surchargeFee || 0,
+      requiresPayment,
+      stkResult
     });
   } catch (err) {
     console.error(err);
@@ -695,6 +785,74 @@ app.get('/api/tickets/my-tickets', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Check payment & approval status for a specific ticket
+app.get('/api/tickets/:id/payment-status', authMiddleware, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    if (ticket.user && ticket.user.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    res.json({
+      ticketId: ticket._id,
+      status: ticket.status,
+      paymentStatus: ticket.paymentStatus,
+      isApproved: ticket.status === 'Approved'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Re-initiate STK push for extra tickets fee
+app.post('/api/tickets/:id/pay-extra-stk', authMiddleware, ticketActionLimiter, async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+    if (!phoneNumber) return res.status(400).json({ error: 'Please enter a valid M-Pesa phone number.' });
+
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    if (ticket.user && ticket.user.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    if (ticket.paymentStatus === 'Paid') {
+      return res.status(400).json({ error: 'Extra ticket fee is already paid and approved.' });
+    }
+
+    const reference = `EXTRA_${ticket._id}_${req.user.id}_${Date.now()}`;
+    ticket.mpesaReference = reference;
+    ticket.mpesaPhone = phoneNumber;
+    await ticket.save();
+
+    const stkRes = await sendPayHeroSTKPush({
+      phoneNumber,
+      amount: ticket.surchargeFee || 50,
+      reference
+    });
+
+    if (stkRes.isDemo) {
+      setTimeout(async () => {
+        try {
+          const t = await Ticket.findById(ticket._id);
+          if (t && t.status === 'Pending') {
+            t.status = 'Approved';
+            t.paymentStatus = 'Paid';
+            await t.save();
+            const emailUser = await User.findById(t.user).select('email');
+            if (emailUser) sendBookingConfirmationEmail(emailUser.email, t);
+          }
+        } catch (_) {}
+      }, 4000);
+    }
+
+    res.json({ success: true, message: stkRes.message, reference });
+  } catch (err) {
+    console.error('Pay extra error:', err);
+    res.status(500).json({ error: err.message || 'Failed to initiate STK push' });
   }
 });
 
@@ -1651,7 +1809,33 @@ app.post('/api/payhero/callback', async (req, res) => {
 
     // Only act on confirmed successful payments
     if (callbackData && callbackData.status === 'Success') {
-      const extRef = callbackData.external_reference; // Format: SUB_{userId}_{plan}_{timestamp}
+      const extRef = callbackData.external_reference; // Format: SUB_{userId}_{plan}_{timestamp} or EXTRA_{ticketId}_{userId}_{timestamp}
+
+      if (extRef && extRef.startsWith('EXTRA_')) {
+        const parts = extRef.split('_');
+        // parts[0] = 'EXTRA', parts[1] = ticketId, parts[2] = userId, parts[3] = timestamp
+        const ticketId = parts[1];
+        const userId = parts[2];
+        const ticket = await Ticket.findById(ticketId);
+        if (ticket) {
+          ticket.status = 'Approved';
+          ticket.paymentStatus = 'Paid';
+          await ticket.save();
+          console.log(`[PayHero Callback] Ticket ${ticketId} extra surcharge paid. Status set to Approved.`);
+
+          const emailUser = await User.findById(userId || ticket.user).select('email');
+          if (emailUser) sendBookingConfirmationEmail(emailUser.email, ticket);
+
+          const io = req.app.get('io');
+          if (io) {
+            io.to(userId).emit('ticket_approved', {
+              ticketId: ticket._id,
+              status: 'Approved',
+              message: 'M-Pesa payment confirmed! Your extra tickets are Approved. 🎉'
+            });
+          }
+        }
+      }
 
       if (extRef && extRef.startsWith('SUB_')) {
         const parts = extRef.split('_');

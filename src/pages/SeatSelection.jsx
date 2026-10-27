@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ChevronLeft, Check, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, Check, Plus, Minus, Smartphone, X, ShieldCheck } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { STADIUM_LAYOUTS, getLayoutById, generateSectionsForLayout } from '../utils/stadiumLayouts';
 import VenueSeatMap from '../components/VenueSeatMap';
@@ -20,6 +20,14 @@ export default function SeatSelection() {
   const [lifetimeTickets, setLifetimeTickets] = useState(0); // user's total tickets ever purchased (lifetime)
   const isSuperAdmin = currentUserRole === 'superadmin';
 
+  // Extra ticket M-Pesa STK push payment state
+  const [showMpesaModal, setShowMpesaModal] = useState(false);
+  const [mpesaPhone, setMpesaPhone] = useState('');
+  const [mpesaLoading, setMpesaLoading] = useState(false);
+  const [mpesaStatus, setMpesaStatus] = useState('idle'); // 'idle' | 'sending' | 'waiting' | 'confirmed'
+  const [mpesaMessage, setMpesaMessage] = useState('');
+  const [createdTicketId, setCreatedTicketId] = useState(null);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -29,6 +37,7 @@ export default function SeatSelection() {
       .then(d => {
         if (d && d.role) setCurrentUserRole(d.role);
         if (d && d.subscription) setUserSubscription(d.subscription);
+        if (d && d.phoneNumber) setMpesaPhone(d.phoneNumber);
       })
       .catch(() => {});
   }, []);
@@ -239,6 +248,14 @@ export default function SeatSelection() {
       return;
     }
 
+    // For paid plans with extra tickets beyond 2: require STK Push payment before approval
+    if (isPaidPlan && surchargeFee > 0) {
+      setMpesaStatus('idle');
+      setMpesaMessage('');
+      setShowMpesaModal(true);
+      return;
+    }
+
     // Generate seat IDs
     const seats = selectedSection.isGA 
       ? Array.from({ length: quantity }, (_, i) => `Section: ${selectedSection.ticketName}, Ticket Number: ${i + 1} (General Admission)`)
@@ -283,6 +300,89 @@ export default function SeatSelection() {
       toast.error(err.message);
     } finally {
       setCheckoutLoading(false);
+    }
+  };
+  
+  const handleMpesaSTKCheckout = async () => {
+    const cleanPhone = mpesaPhone.trim().replace(/[\s+-]/g, '');
+    if (!cleanPhone || cleanPhone.length < 9) {
+      toast.error('Please enter a valid M-Pesa phone number (e.g. 0712345678)');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Please sign in to complete payment');
+      navigate('/signin');
+      return;
+    }
+
+    const seats = selectedSection.isGA 
+      ? Array.from({ length: quantity }, (_, i) => `Section: ${selectedSection.ticketName}, Ticket Number: ${i + 1} (General Admission)`)
+      : selectedSpecificSeats.map(s => `Section: ${selectedSection.ticketName}, Row: ${s.row}, Seat Number: ${s.num}`);
+
+    setMpesaLoading(true);
+    setMpesaStatus('sending');
+    setMpesaMessage('Initiating M-Pesa STK Push...');
+
+    try {
+      const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API}/api/tickets/book`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          eventId: id || 'trending',
+          eventTitle: eventTitle,
+          eventImage: event?.image || null,
+          seats: seats,
+          totalPrice,
+          currency,
+          extraTickets,
+          surchargeFee,
+          phoneNumber: cleanPhone
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to initiate booking');
+      }
+
+      setCreatedTicketId(data._id);
+      setMpesaStatus('waiting');
+      setMpesaMessage(`STK Push sent to ${cleanPhone}. Please check your phone and enter your M-Pesa PIN for KES ${surchargeFee}.`);
+
+      // Poll for ticket approval status every 2 seconds
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`${API}/api/tickets/${data._id}/payment-status`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const statusData = await statusRes.json();
+          if (statusData && (statusData.status === 'Approved' || statusData.paymentStatus === 'Paid')) {
+            clearInterval(pollInterval);
+            setMpesaStatus('confirmed');
+            setMpesaMessage('Payment confirmed! Your extra tickets have been approved.');
+            toast.success('M-Pesa payment confirmed! Tickets approved.');
+            setTimeout(() => {
+              navigate('/mytickets');
+            }, 1800);
+          }
+        } catch (_) {}
+      }, 2000);
+
+      // Safety timeout after 60s
+      setTimeout(() => {
+        clearInterval(pollInterval);
+      }, 60000);
+
+    } catch (err) {
+      setMpesaStatus('idle');
+      setMpesaLoading(false);
+      toast.error(err.message || 'Payment initiation failed');
     }
   };
 
@@ -720,6 +820,175 @@ export default function SeatSelection() {
                 Maybe Later
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* M-Pesa STK Push Payment Modal for Extra Tickets */}
+      {showMpesaModal && (
+        <div style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 9999, padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'white', borderRadius: '24px', padding: '32px 24px',
+            width: '100%', maxWidth: '420px', boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
+            position: 'relative'
+          }}>
+            {/* Close button if not currently sending / waiting */}
+            {mpesaStatus !== 'sending' && mpesaStatus !== 'waiting' && (
+              <button
+                onClick={() => { setShowMpesaModal(false); setMpesaStatus('idle'); }}
+                style={{
+                  position: 'absolute', top: '16px', right: '16px',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#888', padding: '4px'
+                }}
+              >
+                <X size={20} />
+              </button>
+            )}
+
+            {/* Header with M-Pesa Branding */}
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '6px 14px', backgroundColor: '#e8f5e9',
+                borderRadius: '20px', color: '#00843d', fontWeight: 800,
+                fontSize: '12px', letterSpacing: '0.5px', marginBottom: '12px'
+              }}>
+                <Smartphone size={16} /> M-PESA EXPRESS (STK PUSH)
+              </div>
+              <h3 style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 900, color: '#111' }}>
+                Payment for Extra Tickets
+              </h3>
+              <p style={{ margin: 0, fontSize: '13px', color: '#666', lineHeight: 1.5 }}>
+                Your VIP plan includes 2 tickets for this event. Extra tickets require payment via STK Push before approval.
+              </p>
+            </div>
+
+            {/* Surcharge Breakdown Card */}
+            <div style={{
+              backgroundColor: '#f8fafc', borderRadius: '16px', padding: '16px',
+              border: '1px solid #e2e8f0', marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}>
+                <span style={{ color: '#64748b' }}>Event:</span>
+                <span style={{ fontWeight: 700, color: '#1e293b' }}>{eventTitle}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}>
+                <span style={{ color: '#64748b' }}>Tickets in order:</span>
+                <span style={{ fontWeight: 700, color: '#1e293b' }}>{numTickets} ticket(s)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}>
+                <span style={{ color: '#64748b' }}>Extra tickets:</span>
+                <span style={{ fontWeight: 700, color: '#b45309' }}>{extraTickets} × KES {EXTRA_TICKET_FEE}</span>
+              </div>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                paddingTop: '10px', borderTop: '1px dashed #cbd5e1', marginTop: '6px'
+              }}>
+                <span style={{ fontWeight: 800, fontSize: '14px', color: '#0f172a' }}>Amount via STK Push:</span>
+                <span style={{ fontWeight: 900, fontSize: '20px', color: '#00843d' }}>KES {surchargeFee}</span>
+              </div>
+            </div>
+
+            {/* Form State */}
+            {mpesaStatus === 'idle' && (
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '8px', textTransform: 'uppercase' }}>
+                  M-Pesa Mobile Number
+                </label>
+                <div style={{ position: 'relative', marginBottom: '20px' }}>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 0712345678 or 254..."
+                    value={mpesaPhone}
+                    onChange={(e) => setMpesaPhone(e.target.value)}
+                    style={{
+                      width: '100%', padding: '14px 16px', borderRadius: '12px',
+                      border: '1.5px solid #cbd5e1', fontSize: '16px', fontWeight: 600,
+                      outline: 'none', boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <button
+                  onClick={handleMpesaSTKCheckout}
+                  style={{
+                    width: '100%', padding: '16px', borderRadius: '12px', border: 'none',
+                    backgroundColor: '#00843d', color: 'white', fontSize: '16px', fontWeight: 800,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    boxShadow: '0 4px 16px rgba(0,132,61,0.3)', transition: 'background-color 0.2s'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#007033'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#00843d'}
+                >
+                  <Smartphone size={18} /> Pay KES {surchargeFee} via M-Pesa
+                </button>
+              </div>
+            )}
+
+            {mpesaStatus === 'sending' && (
+              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                <div style={{
+                  width: '40px', height: '40px', border: '4px solid #e2e8f0',
+                  borderTopColor: '#00843d', borderRadius: '50%', margin: '0 auto 16px',
+                  animation: 'spin 0.8s linear infinite'
+                }} />
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                  Sending STK Push...
+                </div>
+                <div style={{ fontSize: '13px', color: '#64748b' }}>
+                  Connecting with Safaricom M-Pesa gateway...
+                </div>
+              </div>
+            )}
+
+            {mpesaStatus === 'waiting' && (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '50%',
+                  backgroundColor: '#e8f5e9', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', margin: '0 auto 16px',
+                  boxShadow: '0 0 0 10px rgba(0, 132, 61, 0.1)'
+                }}>
+                  <Smartphone size={32} color="#00843d" />
+                </div>
+                <div style={{ fontSize: '17px', fontWeight: 800, color: '#1e293b', marginBottom: '8px' }}>
+                  Check your phone!
+                </div>
+                <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
+                  {mpesaMessage}
+                </p>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', backgroundColor: '#f1f5f9', borderRadius: '20px', fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
+                  <span style={{ fontSize: '13px' }}>⏳</span>
+                  Awaiting M-Pesa PIN confirmation...
+                </div>
+              </div>
+            )}
+
+            {mpesaStatus === 'confirmed' && (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '50%',
+                  backgroundColor: '#00843d', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', margin: '0 auto 16px'
+                }}>
+                  <Check size={36} color="white" />
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e293b', marginBottom: '8px' }}>
+                  Payment Confirmed!
+                </div>
+                <p style={{ margin: '0 0 8px', fontSize: '14px', color: '#00843d', fontWeight: 700 }}>
+                  All {numTickets} ticket(s) have been APPROVED!
+                </p>
+                <div style={{ fontSize: '12px', color: '#64748b' }}>
+                  Redirecting to My Tickets...
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -20,6 +20,11 @@ const TicketSchema = new mongoose.Schema({
     enum: ['Active', 'Transferred', 'Expired', 'Pending', 'Approved', 'Rejected', 'For Sale'],
     default: 'Active'
   },
+  extraTickets: { type: Number, default: 0 },
+  surchargeFee: { type: Number, default: 0 },
+  paymentStatus: { type: String, enum: ['Paid', 'Pending', 'Failed', 'N/A'], default: 'Paid' },
+  mpesaReference: { type: String },
+  mpesaPhone: { type: String },
   resalePrice: { type: Number },
   ticketType: { type: String },
   orderNumber: { type: Number } // Sequential order number e.g. 1, 2, 3...
