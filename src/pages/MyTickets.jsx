@@ -1595,7 +1595,6 @@ export default function MyTickets() {
                       </div>
                      </div>
                    </div>
-                </div>
                 <div style={{ padding: '20px 16px', backgroundColor: '#f0f0f0' }}>
                   <h4 style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 800, color: '#111' }}>Post on Social Media</h4>
                   <p style={{ margin: 0, color: '#666', fontSize: '14px', lineHeight: 1.5 }}>
@@ -1741,7 +1740,8 @@ export default function MyTickets() {
                   </span>
                 </div>
               </div>
-            );
+            </div>
+          );
           })}
         </div>
       ) : (
