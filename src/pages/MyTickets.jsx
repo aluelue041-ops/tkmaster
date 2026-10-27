@@ -794,6 +794,7 @@ export default function MyTickets() {
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [celebration, setCelebration] = useState(null); // { eventTitle }
+  const [verifyResult, setVerifyResult] = useState(null); // { found: bool, message: string } after "I Have Paid"
   const [now, setNow] = useState(Date.now()); // for live countdown
   const navigate = useNavigate();
 
@@ -890,6 +891,7 @@ export default function MyTickets() {
   const handleVerifyPayment = async (ticketId) => {
     const token = localStorage.getItem('token');
     setVerifyLoading(true);
+    setVerifyResult(null); // clear previous result
     try {
       const res = await fetch(`${API}/api/tickets/${ticketId}/verify-payment`, {
         method: 'POST',
@@ -903,11 +905,13 @@ export default function MyTickets() {
         setTickets(list);
         const current = list.find(t => t._id === ticketId);
         if (current) setSelectedOrder(current);
+        setVerifyResult(null);
       } else {
-        toast.info(data.message || 'Payment not yet confirmed. Please wait a moment.');
+        // Show persistent inline feedback — payment not yet found
+        setVerifyResult({ found: false, message: data.message });
       }
     } catch (err) {
-      toast.error('Failed to verify payment. Please try again.');
+      setVerifyResult({ found: false, message: 'Could not reach server. Check your connection and try again.' });
     } finally {
       setVerifyLoading(false);
     }
@@ -1463,8 +1467,46 @@ export default function MyTickets() {
                           }}
                         >
                           <CheckCircle size={16} />
-                          {verifyLoading ? 'Checking...' : 'I Have Paid — Check Status'}
+                          {verifyLoading ? 'Checking with M-Pesa...' : 'I Have Paid — Check Status'}
                         </button>
+
+                        {/* Inline result panel when payment not yet found */}
+                        {verifyResult && !verifyResult.found && (
+                          <div style={{
+                            marginTop: '12px', backgroundColor: '#fff8f0', border: '1.5px solid #fca044',
+                            borderRadius: '10px', padding: '14px 16px', textAlign: 'left'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                              <span style={{ fontSize: '20px', flexShrink: 0 }}>⚠️</span>
+                              <div style={{ flex: 1 }}>
+                                <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#92400e' }}>
+                                  Payment not yet confirmed
+                                </p>
+                                <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#78350f', lineHeight: 1.5 }}>
+                                  {verifyResult.message || 'We couldn\'t find a completed M-Pesa payment yet.'}
+                                </p>
+                                <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#78350f', fontWeight: 600 }}>
+                                  What to do:
+                                </p>
+                                <ul style={{ margin: '0 0 10px', paddingLeft: '18px', fontSize: '12px', color: '#78350f', lineHeight: 1.7 }}>
+                                  <li>Check your phone — you may have a pending M-Pesa PIN prompt</li>
+                                  <li>If the STK push didn't arrive, enter your number above and tap <strong>Pay via M-Pesa</strong></li>
+                                  <li>If you already paid, wait 30 seconds then click <strong>Check Status</strong> again</li>
+                                  <li>If money was deducted but no confirmation, contact <strong>M-Pesa support (234)</strong></li>
+                                </ul>
+                                <button
+                                  onClick={() => setVerifyResult(null)}
+                                  style={{
+                                    background: 'none', border: 'none', color: '#b45309', fontSize: '12px',
+                                    fontWeight: 700, cursor: 'pointer', padding: 0, textDecoration: 'underline'
+                                  }}
+                                >
+                                  Dismiss
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
