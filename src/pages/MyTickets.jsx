@@ -49,11 +49,11 @@ function parseSeat(seatString) {
 
   if (seatString.includes('General Admission')) {
     const secMatch = seatString.match(/Section:\s*([^,]+)/);
-    const tktMatch = seatString.match(/Ticket Number:\s*(\d+)/);
+    const tktMatch = seatString.match(/Ticket Number:\s*([^,()]+)/);
     return {
       section: secMatch ? secMatch[1].trim() : 'GA',
       row: 'GA',
-      seat: tktMatch ? tktMatch[1] : '-',
+      seat: tktMatch ? tktMatch[1].trim() : '-',
       type: 'General Admission'
     };
   }

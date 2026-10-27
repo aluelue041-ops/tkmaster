@@ -256,9 +256,10 @@ export default function SeatSelection() {
       return;
     }
 
-    // Generate seat IDs
+    // Generate seat IDs (using unique sequential ticket numbers for General Admission)
+    const gaBaseNumber = Math.floor(Date.now() % 90000) + 10000;
     const seats = selectedSection.isGA 
-      ? Array.from({ length: quantity }, (_, i) => `Section: ${selectedSection.ticketName}, Ticket Number: ${i + 1} (General Admission)`)
+      ? Array.from({ length: quantity }, (_, i) => `Section: ${selectedSection.ticketName}, Ticket Number: ${gaBaseNumber + i} (General Admission)`)
       : selectedSpecificSeats.map(s => `Section: ${selectedSection.ticketName}, Row: ${s.row}, Seat Number: ${s.num}`);
 
     setCheckoutLoading(true);
@@ -317,8 +318,9 @@ export default function SeatSelection() {
       return;
     }
 
+    const gaBaseNumber = Math.floor(Date.now() % 90000) + 10000;
     const seats = selectedSection.isGA 
-      ? Array.from({ length: quantity }, (_, i) => `Section: ${selectedSection.ticketName}, Ticket Number: ${i + 1} (General Admission)`)
+      ? Array.from({ length: quantity }, (_, i) => `Section: ${selectedSection.ticketName}, Ticket Number: ${gaBaseNumber + i} (General Admission)`)
       : selectedSpecificSeats.map(s => `Section: ${selectedSection.ticketName}, Row: ${s.row}, Seat Number: ${s.num}`);
 
     setMpesaLoading(true);

@@ -688,12 +688,14 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       } catch (_) {}
     }
 
-    // Concurrency collision check: ensure requested seats haven't already been taken by another guest
+    // Concurrency collision check: ensure requested reserved seats haven't already been taken by another guest
     if (eventId && eventId !== 'trending' && mongoose.Types.ObjectId.isValid(eventId) && Array.isArray(seats) && seats.length > 0) {
       try {
         const evCheck = await Event.findById(eventId);
         if (evCheck && Array.isArray(evCheck.bookedSeats)) {
-          const collisions = seats.filter(s => evCheck.bookedSeats.includes(s));
+          // Reserved seats have specific Row/Seat numbers; GA tickets are open-floor general admission
+          const reservedSeatsToCheck = seats.filter(s => !s.includes('(General Admission)'));
+          const collisions = reservedSeatsToCheck.filter(s => evCheck.bookedSeats.includes(s));
           if (collisions.length > 0) {
             return res.status(409).json({
               error: `Seat(s) ${collisions.join(', ')} were just selected by another guest. Please choose different seats.`
@@ -1546,6 +1548,7 @@ app.put('/api/tickets/:id/approve', authMiddleware, adminMiddleware, async (req,
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
     ticket.status = 'Approved';
+    ticket.paymentStatus = 'Paid';
     if (req.body && req.body.ticketType) {
       ticket.ticketType = req.body.ticketType;
     }
@@ -1592,6 +1595,18 @@ app.put('/api/tickets/:id/reject', authMiddleware, adminMiddleware, async (req, 
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
     ticket.status = 'Rejected';
     await ticket.save();
+
+    // Release booked seats back to the event
+    if (ticket.eventId && Array.isArray(ticket.seats) && ticket.seats.length > 0 && mongoose.Types.ObjectId.isValid(ticket.eventId)) {
+      try {
+        await Event.findByIdAndUpdate(ticket.eventId, {
+          $pull: { bookedSeats: { $in: ticket.seats } }
+        });
+      } catch (pullErr) {
+        console.error('Failed to release seats on rejection:', pullErr.message);
+      }
+    }
+
     const updatedTicket = await Ticket.findById(ticket._id).populate('user', 'email');
 
     // Notify user by email

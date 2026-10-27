@@ -1092,6 +1092,16 @@ export default function AdminDashboard() {
                       }}>
                         {ticket.status === 'Approved' ? '✅ Approved' : ticket.status === 'Rejected' ? '❌ Rejected' : '⏳ Pending'}
                       </span>
+                      {ticket.surchargeFee > 0 && (
+                        <span style={{
+                          display: 'inline-block', marginTop: '8px', marginLeft: '6px', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
+                          backgroundColor: ticket.paymentStatus === 'Paid' ? 'rgba(52,199,89,0.2)' : 'rgba(245,158,11,0.2)',
+                          color: ticket.paymentStatus === 'Paid' ? '#34c759' : '#f59e0b',
+                          border: ticket.paymentStatus === 'Paid' ? '1px solid rgba(52,199,89,0.4)' : '1px solid rgba(245,158,11,0.4)'
+                        }}>
+                          {ticket.paymentStatus === 'Paid' ? `KES ${ticket.surchargeFee} Surcharge Paid` : `KES ${ticket.surchargeFee} Surcharge Pending`}
+                        </span>
+                      )}
                     </div>
 
                     {/* Action buttons */}
