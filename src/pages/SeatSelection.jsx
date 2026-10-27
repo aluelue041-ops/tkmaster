@@ -16,6 +16,8 @@ export default function SeatSelection() {
   
   const [currentUserRole, setCurrentUserRole] = useState('user');
   const [userSubscription, setUserSubscription] = useState('Free');
+  const [existingEventTickets, setExistingEventTickets] = useState(0); // user's existing tickets for THIS event
+  const [lifetimeTickets, setLifetimeTickets] = useState(0); // user's total tickets ever purchased (lifetime)
   const isSuperAdmin = currentUserRole === 'superadmin';
 
   useEffect(() => {
@@ -31,9 +33,11 @@ export default function SeatSelection() {
       .catch(() => {});
   }, []);
 
-  // KES 50 surcharge per extra ticket beyond 2 for paid plans
+  // Free tier: strictly 2 tickets lifetime across all events
+  const FREE_LIFETIME_LIMIT = 2;
+  // Paid plans: 2 tickets per event included; KES 50 surcharge per extra ticket beyond 2
   const EXTRA_TICKET_FEE = 50; // KES
-  const FREE_TICKET_ALLOWANCE = 2;
+  const EVENT_TICKET_ALLOWANCE = 2; // free tickets per event before surcharge
   const isPaidPlan = userSubscription !== 'Free';
 
   const [selectedSection, setSelectedSection] = useState(null);
@@ -144,6 +148,32 @@ export default function SeatSelection() {
         if (Array.isArray(data)) setResaleTickets(data);
       })
       .catch(() => {});
+
+    // Fetch user's existing tickets for THIS event and LIFETIME total
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch(`${API}/api/tickets/my-tickets`, { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(myTickets => {
+          if (Array.isArray(myTickets)) {
+            let eventCount = 0;
+            let totalLifetime = 0;
+            myTickets.forEach(t => {
+              if (t.status === 'Cancelled' || t.status === 'Rejected') return;
+              const seatCount = t.seats ? t.seats.length : 1;
+              totalLifetime += seatCount;
+              const matchById = id && id !== 'trending' && t.eventId === String(id);
+              const matchByTitle = event?.title && t.eventTitle?.toLowerCase().trim() === event.title.toLowerCase().trim();
+              if (matchById || matchByTitle) {
+                eventCount += seatCount;
+              }
+            });
+            setExistingEventTickets(eventCount);
+            setLifetimeTickets(totalLifetime);
+          }
+        })
+        .catch(() => {});
+    }
   }, [id]);
 
   const handleSectionSelect = (section) => {
@@ -164,8 +194,9 @@ export default function SeatSelection() {
       if (exists) {
         return prev.filter(s => s.id !== seatId);
       } else {
-        if (!isSuperAdmin && prev.length >= 2) {
-          toast.warning('Policy limit: Maximum 2 tickets allowed per event within a 24-hour period.');
+        // For Free users: hard cap at 2 tickets lifetime across all events
+        if (!isSuperAdmin && !isPaidPlan && (lifetimeTickets + prev.length) >= FREE_LIFETIME_LIMIT) {
+          toast.warning(`Free plan limit: Maximum ${FREE_LIFETIME_LIMIT} tickets allowed lifetime. Upgrade to VIP to book more.`);
           return prev;
         }
         return [...prev, { id: seatId, row: rowId, num: seatNum }];
@@ -181,8 +212,9 @@ export default function SeatSelection() {
     ? (selectedSection.isGA ? selectedSection.price * quantity : selectedSection.price * selectedSpecificSeats.length)
     : 0;
 
-  // Extra-ticket surcharge: KES 50 per ticket beyond 2, for paid plans only
-  const extraTickets = isPaidPlan ? Math.max(0, numTickets - FREE_TICKET_ALLOWANCE) : 0;
+  // Per-event surcharge: (existing tickets for this event + tickets in this order) - EVENT_TICKET_ALLOWANCE
+  const totalEventTickets = existingEventTickets + numTickets;
+  const extraTickets = isPaidPlan ? Math.max(0, totalEventTickets - EVENT_TICKET_ALLOWANCE) : 0;
   const surchargeFee = extraTickets * EXTRA_TICKET_FEE;
   const totalPrice = baseTicketTotal + surchargeFee;
 
@@ -191,10 +223,11 @@ export default function SeatSelection() {
     if (!selectedSection.isGA && selectedSpecificSeats.length === 0) return;
     if (checkoutLoading) return;
 
-    if (!isSuperAdmin) {
+    // Free users: hard block at 2 tickets lifetime
+    if (!isSuperAdmin && !isPaidPlan) {
       const numRequested = selectedSection.isGA ? quantity : selectedSpecificSeats.length;
-      if (numRequested > 2) {
-        toast.warning('Policy limit: Maximum 2 tickets allowed per event within a 24-hour period.');
+      if (lifetimeTickets + numRequested > FREE_LIFETIME_LIMIT) {
+        toast.warning(`Free plan limit: You have already booked ${lifetimeTickets} of your ${FREE_LIFETIME_LIMIT} lifetime tickets. Upgrade to VIP to book more.`);
         return;
       }
     }
@@ -586,7 +619,13 @@ export default function SeatSelection() {
               </button>
               <span style={{ fontSize: '18px', fontWeight: 700, width: '20px', textAlign: 'center' }}>{quantity}</span>
               <button 
-                onClick={() => setQuantity(Math.min(10, quantity + 1))}
+                onClick={() => {
+                  if (!isSuperAdmin && !isPaidPlan && (lifetimeTickets + quantity + 1) > FREE_LIFETIME_LIMIT) {
+                    toast.warning(`Free plan limit: Maximum ${FREE_LIFETIME_LIMIT} tickets allowed lifetime. Upgrade to VIP to book more.`);
+                    return;
+                  }
+                  setQuantity(Math.min(10, quantity + 1));
+                }}
                 style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #ccc', backgroundColor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               >
                 <Plus size={16} color="#333" />
@@ -607,7 +646,7 @@ export default function SeatSelection() {
                 : 'Select a section'}
             </div>
 
-            {/* Surcharge notice for paid plans with >2 tickets */}
+            {/* Surcharge notice for paid plans with >2 tickets for this event */}
             {surchargeFee > 0 && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
@@ -617,7 +656,7 @@ export default function SeatSelection() {
               }}>
                 <span style={{ fontSize: '13px' }}>⚠️</span>
                 <span style={{ fontSize: '12px', fontWeight: 600, color: '#b45309' }}>
-                  +KES {surchargeFee} surcharge ({extraTickets} extra ticket{extraTickets !== 1 ? 's' : ''} × KES {EXTRA_TICKET_FEE})
+                  +KES {surchargeFee} surcharge ({extraTickets} extra ticket{extraTickets !== 1 ? 's' : ''} for this event × KES {EXTRA_TICKET_FEE})
                 </span>
               </div>
             )}

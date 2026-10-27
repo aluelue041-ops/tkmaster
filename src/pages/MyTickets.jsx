@@ -24,13 +24,13 @@ const CustomBarcodeIcon = ({ size = 24, color = "white" }) => (
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// Returns true if a Free-tier ticket is older than 2 days and should be blurred
+// Returns true if a Free-tier ticket is older than 24 hours and should be blurred
 function isTicketBlurred(ticket, userSubscription) {
   if (userSubscription !== 'Free') return false;
   const purchaseDate = ticket?.purchaseDate || ticket?.createdAt;
   if (!purchaseDate) return false;
   const ageMs = Date.now() - new Date(purchaseDate).getTime();
-  return ageMs > 2 * 24 * 60 * 60 * 1000; // 2 days in ms
+  return ageMs > 24 * 60 * 60 * 1000; // 24 hours
 }
 
 // Parse seat string into section/row/seat
@@ -385,7 +385,7 @@ function BlurPaywall({ onUpgrade }) {
           Free Preview Expired
         </div>
         <div style={{ fontSize: '12px', color: '#666', lineHeight: 1.55, marginBottom: '16px' }}>
-          Free-tier tickets are viewable for <strong>2 days</strong> after purchase.
+          Free-tier tickets are viewable for <strong>24 hours</strong> after purchase.
           Upgrade to keep full access to your tickets anytime.
         </div>
         <button
@@ -1223,22 +1223,16 @@ export default function MyTickets() {
   }
 
   // Orders list view
-  const currentMonthStart = new Date();
-  currentMonthStart.setDate(1);
-  currentMonthStart.setHours(0, 0, 0, 0);
+  const FREE_LIFETIME_LIMIT = 2;
+  const isVIP = userSubscription === 'VIP';
+  const isFree = userSubscription === 'Free';
 
-  const usedThisMonth = tickets.reduce((total, ticket) => {
-    const tDate = new Date(ticket.purchaseDate || ticket.createdAt || new Date());
-    if (tDate >= currentMonthStart) {
-      return total + (ticket.seats ? ticket.seats.length : 1);
-    }
-    return total;
+  // Free: count all tickets ever purchased (lifetime)
+  const lifetimeUsed = tickets.reduce((total, ticket) => {
+    return total + (ticket.seats ? ticket.seats.length : 1);
   }, 0);
 
-  let limit = 2; // Free
-  const isVIP = userSubscription === 'VIP';
-
-  const usagePercent = isVIP ? 0 : Math.min(100, (usedThisMonth / limit) * 100);
+  const usagePercent = isFree ? Math.min(100, (lifetimeUsed / FREE_LIFETIME_LIMIT) * 100) : 0;
 
   return (
     <div className="page my-tickets-page premium-gradient-bg" style={{ minHeight: "100vh" }}>
@@ -1249,9 +1243,11 @@ export default function MyTickets() {
         <div className="glass-panel" style={{ padding: "20px" }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monthly Usage</div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                {isFree ? 'Lifetime Free Usage' : 'Subscription Plan'}
+              </div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: '#111', marginTop: '2px' }}>
-                {isVIP ? `${usedThisMonth} Tickets (Unlimited)` : `${usedThisMonth} of ${limit} Tickets`}
+                {isVIP ? `${lifetimeUsed} Tickets (VIP Plan)` : `${lifetimeUsed} of ${FREE_LIFETIME_LIMIT} Lifetime Tickets`}
               </div>
             </div>
             {!isVIP && (
@@ -1268,11 +1264,11 @@ export default function MyTickets() {
               <div style={{ width: `${usagePercent}%`, height: '100%', backgroundColor: usagePercent >= 100 ? '#ef4444' : usagePercent >= 80 ? '#f59e0b' : '#026cdf', transition: 'width 0.3s' }}></div>
             </div>
           )}
-          {!isVIP && limit - usedThisMonth <= 5 && limit - usedThisMonth > 0 && (
-            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#f59e0b', fontWeight: 600 }}>âš ï¸ Only {limit - usedThisMonth} ticket{limit - usedThisMonth !== 1 ? 's' : ''} left this month!</p>
+          {!isVIP && FREE_LIFETIME_LIMIT - lifetimeUsed === 1 && (
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#f59e0b', fontWeight: 600 }}>⚠️ Only 1 free ticket left for your account!</p>
           )}
-          {!isVIP && limit - usedThisMonth <= 0 && (
-            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>âš ï¸ You have reached your monthly booking limit.</p>
+          {!isVIP && FREE_LIFETIME_LIMIT - lifetimeUsed <= 0 && (
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>⚠️ You have reached your 2 free lifetime tickets limit. Upgrade to VIP to book more.</p>
           )}
         </div>
       </div>

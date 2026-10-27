@@ -578,21 +578,43 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
     const user = await User.findById(req.user.id);
     const isSuperAdmin = user && user.role === 'superadmin';
 
-    // 24-HOUR DAILY EVENT LIMIT ENFORCEMENT (Except Super Admin)
-    // Rule: Restrict to 2 tickets per event per person on a rolling 24-hour cycle
+    // Check if subscription has expired → revert to Free
+    let subscription = user ? (user.subscription || 'Free') : 'Free';
+    if (subscription !== 'Free' && user.subscriptionExpiresAt && new Date() > user.subscriptionExpiresAt) {
+      subscription = 'Free';
+      await User.findByIdAndUpdate(req.user.id, { subscription: 'Free', subscriptionExpiresAt: null });
+    }
+    const isPaidPlan = subscription !== 'Free';
+    const autoApprove = isPaidPlan;
     const numSeatsRequested = seats ? seats.length : 1;
 
-    if (!isSuperAdmin) {
-      if (numSeatsRequested > 2) {
+    // 1. FREE USERS: Allowed only 2 tickets lifetime (total ever booked across all events)
+    if (!isSuperAdmin && !isPaidPlan) {
+      const allUserTickets = await Ticket.find({
+        user: req.user.id,
+        status: { $nin: ['Cancelled', 'Rejected'] }
+      });
+
+      let lifetimeTicketsCount = 0;
+      allUserTickets.forEach(t => {
+        lifetimeTicketsCount += (t.seats && t.seats.length > 0 ? t.seats.length : 1);
+      });
+
+      if (lifetimeTicketsCount + numSeatsRequested > 2) {
         return res.status(400).json({ 
-          error: 'Daily limit exceeded: Maximum 2 tickets allowed per event per person within a 24-hour period.',
+          error: `Free plan limit reached: You are allowed a maximum of 2 tickets lifetime. You have already booked ${lifetimeTicketsCount} ticket(s). Upgrade to VIP to book more tickets.`,
           limitExceeded: true,
-          limitType: 'daily_event_limit'
+          limitType: 'free_lifetime_limit',
+          lifetimeTicketsCount
         });
       }
+    }
 
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      
+    // 2. PAID USERS: 2 tickets per event included; each extra ticket for the event costs KES 50
+    let calculatedExtraTickets = 0;
+    let calculatedSurchargeFee = 0;
+
+    if (isPaidPlan) {
       const eventQueries = [];
       if (eventId && eventId !== 'trending') {
         eventQueries.push({ eventId: String(eventId) });
@@ -601,73 +623,20 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
         eventQueries.push({ eventTitle: eventTitle });
       }
 
-      const existingEventTickets24h = await Ticket.find({
+      const existingEventTickets = await Ticket.find({
         user: req.user.id,
         $or: eventQueries.length > 0 ? eventQueries : [{ eventTitle }],
-        purchaseDate: { $gte: twentyFourHoursAgo },
         status: { $nin: ['Cancelled', 'Rejected'] }
       });
 
-      let seatsBoughtLast24h = 0;
-      existingEventTickets24h.forEach(t => {
-        seatsBoughtLast24h += (t.seats && t.seats.length > 0 ? t.seats.length : 1);
+      let seatsBoughtForEvent = 0;
+      existingEventTickets.forEach(t => {
+        seatsBoughtForEvent += (t.seats && t.seats.length > 0 ? t.seats.length : 1);
       });
 
-      if (seatsBoughtLast24h + numSeatsRequested > 2) {
-        const earliestPurchase = existingEventTickets24h.reduce((min, t) => {
-          const pDate = new Date(t.purchaseDate || t._id.getTimestamp());
-          return pDate < min ? pDate : min;
-        }, new Date());
-        const resetTime = new Date(earliestPurchase.getTime() + 24 * 60 * 60 * 1000);
-        const msRemaining = Math.max(0, resetTime.getTime() - Date.now());
-        const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
-        const minutesRemaining = Math.ceil((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
-        const timeLeftStr = hoursRemaining > 0 ? `${hoursRemaining}h ${minutesRemaining}m` : `${minutesRemaining}m`;
-
-        return res.status(400).json({ 
-          error: `Daily limit reached: Maximum 2 tickets allowed per event every 24 hours. You have already booked ${seatsBoughtLast24h} ticket(s) for this event in the past 24 hours. Limit resets in approx ${timeLeftStr}.`,
-          limitExceeded: true,
-          limitType: 'daily_event_limit',
-          seatsBoughtLast24h,
-          hoursRemaining
-        });
-      }
-    }
-
-    // Check if subscription has expired → revert to Free
-    let subscription = user ? (user.subscription || 'Free') : 'Free';
-    if (subscription !== 'Free' && user.subscriptionExpiresAt && new Date() > user.subscriptionExpiresAt) {
-      subscription = 'Free';
-      await User.findByIdAndUpdate(req.user.id, { subscription: 'Free', subscriptionExpiresAt: null });
-    }
-    const autoApprove = subscription !== 'Free';
-
-    // Calculate seats bought this month
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    const userTicketsThisMonth = await Ticket.find({
-      user: req.user.id,
-      purchaseDate: { $gte: startOfMonth }
-    });
-
-    let seatsBoughtThisMonth = 0;
-    userTicketsThisMonth.forEach(t => {
-      seatsBoughtThisMonth += (t.seats ? t.seats.length : 1);
-    });
-
-    let limit = 2; // Free tier hard cap
-    if (subscription === 'VIP' || isSuperAdmin) limit = Infinity;
-
-    // Free-tier users are hard-blocked beyond 2 tickets/month.
-    // Paid (VIP/etc) users can book beyond 2 — they just pay KES 50 surcharge per extra ticket.
-    if (!isSuperAdmin && subscription === 'Free' && seatsBoughtThisMonth + numSeatsRequested > limit) {
-      return res.status(400).json({ 
-        error: `Monthly limit exceeded. Your Free plan allows ${limit} tickets/month. You have already booked ${seatsBoughtThisMonth}. Upgrade to book more tickets.`,
-        limitExceeded: true,
-        limitType: 'monthly_plan_limit'
-      });
+      const totalEventTickets = seatsBoughtForEvent + numSeatsRequested;
+      calculatedExtraTickets = Math.max(0, totalEventTickets - 2);
+      calculatedSurchargeFee = calculatedExtraTickets * 50; // KES 50 per extra ticket for this event
     }
 
     let finalEventImage = eventImage || null;
@@ -709,8 +678,8 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
 
     res.json({
       ...newTicket.toObject(),
-      extraTickets: extraTickets || 0,
-      surchargeFee: surchargeFee || 0
+      extraTickets: calculatedExtraTickets || extraTickets || 0,
+      surchargeFee: calculatedSurchargeFee || surchargeFee || 0
     });
   } catch (err) {
     console.error(err);

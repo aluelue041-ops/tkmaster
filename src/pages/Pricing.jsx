@@ -43,7 +43,7 @@ export default function Pricing() {
       name: 'Free',
       price: '0',
       description: 'For casual event goers',
-      features: ['2 Tickets per month', 'Standard Approval', 'Email Support'],
+      features: ['2 Tickets lifetime total', 'Viewable for 24 hours', 'Standard Approval', 'Email Support'],
       limit: 'Strict screen recording limits',
       recommended: false
     },
@@ -52,7 +52,7 @@ export default function Pricing() {
       price: '2,500',
       cryptoPrice: '20',
       description: 'For corporate & VIPs',
-      features: ['Unlimited Tickets', 'Instant Auto-Approve', 'Dedicated Account Manager', 'No screen recording limits'],
+      features: ['2 Tickets per event included', 'Extra tickets KES 50 each', 'Permanent ticket access (no blur)', 'Instant Auto-Approve'],
       limit: '',
       recommended: true
     }
