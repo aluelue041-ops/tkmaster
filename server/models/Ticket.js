@@ -17,7 +17,7 @@ const TicketSchema = new mongoose.Schema({
   purchaseDate: { type: Date, default: Date.now },
   status: {
     type: String,
-    enum: ['Active', 'Transferred', 'Expired', 'Pending', 'Approved', 'Rejected', 'For Sale'],
+    enum: ['Active', 'Transferred', 'Expired', 'Pending', 'Approved', 'Rejected', 'For Sale', 'Cancelled'],
     default: 'Active'
   },
   extraTickets: { type: Number, default: 0 },
@@ -25,6 +25,7 @@ const TicketSchema = new mongoose.Schema({
   paymentStatus: { type: String, enum: ['Paid', 'Pending', 'Failed', 'N/A'], default: 'Paid' },
   mpesaReference: { type: String },
   mpesaPhone: { type: String },
+  lastStkPushAt: { type: Date },
   resalePrice: { type: Number },
   ticketType: { type: String },
   orderNumber: { type: Number } // Sequential order number e.g. 1, 2, 3...

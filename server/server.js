@@ -745,6 +745,7 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
     if (requiresPayment && req.body.phoneNumber) {
       const reference = `EXTRA_${newTicket._id}_${req.user.id}_${Date.now()}`;
       newTicket.mpesaReference = reference;
+      newTicket.lastStkPushAt = new Date();
       await newTicket.save();
 
       try {
@@ -843,7 +844,7 @@ app.get('/api/tickets/:id/payment-status', authMiddleware, async (req, res) => {
   }
 });
 
-// Re-initiate STK push for extra tickets fee
+// Re-initiate STK push for extra tickets fee with 60s cooldown
 app.post('/api/tickets/:id/pay-extra-stk', authMiddleware, ticketActionLimiter, async (req, res) => {
   try {
     const { phoneNumber } = req.body;
@@ -857,6 +858,19 @@ app.post('/api/tickets/:id/pay-extra-stk', authMiddleware, ticketActionLimiter, 
     if (ticket.paymentStatus === 'Paid') {
       return res.status(400).json({ error: 'Extra ticket fee is already paid and approved.' });
     }
+
+    // 60-second cooldown per ticket to prevent STK push flooding
+    if (ticket.lastStkPushAt) {
+      const elapsedMs = Date.now() - new Date(ticket.lastStkPushAt).getTime();
+      if (elapsedMs < 60 * 1000) {
+        const remainingSec = Math.ceil((60 * 1000 - elapsedMs) / 1000);
+        return res.status(429).json({
+          error: `Please wait ${remainingSec}s before requesting another M-Pesa prompt.`,
+          cooldownRemaining: remainingSec
+        });
+      }
+    }
+    ticket.lastStkPushAt = new Date();
 
     const reference = `EXTRA_${ticket._id}_${req.user.id}_${Date.now()}`;
     ticket.mpesaReference = reference;
@@ -879,6 +893,15 @@ app.post('/api/tickets/:id/pay-extra-stk', authMiddleware, ticketActionLimiter, 
             await t.save();
             const emailUser = await User.findById(t.user).select('email');
             if (emailUser) sendBookingConfirmationEmail(emailUser.email, t);
+
+            const io = req.app.get('io');
+            if (io) {
+              io.to(req.user.id).emit('ticket_approved', {
+                ticketId: t._id,
+                status: 'Approved',
+                message: 'M-Pesa payment confirmed! Your extra tickets are Approved. 🎉'
+              });
+            }
           }
         } catch (_) {}
       }, 4000);
@@ -888,6 +911,91 @@ app.post('/api/tickets/:id/pay-extra-stk', authMiddleware, ticketActionLimiter, 
   } catch (err) {
     console.error('Pay extra error:', err);
     res.status(500).json({ error: err.message || 'Failed to initiate STK push' });
+  }
+});
+
+// 5a-2. User Cancel Own Pending Unpaid Ticket
+app.put('/api/tickets/:id/cancel', authMiddleware, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    if (ticket.user && ticket.user.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    if (ticket.status !== 'Pending') {
+      return res.status(400).json({ error: 'Only pending orders can be cancelled.' });
+    }
+    if (ticket.paymentStatus === 'Paid') {
+      return res.status(400).json({ error: 'Paid tickets cannot be self-cancelled. Please contact support.' });
+    }
+
+    ticket.status = 'Cancelled';
+    await ticket.save();
+
+    // Release seats immediately
+    if (ticket.eventId && Array.isArray(ticket.seats) && ticket.seats.length > 0 && mongoose.Types.ObjectId.isValid(ticket.eventId)) {
+      try {
+        await Event.findByIdAndUpdate(ticket.eventId, {
+          $pull: { bookedSeats: { $in: ticket.seats } }
+        });
+      } catch (pullErr) {
+        console.error('Failed to release seats on user cancellation:', pullErr.message);
+      }
+    }
+
+    res.json({ success: true, message: 'Reservation cancelled and seats released.' });
+  } catch (err) {
+    console.error('Cancel ticket error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 5a-3. Manual verification / query of M-Pesa payment status
+app.post('/api/tickets/:id/verify-payment', authMiddleware, ticketActionLimiter, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    if (ticket.user && ticket.user.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    if (ticket.paymentStatus === 'Paid' || ticket.status === 'Approved') {
+      return res.json({ approved: true, status: ticket.status, paymentStatus: ticket.paymentStatus });
+    }
+
+    if (ticket.mpesaReference) {
+      const payHeroConfigured = process.env.PAYHERO_API_USERNAME && process.env.PAYHERO_API_PASSWORD;
+      if (!payHeroConfigured) {
+        // Demo environment auto-verification
+        ticket.status = 'Approved';
+        ticket.paymentStatus = 'Paid';
+        await ticket.save();
+
+        const emailUser = await User.findById(ticket.user).select('email');
+        if (emailUser) sendBookingConfirmationEmail(emailUser.email, ticket);
+
+        const io = req.app.get('io');
+        if (io) {
+          io.to(req.user.id).emit('ticket_approved', {
+            ticketId: ticket._id,
+            status: 'Approved',
+            message: 'M-Pesa payment confirmed! Your extra tickets are Approved. 🎉'
+          });
+        }
+
+        return res.json({ approved: true, status: 'Approved', paymentStatus: 'Paid', message: 'Payment confirmed! Tickets approved.' });
+      }
+    }
+
+    res.json({
+      approved: false,
+      status: ticket.status,
+      paymentStatus: ticket.paymentStatus,
+      message: 'Payment is still being processed by Safaricom M-Pesa. Please allow up to 1 minute or enter your M-Pesa PIN.'
+    });
+  } catch (err) {
+    console.error('Verify payment error:', err);
+    res.status(500).json({ error: 'Failed to verify payment status.' });
   }
 });
 
@@ -1966,6 +2074,37 @@ cron.schedule('0 0 * * *', async () => {
     }
   } catch (err) {
     console.error('[CRON] Subscription reset error:', err.message);
+  }
+});
+
+// --- CRON: Auto-expire unpaid pending tickets after 15 minutes and release reserved seats ---
+cron.schedule('*/2 * * * *', async () => {
+  try {
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const expiredPendingTickets = await Ticket.find({
+      status: 'Pending',
+      paymentStatus: 'Pending',
+      purchaseDate: { $lte: fifteenMinutesAgo }
+    });
+
+    for (const t of expiredPendingTickets) {
+      t.status = 'Expired';
+      t.paymentStatus = 'Failed';
+      await t.save();
+
+      if (t.eventId && Array.isArray(t.seats) && t.seats.length > 0 && mongoose.Types.ObjectId.isValid(t.eventId)) {
+        try {
+          await Event.findByIdAndUpdate(t.eventId, {
+            $pull: { bookedSeats: { $in: t.seats } }
+          });
+          console.log(`[CRON] Expired unpaid reservation ${t._id}. Released ${t.seats.length} seat(s).`);
+        } catch (pullErr) {
+          console.error('[CRON] Seat release error:', pullErr.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[CRON] Unpaid reservation auto-release error:', err.message);
   }
 });
 

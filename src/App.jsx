@@ -382,11 +382,13 @@ function App() {
       }
     };
     handleAuth();
+    // Re-join room on reconnect (e.g. after network drop)
+    socket.on('connect', handleAuth);
 
     socket.on('ticket_bought', (data) => toast.success(data.message));
     socket.on('ticket_sold', (data) => toast.info(data.message));
     socket.on('ticket_received', (data) => toast.success(data.message));
-    socket.on('ticket_approved', (data) => toast.success(data.message));
+    // ticket_approved is handled with rich UI in MyTickets.jsx
     socket.on('ticket_rejected', (data) => toast.error(data.message));
     socket.on('subscription_success', (data) => {
       toast.success(data.message);
@@ -395,10 +397,10 @@ function App() {
     });
 
     return () => {
+      socket.off('connect', handleAuth);
       socket.off('ticket_bought');
       socket.off('ticket_sold');
       socket.off('ticket_received');
-      socket.off('ticket_approved');
       socket.off('ticket_rejected');
       socket.off('subscription_success');
     };

@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical, ScanBarcode, Navigation } from 'lucide-react';
+import { ChevronLeft, Ticket as TicketIcon, ArrowUpRight, RefreshCw, MapPin, X, Download, Smartphone, MoreVertical, ScanBarcode, Navigation, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { getMapIframeSrc, getDirectionsUrl } from '../utils/mapUtils';
 import { toast } from 'react-toastify';
 import { QRCodeSVG } from 'qrcode.react';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
+import { socket } from '../App';
 
 const CustomBarcodeIcon = ({ size = 24, color = "white" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -32,15 +33,33 @@ const EXISTING_FREE_CUTOFF = new Date('2026-10-27T13:30:00+03:00').getTime();
 function isTicketBlurred(ticket, userSubscription) {
   if (userSubscription !== 'Free') return false;
   const rawDate = ticket?.purchaseDate || ticket?.createdAt;
-  // If there is no purchase date, it is an existing ticket and blurred
   if (!rawDate) return true;
   const purchaseTime = new Date(rawDate).getTime();
   if (isNaN(purchaseTime)) return true;
-  // All existing Free-tier tickets are immediately blurred
   if (purchaseTime <= EXISTING_FREE_CUTOFF) return true;
-  // Any newly booked tickets blur after 24 hours
   const ageMs = Date.now() - purchaseTime;
-  return ageMs > 24 * 60 * 60 * 1000; // 24 hours
+  return ageMs > 24 * 60 * 60 * 1000;
+}
+
+// Returns ms remaining before Free ticket blurs, or 0 if already blurred/not free
+function getFreeCountdownMs(ticket, userSubscription) {
+  if (userSubscription !== 'Free') return 0;
+  const rawDate = ticket?.purchaseDate || ticket?.createdAt;
+  if (!rawDate) return 0;
+  const purchaseTime = new Date(rawDate).getTime();
+  if (isNaN(purchaseTime) || purchaseTime <= EXISTING_FREE_CUTOFF) return 0;
+  const expiresAt = purchaseTime + 24 * 60 * 60 * 1000;
+  return Math.max(0, expiresAt - Date.now());
+}
+
+// Format ms into h:mm:ss
+function formatCountdown(ms) {
+  if (ms <= 0) return null;
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
 }
 
 // Parse seat string into section/row/seat
@@ -771,9 +790,54 @@ export default function MyTickets() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [retryPhone, setRetryPhone] = useState('');
   const [retryLoading, setRetryLoading] = useState(false);
+  const [stkCooldown, setStkCooldown] = useState(0); // seconds remaining in STK cooldown
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [celebration, setCelebration] = useState(null); // { eventTitle }
+  const [now, setNow] = useState(Date.now()); // for live countdown
   const navigate = useNavigate();
 
+  // Tick every second to keep countdown live
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // STK cooldown countdown
+  useEffect(() => {
+    if (stkCooldown <= 0) return;
+    const t = setTimeout(() => setStkCooldown(c => Math.max(0, c - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [stkCooldown]);
+
+  // Socket.io — listen for ticket approval events and show celebration
+  useEffect(() => {
+    const handler = (data) => {
+      const title = data?.eventTitle || selectedOrder?.eventTitle || '';
+      setCelebration({ eventTitle: title, message: data?.message });
+      toast.success(data?.message || '🎉 Your tickets are approved!');
+      // Refresh tickets
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch(`${API}/api/tickets/my-tickets`, { headers: { 'Authorization': `Bearer ${token}` } })
+          .then(r => r.json())
+          .then(list => {
+            setTickets(list);
+            const current = list.find(t => t._id === data?.ticketId || t._id === selectedOrder?._id);
+            if (current) setSelectedOrder(current);
+          })
+          .catch(() => {});
+      }
+    };
+    socket.on('ticket_approved', handler);
+    return () => socket.off('ticket_approved', handler);
+  }, [selectedOrder]);
+
   const handlePayPendingExtra = async (ticketId, surchargeFee) => {
+    if (stkCooldown > 0) {
+      toast.warning(`Please wait ${stkCooldown}s before sending another M-Pesa prompt.`);
+      return;
+    }
     const phone = retryPhone.trim().replace(/[\s+-]/g, '');
     if (!phone || phone.length < 9) {
       toast.error('Please enter a valid M-Pesa phone number (e.g. 0712345678)');
@@ -784,15 +848,18 @@ export default function MyTickets() {
     try {
       const res = await fetch(`${API}/api/tickets/${ticketId}/pay-extra-stk`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ phoneNumber: phone })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send STK push');
-      toast.info(`STK Push sent to ${phone}. Enter your M-Pesa PIN!`);
+      if (!res.ok) {
+        if (res.status === 429 && data.cooldownRemaining) {
+          setStkCooldown(data.cooldownRemaining);
+        }
+        throw new Error(data.error || 'Failed to send STK push');
+      }
+      setStkCooldown(60); // start 60s cooldown
+      toast.info(`✅ STK Push sent to ${phone}. Enter your M-Pesa PIN!`);
 
       const interval = setInterval(async () => {
         try {
@@ -817,6 +884,58 @@ export default function MyTickets() {
     } catch (err) {
       setRetryLoading(false);
       toast.error(err.message);
+    }
+  };
+
+  const handleVerifyPayment = async (ticketId) => {
+    const token = localStorage.getItem('token');
+    setVerifyLoading(true);
+    try {
+      const res = await fetch(`${API}/api/tickets/${ticketId}/verify-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.approved) {
+        toast.success('✅ Payment verified! Your tickets are now approved.');
+        const updated = await fetch(`${API}/api/tickets/my-tickets`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const list = await updated.json();
+        setTickets(list);
+        const current = list.find(t => t._id === ticketId);
+        if (current) setSelectedOrder(current);
+      } else {
+        toast.info(data.message || 'Payment not yet confirmed. Please wait a moment.');
+      }
+    } catch (err) {
+      toast.error('Failed to verify payment. Please try again.');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleCancelReservation = async (ticketId) => {
+    if (!window.confirm('Cancel this reservation? Your seats will be released and the order cannot be recovered.')) return;
+    const token = localStorage.getItem('token');
+    setCancelLoading(true);
+    try {
+      const res = await fetch(`${API}/api/tickets/${ticketId}/cancel`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('Reservation cancelled. Seats released.');
+        const updated = await fetch(`${API}/api/tickets/my-tickets`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const list = await updated.json();
+        setTickets(list);
+        setSelectedOrder(null);
+      } else {
+        toast.error(data.error || 'Failed to cancel reservation.');
+      }
+    } catch (err) {
+      toast.error('Failed to cancel. Please try again.');
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -1280,6 +1399,22 @@ export default function MyTickets() {
                         : 'Tickets, seat allocations, barcodes, and QR codes are hidden until your order is reviewed and approved. Once approved, full ticket access will appear here.'}
                     </p>
 
+                    {/* ⏱ 15-minute hold timer warning */}
+                    {selectedOrder.paymentStatus === 'Pending' && selectedOrder.purchaseDate && (() => {
+                      const holdExpiresAt = new Date(selectedOrder.purchaseDate).getTime() + 15 * 60 * 1000;
+                      const holdRemainingMs = Math.max(0, holdExpiresAt - now);
+                      const holdMin = Math.floor(holdRemainingMs / 60000);
+                      const holdSec = Math.floor((holdRemainingMs % 60000) / 1000);
+                      return holdRemainingMs > 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '14px', backgroundColor: '#fff3e0', padding: '8px 16px', borderRadius: '8px', border: '1px solid #ffcc80' }}>
+                          <Clock size={14} color="#f57c00" />
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#e65100' }}>
+                            Seat hold expires in {holdMin}:{String(holdSec).padStart(2, '0')} — complete payment to secure seats
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
+
                     {selectedOrder.surchargeFee > 0 && selectedOrder.paymentStatus !== 'Paid' && (
                       <div style={{ maxWidth: '360px', margin: '0 auto', textAlign: 'left', backgroundColor: 'white', padding: '18px', borderRadius: '14px', border: '1px solid #ffd54f', boxShadow: '0 4px 12px rgba(245,158,11,0.1)' }}>
                         <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '6px', textTransform: 'uppercase' }}>
@@ -1293,24 +1428,62 @@ export default function MyTickets() {
                           style={{
                             width: '100%', padding: '12px 14px', borderRadius: '8px',
                             border: '1.5px solid #cbd5e1', fontSize: '15px', outline: 'none',
-                            marginBottom: '12px', boxSizing: 'border-box'
+                            marginBottom: '10px', boxSizing: 'border-box'
                           }}
                         />
+                        {/* Pay via M-Pesa button with cooldown */}
                         <button
                           onClick={() => handlePayPendingExtra(selectedOrder._id, selectedOrder.surchargeFee)}
-                          disabled={retryLoading}
+                          disabled={retryLoading || stkCooldown > 0}
                           style={{
                             width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
-                            backgroundColor: '#00843d', color: 'white', fontSize: '15px', fontWeight: 800,
-                            cursor: retryLoading ? 'not-allowed' : 'pointer',
+                            backgroundColor: (retryLoading || stkCooldown > 0) ? '#9e9e9e' : '#00843d',
+                            color: 'white', fontSize: '15px', fontWeight: 800,
+                            cursor: (retryLoading || stkCooldown > 0) ? 'not-allowed' : 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                            boxShadow: '0 4px 12px rgba(0,132,61,0.25)'
+                            boxShadow: '0 4px 12px rgba(0,132,61,0.25)', marginBottom: '8px'
                           }}
                         >
-                          {retryLoading ? 'Sending STK Push...' : `Pay KES ${selectedOrder.surchargeFee} via M-Pesa`}
+                          {retryLoading
+                            ? 'Sending STK Push...'
+                            : stkCooldown > 0
+                              ? `⏱ Resend available in ${stkCooldown}s`
+                              : `Pay KES ${selectedOrder.surchargeFee} via M-Pesa`}
+                        </button>
+                        {/* "I Have Paid" / Verify Payment button */}
+                        <button
+                          onClick={() => handleVerifyPayment(selectedOrder._id)}
+                          disabled={verifyLoading}
+                          style={{
+                            width: '100%', padding: '12px', borderRadius: '8px',
+                            border: '2px solid #026cdf', backgroundColor: 'white',
+                            color: '#026cdf', fontSize: '14px', fontWeight: 700,
+                            cursor: verifyLoading ? 'not-allowed' : 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                          }}
+                        >
+                          <CheckCircle size={16} />
+                          {verifyLoading ? 'Checking...' : 'I Have Paid — Check Status'}
                         </button>
                       </div>
                     )}
+
+                    {/* Cancel Reservation button */}
+                    <div style={{ marginTop: '16px' }}>
+                      <button
+                        onClick={() => handleCancelReservation(selectedOrder._id)}
+                        disabled={cancelLoading}
+                        style={{
+                          background: 'none', border: 'none', color: '#ef4444', fontSize: '13px',
+                          fontWeight: 700, cursor: cancelLoading ? 'not-allowed' : 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '6px', margin: '0 auto',
+                          opacity: cancelLoading ? 0.6 : 1
+                        }}
+                      >
+                        <XCircle size={15} />
+                        {cancelLoading ? 'Cancelling...' : 'Cancel Reservation & Release Seats'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1480,28 +1653,43 @@ export default function MyTickets() {
                       <TicketIcon size={14} /> x{ticket.seatsOriginalCount || ticket.seats?.length || 1}
                     </span>
                   </div>
-                  {/* Status badge */}
-                  <div style={{ marginTop: '10px' }}>
-                    <span style={{
-                      display: 'inline-block', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
-                      backgroundColor:
-                        ticket.status === 'Active' ? '#e8f5e9' :
-                        ticket.status === 'Approved' ? '#e8f5e9' :
-                        ticket.status === 'Transferred' ? '#e3f2fd' :
-                        ticket.status === 'Expired' ? '#f3f3f3' :
-                        ticket.status === 'Rejected' ? '#fce4ec' : '#fff8e1',
-                      color:
-                        ticket.status === 'Active' ? '#2e7d32' :
-                        ticket.status === 'Approved' ? '#2e7d32' :
-                        ticket.status === 'Transferred' ? '#1565c0' :
-                        ticket.status === 'Expired' ? '#9e9e9e' :
-                        ticket.status === 'Rejected' ? '#c62828' : '#f57f17'
-                    }}>
-                      {ticket.status === 'Pending' && ticket.surchargeFee > 0 && ticket.paymentStatus !== 'Paid'
-                        ? 'Pending M-Pesa Payment'
-                        : (ticket.status || 'Active')}
-                    </span>
-                  </div>
+              {/* 24h Free countdown banner */}
+                {!blurred && userSubscription === 'Free' && ticket.status !== 'Pending' && (() => {
+                  const ms = getFreeCountdownMs(ticket, userSubscription);
+                  const label = formatCountdown(ms);
+                  if (!label) return null;
+                  return (
+                    <div style={{ backgroundColor: '#fff3e0', borderTop: '1px solid #ffcc80', padding: '6px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Clock size={12} color="#f57c00" />
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#e65100' }}>
+                        Free preview expires in {label} — Upgrade to keep access
+                      </span>
+                    </div>
+                  );
+                })()}
+                {/* Status badge */}
+                <div style={{ padding: '0 16px 14px', filter: blurred ? 'blur(5px)' : 'none', userSelect: blurred ? 'none' : 'auto' }}>
+                  <span style={{
+                    display: 'inline-block', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
+                    backgroundColor:
+                      ticket.status === 'Active' ? '#e8f5e9' :
+                      ticket.status === 'Approved' ? '#e8f5e9' :
+                      ticket.status === 'Transferred' ? '#e3f2fd' :
+                      ticket.status === 'Expired' ? '#f3f3f3' :
+                      ticket.status === 'Rejected' ? '#fce4ec' :
+                      ticket.status === 'Cancelled' ? '#f3f4f6' : '#fff8e1',
+                    color:
+                      ticket.status === 'Active' ? '#2e7d32' :
+                      ticket.status === 'Approved' ? '#2e7d32' :
+                      ticket.status === 'Transferred' ? '#1565c0' :
+                      ticket.status === 'Expired' ? '#9e9e9e' :
+                      ticket.status === 'Rejected' ? '#c62828' :
+                      ticket.status === 'Cancelled' ? '#6b7280' : '#f57f17'
+                  }}>
+                    {ticket.status === 'Pending' && ticket.surchargeFee > 0 && ticket.paymentStatus !== 'Paid'
+                      ? 'Pending M-Pesa Payment'
+                      : (ticket.status || 'Active')}
+                  </span>
                 </div>
               </div>
             );
@@ -1515,6 +1703,46 @@ export default function MyTickets() {
           <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>No tickets yet</h2>
           <p style={{ color: '#888', marginBottom: '32px' }}>When you buy tickets, they'll show up here.</p>
           <button className="btn-primary" style={{ maxWidth: '200px' }} onClick={() => navigate('/')}>Find Tickets</button>
+        </div>
+      )}
+
+      {/* 🎉 Approval Celebration Modal */}
+      {celebration && (
+        <div style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #026cdf, #004aad)', borderRadius: '24px',
+            padding: '40px 32px', maxWidth: '340px', width: '100%', textAlign: 'center',
+            boxShadow: '0 24px 64px rgba(2,108,223,0.5)', color: 'white', position: 'relative'
+          }}>
+            <div style={{ fontSize: '56px', marginBottom: '12px' }}>🎉</div>
+            <h2 style={{ fontSize: '24px', fontWeight: 900, margin: '0 0 10px' }}>Tickets Approved!</h2>
+            {celebration.eventTitle ? (
+              <p style={{ fontSize: '15px', opacity: 0.85, margin: '0 0 6px' }}>
+                <strong>{celebration.eventTitle}</strong>
+              </p>
+            ) : null}
+            <p style={{ fontSize: '13px', opacity: 0.7, margin: '0 0 24px', lineHeight: 1.5 }}>
+              Your M-Pesa payment was confirmed. Your seats are now secured — download your tickets!
+            </p>
+            <button
+              onClick={() => { setCelebration(null); navigate('/mytickets'); }}
+              style={{
+                width: '100%', padding: '14px', backgroundColor: 'white', color: '#026cdf',
+                border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 800, cursor: 'pointer'
+              }}
+            >
+              View My Tickets
+            </button>
+            <button
+              onClick={() => setCelebration(null)}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', marginTop: '12px' }}
+            >
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
     </div>
