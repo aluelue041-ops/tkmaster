@@ -30,8 +30,8 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const EXISTING_FREE_CUTOFF = new Date('2026-10-27T13:30:00+03:00').getTime();
 
 // Returns true if a Free-tier ticket is an existing ticket or older than 24 hours
-function isTicketBlurred(ticket, userSubscription) {
-  if (userSubscription !== 'Free') return false;
+function isTicketBlurred(ticket, userSubscription, userRole) {
+  if (userRole === 'superadmin' || userSubscription !== 'Free') return false;
   const rawDate = ticket?.purchaseDate || ticket?.createdAt;
   if (!rawDate) return true;
   const purchaseTime = new Date(rawDate).getTime();
@@ -42,8 +42,8 @@ function isTicketBlurred(ticket, userSubscription) {
 }
 
 // Returns ms remaining before Free ticket blurs, or 0 if already blurred/not free
-function getFreeCountdownMs(ticket, userSubscription) {
-  if (userSubscription !== 'Free') return 0;
+function getFreeCountdownMs(ticket, userSubscription, userRole) {
+  if (userRole === 'superadmin' || userSubscription !== 'Free') return 0;
   const rawDate = ticket?.purchaseDate || ticket?.createdAt;
   if (!rawDate) return 0;
   const purchaseTime = new Date(rawDate).getTime();
@@ -786,6 +786,8 @@ export default function MyTickets() {
   const [tickets, setTickets] = useState([]);
   const [events, setEvents] = useState([]);
   const [userSubscription, setUserSubscription] = useState('Free');
+  const [currentUserRole, setCurrentUserRole] = useState('user');
+  const isSuperAdmin = currentUserRole === 'superadmin';
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [retryPhone, setRetryPhone] = useState('');
@@ -962,7 +964,12 @@ export default function MyTickets() {
         }
         if (userRes.ok) {
           const uData = await userRes.json();
-          setUserSubscription(uData.subscription || 'Free');
+          if (uData.role) setCurrentUserRole(uData.role);
+          if (uData.role === 'superadmin') {
+            setUserSubscription('VIP');
+          } else {
+            setUserSubscription(uData.subscription || 'Free');
+          }
         }
       } catch (err) {
         console.error(err);
@@ -1609,8 +1616,8 @@ export default function MyTickets() {
 
   // Orders list view
   const FREE_LIFETIME_LIMIT = 2;
-  const isVIP = userSubscription === 'VIP';
-  const isFree = userSubscription === 'Free';
+  const isVIP = isSuperAdmin || userSubscription === 'VIP';
+  const isFree = !isSuperAdmin && userSubscription === 'Free';
 
   // Free: count all tickets ever purchased (lifetime)
   const lifetimeUsed = tickets.reduce((total, ticket) => {
@@ -1629,10 +1636,10 @@ export default function MyTickets() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
             <div>
               <div style={{ fontSize: '13px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                {isFree ? 'Lifetime Free Usage' : 'Subscription Plan'}
+                {isSuperAdmin ? 'Admin Access' : isFree ? 'Lifetime Free Usage' : 'Subscription Plan'}
               </div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: '#111', marginTop: '2px' }}>
-                {isVIP ? `${lifetimeUsed} Tickets (VIP Plan)` : `${lifetimeUsed} of ${FREE_LIFETIME_LIMIT} Lifetime Tickets`}
+                {isSuperAdmin ? 'Super Admin (Unlimited Access)' : isVIP ? `${lifetimeUsed} Tickets (VIP Plan)` : `${lifetimeUsed} of ${FREE_LIFETIME_LIMIT} Lifetime Tickets`}
               </div>
             </div>
             {!isVIP && (

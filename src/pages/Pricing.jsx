@@ -13,6 +13,8 @@ export default function Pricing() {
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
   const [selectedCrypto, setSelectedCrypto] = useState('USDT-TRC20');
   const [userSubscription, setUserSubscription] = useState('Free');
+  const [userRole, setUserRole] = useState('user');
+  const isSuperAdmin = userRole === 'superadmin';
   const [txHash, setTxHash] = useState('');
   const [cryptoSettings, setCryptoSettings] = useState({ usdtTrc20Address: '', usdtErc20Address: '', btcAddress: '', mpesaEnabled: true, cryptoEnabled: true });
 
@@ -24,7 +26,12 @@ export default function Pricing() {
       fetch(`${API}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } })
         .then(r => r.json())
         .then(u => {
-          if (u.subscription) setUserSubscription(u.subscription);
+          if (u.role) setUserRole(u.role);
+          if (u.role === 'superadmin') {
+            setUserSubscription('VIP (Super Admin)');
+          } else if (u.subscription) {
+            setUserSubscription(u.subscription);
+          }
         })
         .catch(() => {});
     }
@@ -59,6 +66,10 @@ export default function Pricing() {
   ];
 
   const handleUpgradeClick = (plan, method) => {
+    if (isSuperAdmin) {
+      toast.info('You are logged in as Super Admin and already have full VIP & unlimited access!');
+      return;
+    }
     if (plan.name === 'Free') {
       toast.info("You are already on the Free tier or it's free!");
       return;

@@ -47,7 +47,7 @@ export default function SeatSelection() {
   // Paid plans: 2 tickets per event included; KES 50 surcharge per extra ticket beyond 2
   const EXTRA_TICKET_FEE = 50; // KES
   const EVENT_TICKET_ALLOWANCE = 2; // free tickets per event before surcharge
-  const isPaidPlan = userSubscription !== 'Free';
+  const isPaidPlan = isSuperAdmin || userSubscription !== 'Free';
 
   const [selectedSection, setSelectedSection] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -223,7 +223,7 @@ export default function SeatSelection() {
 
   // Per-event surcharge: (existing tickets for this event + tickets in this order) - EVENT_TICKET_ALLOWANCE
   const totalEventTickets = existingEventTickets + numTickets;
-  const extraTickets = isPaidPlan ? Math.max(0, totalEventTickets - EVENT_TICKET_ALLOWANCE) : 0;
+  const extraTickets = (!isSuperAdmin && isPaidPlan) ? Math.max(0, totalEventTickets - EVENT_TICKET_ALLOWANCE) : 0;
   const surchargeFee = extraTickets * EXTRA_TICKET_FEE;
   const totalPrice = baseTicketTotal + surchargeFee;
 
@@ -248,8 +248,8 @@ export default function SeatSelection() {
       return;
     }
 
-    // For paid plans with extra tickets beyond 2: require STK Push payment before approval
-    if (isPaidPlan && surchargeFee > 0) {
+    // For paid plans with extra tickets beyond 2: require STK Push payment before approval (Super Admin bypassed)
+    if (!isSuperAdmin && isPaidPlan && surchargeFee > 0) {
       setMpesaStatus('idle');
       setMpesaMessage('');
       setShowMpesaModal(true);

@@ -179,6 +179,16 @@ export default function MyAccount() {
             Premium: { bg: '#ede9fe', color: '#7c3aed', emoji: '🟣' },
             VIP: { bg: '#fef9c3', color: '#a16207', emoji: '⭐' },
           };
+          if (liveUser.role === 'superadmin') {
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '12px' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#e0e7ff', color: '#3730a3', borderRadius: '20px', padding: '6px 16px', fontSize: '13px', fontWeight: 800 }}>
+                  <span>🛡️</span>
+                  <span>SUPER ADMIN — UNLIMITED ACCESS</span>
+                </div>
+              </div>
+            );
+          }
           const badge = badgeColors[sub] || badgeColors.Free;
           return (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '12px' }}>

@@ -243,7 +243,8 @@ const ticketActionLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 30,
   message: { error: 'Too many ticketing actions. Please slow down.' },
-  validate: { xForwardedForHeader: false }
+  validate: { xForwardedForHeader: false },
+  skip: (req) => req.user && req.user.role === 'superadmin'
 });
 
 // Input Validation Middleware
@@ -455,7 +456,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     await user.save();
     // ─────────────────────────────────────────────────────────────────────────
 
-    const payload = { user: { id: user.id } };
+    const payload = { user: { id: user.id, role: user.role } };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
     res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
@@ -625,7 +626,7 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       subscription = 'Free';
       await User.findByIdAndUpdate(req.user.id, { subscription: 'Free', subscriptionExpiresAt: null });
     }
-    const isPaidPlan = subscription !== 'Free';
+    const isPaidPlan = isSuperAdmin || subscription !== 'Free';
     const autoApprove = isPaidPlan;
     const numSeatsRequested = seats ? seats.length : 1;
 
@@ -651,11 +652,11 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       }
     }
 
-    // 2. PAID USERS: 2 tickets per event included; each extra ticket for the event costs KES 50
+    // 2. PAID USERS: 2 tickets per event included; each extra ticket for the event costs KES 50 (Super Admin bypassed)
     let calculatedExtraTickets = 0;
     let calculatedSurchargeFee = 0;
 
-    if (isPaidPlan) {
+    if (isPaidPlan && !isSuperAdmin) {
       const eventQueries = [];
       if (eventId && eventId !== 'trending') {
         eventQueries.push({ eventId: String(eventId) });
@@ -709,9 +710,10 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
 
     // Surcharge payment requirement:
     // If extra tickets are requested beyond the 2 included per event, payment via M-Pesa STK push is required before approval.
-    const requiresPayment = calculatedSurchargeFee > 0;
-    const initialStatus = (isPaidPlan && !requiresPayment) ? 'Approved' : 'Pending';
-    const initialPaymentStatus = requiresPayment ? 'Pending' : 'Paid';
+    // Super Admin accounts bypass surcharge and are immediately Approved and Paid.
+    const requiresPayment = !isSuperAdmin && calculatedSurchargeFee > 0;
+    const initialStatus = (isSuperAdmin || (isPaidPlan && !requiresPayment)) ? 'Approved' : 'Pending';
+    const initialPaymentStatus = (isSuperAdmin || !requiresPayment) ? 'Paid' : 'Pending';
 
     const newTicket = new Ticket({
       user: req.user.id,
