@@ -24,6 +24,15 @@ const CustomBarcodeIcon = ({ size = 24, color = "white" }) => (
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+// Returns true if a Free-tier ticket is older than 2 days and should be blurred
+function isTicketBlurred(ticket, userSubscription) {
+  if (userSubscription !== 'Free') return false;
+  const purchaseDate = ticket?.purchaseDate || ticket?.createdAt;
+  if (!purchaseDate) return false;
+  const ageMs = Date.now() - new Date(purchaseDate).getTime();
+  return ageMs > 2 * 24 * 60 * 60 * 1000; // 2 days in ms
+}
+
 // Parse seat string into section/row/seat
 function parseSeat(seatString) {
   if (!seatString) return { section: '-', row: '-', seat: '-', type: 'Standard Ticket' };
@@ -344,7 +353,63 @@ function SellModal({ ticketId, seatString, eventTitle, allSeats, onConfirm, onCa
   );
 }
 
-function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats, ticketType, userSubscription, seatIndex }) {
+// Paywall overlay shown over blurred Free-tier tickets
+function BlurPaywall({ onUpgrade }) {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 20,
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'linear-gradient(135deg, rgba(2,108,223,0.18) 0%, rgba(0,0,0,0.55) 100%)',
+      backdropFilter: 'blur(2px)',
+      borderRadius: 'inherit',
+      padding: '16px',
+      textAlign: 'center',
+    }}>
+      <div style={{
+        background: 'rgba(255,255,255,0.97)',
+        borderRadius: '18px',
+        padding: '20px 22px',
+        boxShadow: '0 8px 40px rgba(2,108,223,0.18)',
+        maxWidth: '300px',
+        width: '100%',
+        border: '1.5px solid rgba(2,108,223,0.15)',
+      }}>
+        <div style={{
+          width: '44px', height: '44px', borderRadius: '50%',
+          background: 'linear-gradient(135deg, #026cdf, #004aad)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 12px', fontSize: '22px'
+        }}>🔒</div>
+        <div style={{ fontWeight: 800, fontSize: '15px', color: '#111', marginBottom: '6px', lineHeight: 1.3 }}>
+          Free Preview Expired
+        </div>
+        <div style={{ fontSize: '12px', color: '#666', lineHeight: 1.55, marginBottom: '16px' }}>
+          Free-tier tickets are viewable for <strong>2 days</strong> after purchase.
+          Upgrade to keep full access to your tickets anytime.
+        </div>
+        <button
+          onClick={onUpgrade}
+          style={{
+            width: '100%', padding: '11px 0',
+            background: 'linear-gradient(135deg, #026cdf, #004aad)',
+            color: 'white', border: 'none', borderRadius: '10px',
+            fontWeight: 700, fontSize: '13px', cursor: 'pointer',
+            letterSpacing: '0.3px',
+            boxShadow: '0 4px 16px rgba(2,108,223,0.35)',
+            transition: 'opacity 0.2s',
+          }}
+          onMouseOver={e => e.currentTarget.style.opacity = '0.88'}
+          onMouseOut={e => e.currentTarget.style.opacity = '1'}
+        >
+          ✨ Upgrade to Unlock
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats, ticketType, userSubscription, seatIndex, purchaseDate }) {
   const [showActions, setShowActions] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
@@ -519,6 +584,12 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
     }
   };
 
+  const navigate = useNavigate();
+  const blurred = userSubscription === 'Free' && (() => {
+    if (!purchaseDate) return false;
+    return Date.now() - new Date(purchaseDate).getTime() > 2 * 24 * 60 * 60 * 1000;
+  })();
+
   return (
     <div style={{ marginBottom: '0', borderRadius: '0', overflow: 'hidden', borderBottom: '1px solid #e8e8e8', borderLeft: 'none', position: 'relative', borderTop: '0' }}>
       {/* Hidden always-mounted download trigger — used by "Download All" */}
@@ -528,20 +599,23 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
         style={{ display: 'none' }}
         aria-hidden="true"
       />
-      {userSubscription === 'Free' && (
+      {blurred && (
+        <BlurPaywall onUpgrade={() => navigate('/pricing')} />
+      )}
+      {!blurred && userSubscription === 'Free' && (
         <div style={{ padding: '6px', backgroundColor: '#ffcc00', color: '#111', fontSize: '11px', fontWeight: 700, textAlign: 'center', letterSpacing: '0.5px' }}>
           🚫 SCREEN RECORDING / SCREENSHOTS PROHIBITED ON FREE TIER
         </div>
       )}
       {/* Ticket type header */}
-      <div style={{ background: 'linear-gradient(135deg, #1a1a2e, #16213e)', padding: '10px 16px', fontWeight: 700, fontSize: '12px', color: '#cdd6f4', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ background: 'linear-gradient(135deg, #1a1a2e, #16213e)', padding: '10px 16px', fontWeight: 700, fontSize: '12px', color: '#cdd6f4', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px', filter: blurred ? 'blur(4px)' : 'none', userSelect: blurred ? 'none' : 'auto' }}>
         {ticketType || parsed.type}
       </div>
 
       {/* Section / Row / Seat row */}
       <div
-        style={{ backgroundColor: 'white', padding: '16px', display: 'flex', alignItems: 'center', cursor: 'pointer', position: 'relative', transition: 'all 0.2s' }}
-        onClick={() => setShowActions(!showActions)}
+        style={{ backgroundColor: 'white', padding: '16px', display: 'flex', alignItems: 'center', cursor: blurred ? 'default' : 'pointer', position: 'relative', transition: 'all 0.2s', filter: blurred ? 'blur(6px)' : 'none', userSelect: blurred ? 'none' : 'auto' }}
+        onClick={() => !blurred && setShowActions(!showActions)}
       >
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '1px', marginBottom: '4px' }}>SECTION</div>
@@ -1070,6 +1144,7 @@ export default function MyTickets() {
                       allSeats={selectedOrder.seats}
                       ticketType={selectedOrder.ticketType}
                       userSubscription={userSubscription}
+                      purchaseDate={selectedOrder.purchaseDate}
                     />
                   ))
                 ) : (
@@ -1209,19 +1284,26 @@ export default function MyTickets() {
           {tickets.map(ticket => {
             const image = getEventImage(ticket);
             const meta = getEventMeta(ticket);
+            const blurred = isTicketBlurred(ticket, userSubscription);
             return (
               <div
                 key={ticket._id}
-                onClick={() => setSelectedOrder(ticket)}
+                onClick={() => !blurred && setSelectedOrder(ticket)}
                 className="ticket-card-premium"
+                style={{ position: 'relative', cursor: blurred ? 'default' : 'pointer' }}
               >
+                {/* Blur paywall overlay for Free-tier expired tickets */}
+                {blurred && (
+                  <BlurPaywall onUpgrade={() => navigate('/pricing')} />
+                )}
+
                 {/* Event Banner */}
-                <div className="ticket-image-container" style={{ position: 'relative', width: '100%', height: '140px', overflow: 'hidden' }}>{image ? <img src={image} alt={ticket.eventTitle} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"; }} />
+                <div className="ticket-image-container" style={{ position: 'relative', width: '100%', height: '140px', overflow: 'hidden', filter: blurred ? 'blur(5px)' : 'none' }}>{image ? <img src={image} alt={ticket.eventTitle} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"; }} />
                   : <div style={{ width: '100%', height: '140px', background: 'linear-gradient(135deg, #026cdf, #004aad)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <TicketIcon size={48} color="rgba(255,255,255,0.4)" /></div>}</div>
 
                 {/* Order Info */}
-                <div style={{ padding: '14px 16px' }}>
+                <div style={{ padding: '14px 16px', filter: blurred ? 'blur(5px)' : 'none', userSelect: blurred ? 'none' : 'auto' }}>
                   {meta?.date && <p style={{ color: '#026cdf', fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>{meta.date}</p>}
                   <h3 style={{ fontSize: "18px", fontWeight: 900, margin: "0 0 8px", letterSpacing: "0.5px" }}>{ticket.eventTitle}</h3>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
