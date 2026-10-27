@@ -728,7 +728,56 @@ export default function MyTickets() {
   const [userSubscription, setUserSubscription] = useState('Free');
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [retryPhone, setRetryPhone] = useState('');
+  const [retryLoading, setRetryLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handlePayPendingExtra = async (ticketId, surchargeFee) => {
+    const phone = retryPhone.trim().replace(/[\s+-]/g, '');
+    if (!phone || phone.length < 9) {
+      toast.error('Please enter a valid M-Pesa phone number (e.g. 0712345678)');
+      return;
+    }
+    const token = localStorage.getItem('token');
+    setRetryLoading(true);
+    try {
+      const res = await fetch(`${API}/api/tickets/${ticketId}/pay-extra-stk`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ phoneNumber: phone })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send STK push');
+      toast.info(`STK Push sent to ${phone}. Enter your M-Pesa PIN!`);
+
+      const interval = setInterval(async () => {
+        try {
+          const sRes = await fetch(`${API}/api/tickets/${ticketId}/payment-status`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const sData = await sRes.json();
+          if (sData && (sData.status === 'Approved' || sData.paymentStatus === 'Paid')) {
+            clearInterval(interval);
+            toast.success('M-Pesa payment confirmed! Tickets approved! 🎉');
+            const updated = await fetch(`${API}/api/tickets/my-tickets`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const list = await updated.json();
+            setTickets(list);
+            const current = list.find(t => t._id === ticketId);
+            if (current) setSelectedOrder(current);
+            setRetryLoading(false);
+          }
+        } catch (_) {}
+      }, 2000);
+
+      setTimeout(() => clearInterval(interval), 60000);
+    } catch (err) {
+      setRetryLoading(false);
+      toast.error(err.message);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -906,11 +955,23 @@ export default function MyTickets() {
               </div>
             </div>
 
-            {/* View Tickets button */}
-            <button className="interactive-btn" style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', margin: 0, padding: '16px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box' }}>
-              <CustomBarcodeIcon size={24} color="white" />
-              View Tickets
-            </button>
+            {/* View Tickets button or Pending indicator */}
+            {selectedOrder.status === 'Pending' ? (
+              <div style={{
+                width: '100%', backgroundColor: '#fff8e1', color: '#b45309',
+                border: 'none', margin: 0, padding: '16px', fontSize: '15px',
+                fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: '8px', boxSizing: 'border-box', borderTop: '2px solid #ffe082'
+              }}>
+                <span>⏳</span>
+                <span>Pending Approval — Tickets Hidden</span>
+              </div>
+            ) : (
+              <button className="interactive-btn" style={{ width: '100%', backgroundColor: '#026cdf', color: 'white', border: 'none', margin: 0, padding: '16px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxSizing: 'border-box' }}>
+                <CustomBarcodeIcon size={24} color="white" />
+                View Tickets
+              </button>
+            )}
           </div>
         </div>
 
@@ -1159,9 +1220,56 @@ export default function MyTickets() {
                     />
                   ))
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: '#fff8e1', borderRadius: '12px', border: '1px solid #ffe082', marginTop: '16px' }}>
-                    <p style={{ margin: 0, color: '#f57f17', fontWeight: 600, fontSize: '15px' }}>â³ Pending Approval</p>
-                    <p style={{ margin: '8px 0 0', color: '#666', fontSize: '13px', lineHeight: 1.5 }}>Your ticket order is currently being processed. The ticket contents and QR code will be available here once approved by the administrator.</p>
+                  <div style={{ padding: '28px 20px', backgroundColor: '#fffdf5', borderRadius: '16px', border: '1.5px solid #ffe082', margin: '16px 0', textAlign: 'center' }}>
+                    <div style={{
+                      width: '60px', height: '60px', borderRadius: '50%',
+                      backgroundColor: '#fff8e1', display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', margin: '0 auto 12px', fontSize: '28px'
+                    }}>
+                      ⏳
+                    </div>
+                    <h3 style={{ margin: '0 0 8px', fontSize: '19px', fontWeight: 800, color: '#b45309' }}>
+                      {selectedOrder.surchargeFee > 0 && selectedOrder.paymentStatus !== 'Paid' 
+                        ? 'M-Pesa Payment Required to Reveal Tickets' 
+                        : 'Tickets Pending Approval'}
+                    </h3>
+                    <p style={{ margin: '0 0 16px', color: '#666', fontSize: '13px', lineHeight: 1.6, maxWidth: '420px', marginLeft: 'auto', marginRight: 'auto' }}>
+                      {selectedOrder.surchargeFee > 0 && selectedOrder.paymentStatus !== 'Paid'
+                        ? `This order includes ${selectedOrder.extraTickets || 0} extra ticket(s). Tickets, barcodes, and entry QR codes remain hidden until the KES ${selectedOrder.surchargeFee} surcharge is paid.`
+                        : 'Tickets, seat allocations, barcodes, and QR codes are hidden until your order is reviewed and approved. Once approved, full ticket access will appear here.'}
+                    </p>
+
+                    {selectedOrder.surchargeFee > 0 && selectedOrder.paymentStatus !== 'Paid' && (
+                      <div style={{ maxWidth: '360px', margin: '0 auto', textAlign: 'left', backgroundColor: 'white', padding: '18px', borderRadius: '14px', border: '1px solid #ffd54f', boxShadow: '0 4px 12px rgba(245,158,11,0.1)' }}>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#333', marginBottom: '6px', textTransform: 'uppercase' }}>
+                          M-Pesa Mobile Number
+                        </label>
+                        <input
+                          type="tel"
+                          placeholder="e.g. 0712345678"
+                          value={retryPhone}
+                          onChange={e => setRetryPhone(e.target.value)}
+                          style={{
+                            width: '100%', padding: '12px 14px', borderRadius: '8px',
+                            border: '1.5px solid #cbd5e1', fontSize: '15px', outline: 'none',
+                            marginBottom: '12px', boxSizing: 'border-box'
+                          }}
+                        />
+                        <button
+                          onClick={() => handlePayPendingExtra(selectedOrder._id, selectedOrder.surchargeFee)}
+                          disabled={retryLoading}
+                          style={{
+                            width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
+                            backgroundColor: '#00843d', color: 'white', fontSize: '15px', fontWeight: 800,
+                            cursor: retryLoading ? 'not-allowed' : 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                            boxShadow: '0 4px 12px rgba(0,132,61,0.25)'
+                          }}
+                        >
+                          {retryLoading ? 'Sending STK Push...' : `Pay KES ${selectedOrder.surchargeFee} via M-Pesa`}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1210,8 +1318,18 @@ export default function MyTickets() {
                    {/* Right side: YOU GOT TICKETS! */}
                    <div style={{ flex: '0 0 140px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backgroundColor: '#1a1a1a', borderLeft: '1px solid #333' }}>
                      <div style={{ textAlign: 'center', letterSpacing: '0.5px' }}>
-                       <div style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.4 }}>YOU GOT</div>
-                       <div style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.4, borderBottom: "3px solid #026cdf", paddingBottom: "4px", display: 'inline-block' }}>TICKETS!</div>
+                        {selectedOrder.status === 'Pending' ? (
+                          <>
+                            <div style={{ fontSize: '14px', fontWeight: 800, lineHeight: 1.4, color: '#f59e0b' }}>AWAITING</div>
+                            <div style={{ fontSize: '14px', fontWeight: 800, lineHeight: 1.4, borderBottom: "3px solid #f59e0b", paddingBottom: "4px", display: 'inline-block', color: '#f59e0b' }}>APPROVAL</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.4 }}>YOU GOT</div>
+                            <div style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.4, borderBottom: "3px solid #026cdf", paddingBottom: "4px", display: 'inline-block' }}>TICKETS!</div>
+                          </>
+                        )}
+                      </div>
                      </div>
                    </div>
                 </div>
@@ -1314,7 +1432,9 @@ export default function MyTickets() {
                   {meta?.date && <p style={{ color: '#026cdf', fontSize: '12px', fontWeight: 600, margin: '0 0 4px' }}>{meta.date}</p>}
                   <h3 style={{ fontSize: "18px", fontWeight: 900, margin: "0 0 8px", letterSpacing: "0.5px" }}>{ticket.eventTitle}</h3>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#666', fontSize: '13px' }}>{meta?.location || 'View Order'}</span>
+                    <span style={{ color: ticket.status === 'Pending' ? '#b45309' : '#666', fontSize: '13px', fontWeight: ticket.status === 'Pending' ? 700 : 400 }}>
+                      {ticket.status === 'Pending' ? '🔒 Tickets hidden until approved' : (meta?.location || 'View Order')}
+                    </span>
                     <span style={{ color: '#333', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <TicketIcon size={14} /> x{ticket.seats.length}
                     </span>
