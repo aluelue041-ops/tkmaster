@@ -420,12 +420,23 @@ function BlurPaywall({ onUpgrade }) {
 }
 
 function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eventImage, eventTitle, currency, totalPrice, status, allSeats, ticketType, userSubscription, seatIndex, purchaseDate }) {
+  const navigate = useNavigate();
+  const blurred = isTicketBlurred({ purchaseDate }, userSubscription);
   const [showActions, setShowActions] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
   const parsed = parseSeat(seatString);
 
   const downloadPDF = async () => {
+    if (status === 'Pending') {
+      toast.warning('Tickets cannot be downloaded while pending approval.');
+      return;
+    }
+    if (blurred) {
+      toast.warning('Free preview expired. Please upgrade to download tickets.');
+      navigate('/pricing');
+      return;
+    }
     try {
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a5' });
       const W = 210;
@@ -594,9 +605,6 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
     }
   };
 
-  const navigate = useNavigate();
-  const blurred = isTicketBlurred({ purchaseDate }, userSubscription);
-
   return (
     <div style={{ marginBottom: '0', borderRadius: '0', overflow: 'hidden', borderBottom: '1px solid #e8e8e8', borderLeft: 'none', position: 'relative', borderTop: '0' }}>
       {/* Hidden always-mounted download trigger — used by "Download All" */}
@@ -642,7 +650,19 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
       {showActions && (
         <div style={{ backgroundColor: '#fafafa', borderTop: '1px solid #eee', display: 'flex', gap: '12px', padding: '12px 16px', justifyContent: 'center' }}>
           <button
-            onClick={() => { setShowTransferModal(true); setShowActions(false); }}
+            onClick={() => {
+              if (blurred) {
+                toast.warning('Upgrade to transfer tickets');
+                navigate('/pricing');
+                return;
+              }
+              if (status === 'Pending') {
+                toast.warning('Tickets cannot be transferred while pending approval.');
+                return;
+              }
+              setShowTransferModal(true);
+              setShowActions(false);
+            }}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
               backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '12px',
@@ -679,6 +699,15 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
 
           <button
             onClick={() => {
+              if (blurred) {
+                toast.warning('Upgrade to add tickets to wallet');
+                navigate('/pricing');
+                return;
+              }
+              if (status === 'Pending') {
+                toast.warning('Tickets cannot be saved to wallet while pending approval.');
+                return;
+              }
               toast.success('Ticket added to Wallet!');
               setShowActions(false);
             }}
@@ -693,7 +722,19 @@ function TicketStub({ seatString, ticketId, orderNumber, onTransfer, onSell, eve
           </button>
 
           <button
-            onClick={() => { setShowSellModal(true); setShowActions(false); }}
+            onClick={() => {
+              if (blurred) {
+                toast.warning('Upgrade to sell tickets');
+                navigate('/pricing');
+                return;
+              }
+              if (status === 'Pending') {
+                toast.warning('Tickets cannot be listed for resale while pending approval.');
+                return;
+              }
+              setShowSellModal(true);
+              setShowActions(false);
+            }}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
               backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '12px',
@@ -950,7 +991,7 @@ export default function MyTickets() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', fontSize: '18px', fontWeight: 800 }}>
                   <TicketIcon size={20} color="white" />
-                  <span>x{selectedOrder.seats.length}</span>
+                  <span>x{selectedOrder.seatsOriginalCount || selectedOrder.seats?.length || 1}</span>
                 </div>
               </div>
             </div>
@@ -1003,10 +1044,10 @@ export default function MyTickets() {
               <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Order {generateOrderStr(selectedOrder._id, eventMeta?.location, selectedOrder.orderNumber)}</h3>
               <MoreVertical size={20} color="#333" />
             </div>
-            <p style={{ color: '#888', fontSize: '13px', margin: '0 0 8px', padding: '0 16px' }}>x{selectedOrder.seats.length} Tickets</p>
+            <p style={{ color: '#888', fontSize: '13px', margin: '0 0 8px', padding: '0 16px' }}>x{selectedOrder.seatsOriginalCount || selectedOrder.seats?.length || 1} Tickets</p>
 
             {/* Download All button for multi-seat approved orders */}
-            {selectedOrder.seats.length > 1 && ['Approved', 'Active'].includes(selectedOrder.status) && (
+            {(selectedOrder.seats?.length || 0) > 1 && ['Approved', 'Active'].includes(selectedOrder.status) && !isTicketBlurred(selectedOrder, userSubscription) && (
               <button
                 onClick={async () => {
                   toast.info('Generating your tickets... Please wait.');
@@ -1358,7 +1399,7 @@ export default function MyTickets() {
 
   // Free: count all tickets ever purchased (lifetime)
   const lifetimeUsed = tickets.reduce((total, ticket) => {
-    return total + (ticket.seats ? ticket.seats.length : 1);
+    return total + (ticket.seatsOriginalCount || (ticket.seats ? ticket.seats.length : 1));
   }, 0);
 
   const usagePercent = isFree ? Math.min(100, (lifetimeUsed / FREE_LIFETIME_LIMIT) * 100) : 0;
@@ -1436,7 +1477,7 @@ export default function MyTickets() {
                       {ticket.status === 'Pending' ? '🔒 Tickets hidden until approved' : (meta?.location || 'View Order')}
                     </span>
                     <span style={{ color: '#333', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <TicketIcon size={14} /> x{ticket.seats.length}
+                      <TicketIcon size={14} /> x{ticket.seatsOriginalCount || ticket.seats?.length || 1}
                     </span>
                   </div>
                   {/* Status badge */}

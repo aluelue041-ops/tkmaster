@@ -688,6 +688,23 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       } catch (_) {}
     }
 
+    // Concurrency collision check: ensure requested seats haven't already been taken by another guest
+    if (eventId && eventId !== 'trending' && mongoose.Types.ObjectId.isValid(eventId) && Array.isArray(seats) && seats.length > 0) {
+      try {
+        const evCheck = await Event.findById(eventId);
+        if (evCheck && Array.isArray(evCheck.bookedSeats)) {
+          const collisions = seats.filter(s => evCheck.bookedSeats.includes(s));
+          if (collisions.length > 0) {
+            return res.status(409).json({
+              error: `Seat(s) ${collisions.join(', ')} were just selected by another guest. Please choose different seats.`
+            });
+          }
+        }
+      } catch (checkErr) {
+        console.error('Seat collision check error:', checkErr.message);
+      }
+    }
+
     // Surcharge payment requirement:
     // If extra tickets are requested beyond the 2 included per event, payment via M-Pesa STK push is required before approval.
     const requiresPayment = calculatedSurchargeFee > 0;
@@ -712,12 +729,11 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
 
     await newTicket.save();
 
-    // Mark seats as booked on the event document for real-time availability
-    const mongoose = require('mongoose');
+    // Mark seats as booked on the event document for real-time availability using $addToSet to prevent duplicates
     if (eventId && eventId !== 'trending' && mongoose.Types.ObjectId.isValid(eventId)) {
       try {
         await Event.findByIdAndUpdate(eventId, {
-          $push: { bookedSeats: { $each: seats } }
+          $addToSet: { bookedSeats: { $each: seats } }
         });
       } catch (e) { console.error('Seat tracking error:', e.message); }
     }
@@ -764,8 +780,15 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
       if (emailUser) sendBookingConfirmationEmail(emailUser.email, newTicket);
     }
 
+    const ticketObj = newTicket.toObject();
+    if (initialStatus === 'Pending') {
+      ticketObj.seatsOriginalCount = ticketObj.seats ? ticketObj.seats.length : 0;
+      ticketObj.seats = [];
+      ticketObj.seatsHidden = true;
+    }
+
     res.json({
-      ...newTicket.toObject(),
+      ...ticketObj,
       extraTickets: calculatedExtraTickets || extraTickets || 0,
       surchargeFee: calculatedSurchargeFee || surchargeFee || 0,
       requiresPayment,
@@ -781,7 +804,17 @@ app.post('/api/tickets/book', authMiddleware, ticketActionLimiter, async (req, r
 app.get('/api/tickets/my-tickets', authMiddleware, async (req, res) => {
   try {
     const tickets = await Ticket.find({ user: req.user.id }).sort({ purchaseDate: -1 });
-    res.json(tickets);
+    // Sanitize pending tickets so seat allocations and barcodes are not exposed until approved
+    const sanitizedTickets = tickets.map(t => {
+      const obj = t.toObject();
+      if (obj.status === 'Pending') {
+        obj.seatsOriginalCount = obj.seats ? obj.seats.length : 0;
+        obj.seats = [];
+        obj.seatsHidden = true;
+      }
+      return obj;
+    });
+    res.json(sanitizedTickets);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -866,6 +899,10 @@ app.put('/api/tickets/:id/transfer-to', authMiddleware, ticketActionLimiter, asy
     // Only the ticket owner can transfer
     if (ticket.user && ticket.user._id.toString() !== req.user.id) {
       return res.status(403).json({ error: 'You do not own this ticket' });
+    }
+
+    if (!['Active', 'Approved'].includes(ticket.status) || ticket.paymentStatus === 'Pending') {
+      return res.status(400).json({ error: 'Only approved, active tickets can be transferred' });
     }
 
     const senderEmail = ticket.user ? ticket.user.email : 'A user';
@@ -1041,6 +1078,10 @@ app.put('/api/tickets/:id/sell', authMiddleware, ticketActionLimiter, async (req
 
     if (ticket.user && ticket.user._id.toString() !== req.user.id) {
       return res.status(403).json({ error: 'You do not own this ticket' });
+    }
+
+    if (!['Active', 'Approved'].includes(ticket.status) || ticket.paymentStatus === 'Pending') {
+      return res.status(400).json({ error: 'Only approved, active tickets can be listed for resale' });
     }
 
     let numToSell = parseInt(quantity) || 1;
@@ -1818,10 +1859,23 @@ app.post('/api/payhero/callback', async (req, res) => {
         const userId = parts[2];
         const ticket = await Ticket.findById(ticketId);
         if (ticket) {
+          // Verify external reference matches ticket's stored reference if set
+          if (ticket.mpesaReference && ticket.mpesaReference !== extRef) {
+            console.warn(`[PayHero Callback] Ticket ${ticketId} reference mismatch: expected ${ticket.mpesaReference}, got ${extRef}`);
+            return res.status(200).send('OK');
+          }
+
+          // Verify amount paid is >= surchargeFee
+          const paidAmount = parseFloat(callbackData.amount);
+          if (ticket.surchargeFee && !isNaN(paidAmount) && paidAmount < ticket.surchargeFee) {
+            console.warn(`[PayHero Callback] Ticket ${ticketId} paid amount (${paidAmount}) less than required surchargeFee (${ticket.surchargeFee})`);
+            return res.status(200).send('OK');
+          }
+
           ticket.status = 'Approved';
           ticket.paymentStatus = 'Paid';
           await ticket.save();
-          console.log(`[PayHero Callback] Ticket ${ticketId} extra surcharge paid. Status set to Approved.`);
+          console.log(`[PayHero Callback] Ticket ${ticketId} extra surcharge verified & paid. Status set to Approved.`);
 
           const emailUser = await User.findById(userId || ticket.user).select('email');
           if (emailUser) sendBookingConfirmationEmail(emailUser.email, ticket);
@@ -1841,7 +1895,7 @@ app.post('/api/payhero/callback', async (req, res) => {
         const parts = extRef.split('_');
         // parts[0] = 'SUB', parts[1] = userId, parts[2] = planName, parts[3] = timestamp
         const userId = parts[1];
-        // Read plan directly from reference â€” no amount guessing
+        // Read plan directly from reference — no amount guessing
         const validPlans = ['VIP', 'Premium', 'Basic'];
         const plan = validPlans.includes(parts[2]) ? parts[2] : null;
 
@@ -1857,8 +1911,19 @@ app.post('/api/payhero/callback', async (req, res) => {
         const io = req.app.get('io');
         if (io) {
           io.to(userId).emit('subscription_success', {
-            message: `Your M-Pesa payment was confirmed! Subscription upgraded to ${plan}. ðŸŽ‰`
+            message: `Your M-Pesa payment was confirmed! Subscription upgraded to ${plan}. 🎉`
           });
+        }
+      }
+    } else if (callbackData && (callbackData.status === 'Failed' || callbackData.status === 'Cancelled')) {
+      const extRef = callbackData.external_reference;
+      if (extRef && extRef.startsWith('EXTRA_')) {
+        const ticketId = extRef.split('_')[1];
+        const ticket = await Ticket.findById(ticketId);
+        if (ticket && ticket.paymentStatus === 'Pending') {
+          ticket.paymentStatus = 'Failed';
+          await ticket.save();
+          console.log(`[PayHero Callback] Ticket ${ticketId} payment marked as Failed.`);
         }
       }
     } else {
